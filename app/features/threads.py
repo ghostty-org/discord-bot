@@ -11,8 +11,8 @@ from app.utils import is_dm, is_mod, server_only_warning
 async def create_thread(
     interaction: discord.Interaction,
     title: str,
-    starting_message_id: str = None,
-    ending_message_id: str = None,
+    starting_message_id: str | None = None,
+    ending_message_id: str | None = None,
     ommitted_messages: str = "",
 ) -> None:
     """
