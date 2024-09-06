@@ -8,14 +8,6 @@ The Nix environment is the only supported development environment. You can
 develop this without Nix, of course, but I'm not going to help you figure it
 out.
 
-### Contributing
-
-More information on how to contribute to the Ghostty Bot are to come. For now, before committing, please run:
-```console
-$ poetry run ruff check
-$ poetry run ruff format
-```
-
 ### Discord Bot
 
 You will have to [set up a Discord bot][discord-docs] and get a Discord
