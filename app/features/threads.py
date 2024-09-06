@@ -92,9 +92,9 @@ async def get_webhook(channel: discord.TextChannel) -> discord.Webhook:
     webhooks = await channel.webhooks()
     webhook = None
     if isinstance(webhooks, list):
-        for webhook in webhooks:
-            if webhook.name == "Ghostty Thread Creator":
-                webhook = webhook
+        for hook in webhooks:
+            if hook.name == "Ghostty Thread Creator":
+                webhook = hook
                 break
     # if no webhook is found, create one
     if webhook is None:
