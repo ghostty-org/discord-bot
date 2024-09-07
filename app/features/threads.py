@@ -42,7 +42,7 @@ async def create_thread(
     # Grab current channel from interaction and create thread
     channel = interaction.channel
     thread = await channel.create_thread(name=title)
-    await interaction.response.send_message(f"Thread created: {thread.mention}")
+    await interaction.response.defer(thinking=True, ephemeral=True)
 
     # if starting and ending message IDs are provided, move messages between them inclusive to the thread
     if starting_message_id is not None and ending_message_id is not None:
@@ -96,13 +96,18 @@ async def create_thread(
             async for single_message in thread.history(limit=1):
                 sent_message = single_message
             added_messages_dict[message.id] = sent_message
-            # remove the message from the original channel
-            await message.delete()
             # in the case we have not "ghosted" the author, send a notifying message to the thread and delete it
             if message.author.id not in authors_mentioned:
                 authors_mentioned.append(message.author.id)
                 notification_message = await thread.send(f"{message.author.mention}")
                 await notification_message.delete()
+        await interaction.edit_original_response(
+            content=f"Thread created: {thread.mention}",
+            view=ThreadOptionsView(thread, message_list, interaction, channel),
+        )
+    else:
+        await interaction.delete_original_response()
+        await channel.send(f"Thread created: {thread.mention}")
 
 
 async def get_webhook(channel: discord.TextChannel) -> discord.Webhook:
@@ -118,3 +123,50 @@ async def get_webhook(channel: discord.TextChannel) -> discord.Webhook:
     if webhook is None:
         webhook = await channel.create_webhook(name="Ghostty Thread Creator")
     return webhook
+
+
+class ThreadOptionsView(discord.ui.View):
+    """The view shown to create a thread."""
+
+    def __init__(
+        self,
+        thread: discord.Thread,
+        message_list: list = [],
+        bot_interaction: discord.Interaction = None,
+        channel: discord.TextChannel = None,
+    ) -> None:
+        super().__init__(timeout=None)
+        self.thread = thread
+        self.message_list = message_list
+        self.bot_interaction = bot_interaction
+        self.channel = channel
+        self.omissions = []
+
+    @discord.ui.button(
+        label="Delete Original Posts",
+        style=discord.ButtonStyle.danger,
+        custom_id="delete-original-posts",
+    )
+    async def delete_original_posts(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await self.bot_interaction.edit_original_response(
+            content="Deleting original posts...", view=None
+        )
+        for message in self.message_list:
+            await message.delete()
+        await self.end_prompt()
+
+    @discord.ui.button(
+        label="Don't Delete Original Posts",
+        style=discord.ButtonStyle.secondary,
+        custom_id="dont-delete-original-posts",
+    )
+    async def dont_delete_original_posts(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await self.end_prompt()
+
+    async def end_prompt(self) -> None:
+        await self.bot_interaction.delete_original_response()
+        await self.channel.send(f"Thread created: {self.thread.mention}")
