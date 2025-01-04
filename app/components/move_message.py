@@ -5,6 +5,7 @@ import discord
 from app.setup import bot, config
 from app.utils import (
     SERVER_ONLY,
+    GuildTextChannels,
     get_or_create_webhook,
     is_dm,
     is_helper,
@@ -31,9 +32,13 @@ class SelectChannel(discord.ui.View):
         self, interaction: discord.Interaction, sel: discord.ui.ChannelSelect
     ) -> None:
         if self._used:
+            await interaction.response.send_message(
+                "Channel selector was already used.", ephemeral=True
+            )
             return
         self._used = True
         channel = await bot.fetch_channel(sel.values[0].id)
+        assert isinstance(channel, (discord.abc.GuildChannel, discord.Thread))
         if channel.id == self.message.channel.id:
             await interaction.response.send_message(
                 "You can't move a message to the same channel.", ephemeral=True
@@ -46,6 +51,8 @@ class SelectChannel(discord.ui.View):
             if isinstance(channel, discord.Thread)
             else (channel, discord.utils.MISSING)
         )
+        assert isinstance(webhook_channel, GuildTextChannels)
+
         webhook = await get_or_create_webhook("Ghostty Moderator", webhook_channel)
         await move_message_via_webhook(
             webhook, self.message, self.executor, thread=thread
@@ -73,7 +80,7 @@ class Ghostping(discord.ui.View):
         style=discord.ButtonStyle.secondary,
     )
     async def ghostping(
-        self, interaction: discord.Interaction, but: discord.ui.Button
+        self, interaction: discord.Interaction, _button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(ephemeral=True)
         await (await self._channel.send(self._author.mention)).delete()

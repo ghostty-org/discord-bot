@@ -48,6 +48,7 @@ async def check_message_filters(message: discord.Message) -> bool:
         await message.delete()
         if message.type not in REGULAR_MESSAGE_TYPES:
             continue
+        assert isinstance(message.channel, discord.TextChannel)
         await try_dm(
             message.author,
             MESSAGE_DELETION_TEMPLATE.format(
