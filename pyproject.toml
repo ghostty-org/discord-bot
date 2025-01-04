@@ -17,7 +17,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 discord-py = "^2.4.0"
 pygithub = "^2.3.0"
 sentry-sdk = "^2.3.1"
