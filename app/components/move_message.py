@@ -18,7 +18,6 @@ class SelectChannel(discord.ui.View):
         super().__init__()
         self.message = message
         self.executor = executor
-        self._used = False
 
     @discord.ui.select(
         cls=discord.ui.ChannelSelect,
@@ -30,17 +29,13 @@ class SelectChannel(discord.ui.View):
     async def select_channel(
         self, interaction: discord.Interaction, sel: discord.ui.ChannelSelect
     ) -> None:
-        if self._used:
-            return
-        self._used = True
         channel = await bot.fetch_channel(sel.values[0].id)
         if channel.id == self.message.channel.id:
-            await interaction.response.send_message(
-                "You can't move a message to the same channel.", ephemeral=True
+            return await interaction.response.edit_message(
+                content="You can't move a message to the same channel. Pick a different channel"
             )
-            return
 
-        await interaction.response.defer(thinking=True, ephemeral=True)
+        await interaction.response.defer()
         webhook_channel, thread = (
             (channel.parent, channel)
             if isinstance(channel, discord.Thread)
@@ -50,7 +45,7 @@ class SelectChannel(discord.ui.View):
         await move_message_via_webhook(
             webhook, self.message, self.executor, thread=thread
         )
-        await interaction.followup.send(
+        await interaction.edit_original_response(
             content=f"Moved the message to {channel.mention}.",
             view=Ghostping(
                 cast(discord.Member, self.message.author),
@@ -73,12 +68,14 @@ class Ghostping(discord.ui.View):
         style=discord.ButtonStyle.secondary,
     )
     async def ghostping(
-        self, interaction: discord.Interaction, but: discord.ui.Button
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        await interaction.response.defer(ephemeral=True)
+        button.disabled = True
+        await interaction.response.edit_message(
+            content=f"Moved message to {self._channel.mention} and ghostpinged {self._author.mention}.",
+            view=self,
+        )
         await (await self._channel.send(self._author.mention)).delete()
-        escaped_name = self._author.name.replace("_", "\\_")
-        await interaction.followup.send(f"Ghostpinged {escaped_name}.", ephemeral=True)
 
 
 class HelpPostTitle(discord.ui.Modal, title="Turn into #help post"):
