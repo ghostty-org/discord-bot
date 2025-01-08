@@ -47,7 +47,7 @@ async def close_post(
 
     await interaction.response.defer(ephemeral=True)
 
-    if not moved_to_github and "[solved]" not in post.name.casefold():
+    if not (moved_to_github or "[solved]" in post.name.casefold()):
         await post.edit(name=f"[SOLVED] {post.name}")
     await post.edit(archived=True)
 
