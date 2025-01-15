@@ -5,10 +5,8 @@ from typing import NotRequired, TypedDict, cast
 
 import discord
 from discord.app_commands import Choice, autocomplete
-from github.ContentFile import ContentFile
 
-from app.components.entity_mentions import REPOSITORIES
-from app.setup import bot
+from app.setup import bot, config, gh
 from app.utils import SERVER_ONLY
 
 URL_TEMPLATE = "https://ghostty.org/docs/{section}{page}"
@@ -25,12 +23,6 @@ SECTIONS = {
     "vt-csi": "vt/csi/",
     "vt-esc": "vt/esc/",
     "vt": "vt/",
-}
-
-WEBSITE_PATHS = {
-    "nav": "docs/nav.json",
-    "option": "docs/config/reference.mdx",
-    "action": "docs/config/keybind/reference.mdx",
 }
 
 
@@ -51,25 +43,33 @@ def _load_children(
             _load_children(sitemap, f"{path}-{page}", item.get("children", []))
 
 
+def _get_file(path: str) -> str:
+    return gh.rest.repos.get_content(
+        config.GITHUB_ORG,
+        config.GITHUB_REPOS["web"],
+        path,
+        headers={"Accept": "application/vnd.github.raw+json"},
+    ).text
+
+
 def refresh_sitemap() -> None:
     # Reading vt/, install/, help/, config/,
     # config/keybind/ subpages by reading nav.json
-    raw = cast(ContentFile, REPOSITORIES["web"].get_contents(WEBSITE_PATHS["nav"]))
-    nav: list[Entry] = json.loads(raw.decoded_content)["items"]
+    nav: list[Entry] = json.loads(_get_file("docs/nav.json"))["items"]
     for entry in nav:
         if entry["type"] != "folder":
             continue
         _load_children(sitemap, entry["path"].lstrip("/"), entry.get("children", []))
 
     # Reading config references by parsing headings in .mdx files
-    for key, path in WEBSITE_PATHS.items():
-        if key == "nav":
-            continue
-        raw = cast(ContentFile, REPOSITORIES["web"].get_contents(path))
+    for key, config_path in (
+        ("option", "reference.mdx"),
+        ("action", "keybind/reference.mdx"),
+    ):
         sitemap[key] = [
-            line.removeprefix(b"## ").strip(b"`").decode()
-            for line in raw.decoded_content.splitlines()
-            if line.startswith(b"## ")
+            line.removeprefix("## ").strip("`")
+            for line in _get_file(f"docs/config/{config_path}").splitlines()
+            if line.startswith("## ")
         ]
 
     # Manual adjustments

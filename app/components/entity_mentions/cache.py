@@ -1,8 +1,7 @@
 import datetime as dt
 from typing import Literal, Protocol, cast
 
-import github
-from github.Repository import Repository
+from githubkit.exception import RequestFailed
 
 from app.setup import config, gh
 
@@ -11,11 +10,6 @@ from .discussions import get_discussion
 type RepoName = Literal["web", "bot", "main"]
 type CacheKey = tuple[RepoName, int]
 type EntityKind = Literal["Pull Request", "Issue", "Discussion"]
-
-REPOSITORIES: dict[str, Repository] = {
-    kind: gh.get_repo(f"{config.GITHUB_ORG}/{name}", lazy=True)
-    for kind, name in config.GITHUB_REPOS.items()
-}
 
 
 class GitHubUser(Protocol):
@@ -37,15 +31,15 @@ class TTRCache:
 
     def _fetch_entity(self, key: CacheKey) -> None:
         repo_name, entity_id = key
-        repo = REPOSITORIES[repo_name]
+        repo_path = (config.GITHUB_ORG, config.GITHUB_REPOS[repo_name])
         try:
-            entity = repo.get_issue(entity_id)
+            entity = gh.rest.issues.get(*repo_path, entity_id).parsed_data
             kind = "Issue"
             if entity.pull_request:
-                entity = repo.get_pull(entity_id)
+                entity = gh.rest.pulls.get(*repo_path, entity_id).parsed_data
                 kind = "Pull Request"
-        except github.UnknownObjectException:
-            entity = get_discussion(repo, entity_id)
+        except RequestFailed:
+            entity = get_discussion(*repo_path, entity_id)
             kind = "Discussion"
         self._cache[key] = (dt.datetime.now(), kind, cast(Entity, entity))
 

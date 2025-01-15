@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from github import Auth, Github
+from githubkit import GitHub
 
 from app import config
 
@@ -13,4 +13,4 @@ bot = commands.Bot(
     allowed_mentions=discord.AllowedMentions(everyone=False, roles=False),
 )
 
-gh = Github(auth=Auth.Token(config.GITHUB_TOKEN))
+gh = GitHub(config.GITHUB_TOKEN)

@@ -2,8 +2,7 @@ import re
 from typing import cast
 
 import discord
-from github.Issue import Issue
-from github.PullRequest import PullRequest
+from githubkit.versions.latest.models import Issue, PullRequest
 
 from app.setup import bot, config
 
