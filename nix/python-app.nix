@@ -1,15 +1,21 @@
-{ poetry2nix
-, lib
-, stdenv
-, substituteAll
-, writeShellScriptBin
-
-, python3
-}:
-
-let
+{
+  poetry2nix,
+  lib,
+  stdenv,
+  substituteAll,
+  writeShellScriptBin,
+  python3,
+}: let
   overrides = poetry2nix.overrides.withDefaults (self: super: {
-    # None yet
+    hishel = super.hishel.overridePythonAttrs (
+      old: {
+        nativeBuildInputs =
+          old.nativeBuildInputs
+          ++ [
+            self.hatch-fancy-pypi-readme
+          ];
+      }
+    );
   });
 in {
   # This is the main runnable app that only includes runtime dependencies.
