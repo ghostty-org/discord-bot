@@ -9,6 +9,11 @@ from app.components.entity_mentions import entity_message
 from app.setup import bot, config
 from app.utils import is_dm, is_helper, is_mod
 
+# https://discord.com/developers/docs/topics/opcodes-and-status-codes#http-http-response-codes
+INVALID_REQUEST_DATA = 400
+# https://discord.com/developers/docs/topics/opcodes-and-status-codes#json
+INVALID_FORM_BODY = 50035
+
 
 async def mention_entity(entity_id: int, owner_id: int) -> str:
     msg, _ = await entity_message(
@@ -123,15 +128,66 @@ async def close_post(
         return
 
     await interaction.response.defer(ephemeral=True)
+    followup = "Post closed."
 
     desired_tag_id = config.HELP_CHANNEL_TAG_IDS[tag]
     await post.add_tags(next(tag for tag in help_tags if tag.id == desired_tag_id))
 
     if title_prefix is None:
         title_prefix = f"[{tag.upper()}]"
-    await post.edit(name=f"{title_prefix} {post.name}")
+
+    try:
+        await post.edit(name=f"{title_prefix} {post.name}")
+    except discord.HTTPException as e:
+        # Re-raise if it's not because the new post title was invalid.
+        if e.status != INVALID_REQUEST_DATA or e.code != INVALID_FORM_BODY:
+            raise
+
+        # HACK: there does not appear to be any way to get the actual error
+        # without parsing the returned string or using a private field.  This
+        # is likely a limitation of discord.py, as the Discord API
+        # documentation mentions:
+        #     Some of these errors may include additional details in the form
+        #     of Error Messages provided by an errors object.
+        # in https://discord.com/developers/docs/topics/opcodes-and-status-codes#json
+        # Both approaches are going to be tried... here be dragons.
+        try:
+            # The format of e._errors that is being parsed below is
+            # {
+            #     "name": {
+            #         "_errors": [
+            #             {
+            #                 "code": "BASE_TYPE_MAX_LENGTH",
+            #                 "message": "Must be 100 or fewer in length.",
+            #             }
+            #         ]
+            #     }
+            # }
+            # This tries to make as few assumptions of the keys of the
+            # dictionary as possible, as the field is private.
+            returned_error = next(iter(next(iter(e._errors.values())).values()))[0][
+                "message"
+            ]
+        except Exception:
+            try:
+                # Parsing something of the form:
+                # "Invalid Form Body\nIn name: Must be 100 or fewer in length."
+                returned_error = (
+                    str(e).splitlines()[1].removeprefix("In name: ").strip()
+                )
+            except IndexError:
+                returned_error = None
+        if not returned_error:
+            followup = "Unable to change the post title."
+        else:
+            # Try to fix up some grammar and punctuation.
+            returned_error = returned_error[0].lower() + returned_error[1:]
+            if returned_error[-1] not in ".?!":
+                returned_error += "."
+            returned_error = returned_error.replace("must be", "must have been")
+            followup = f"Unable to change the post title as it {returned_error}"
 
     if additional_reply:
         await post.send(additional_reply)
 
-    await interaction.followup.send("Post closed.", ephemeral=True)
+    await interaction.followup.send(followup, ephemeral=True)
