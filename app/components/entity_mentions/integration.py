@@ -57,7 +57,11 @@ async def reply_with_entities(message: discord.Message) -> None:
         return
 
     sent_message = await message.reply(
-        msg_content, mention_author=False, view=DeleteMention(message, entity_count)
+        msg_content,
+        suppress_embeds=True,
+        mention_author=False,
+        allowed_mentions=discord.AllowedMentions.none(),
+        view=DeleteMention(message, entity_count),
     )
     mention_linker.link(message, sent_message)
     await remove_view_after_timeout(sent_message)
@@ -102,6 +106,7 @@ async def entity_mention_edit_handler(
 
     await reply.edit(
         content=content,
+        suppress=True,
         view=DeleteMention(after, count),
         allowed_mentions=discord.AllowedMentions.none(),
     )
