@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import re
 from collections import defaultdict
 from contextlib import suppress
 from textwrap import shorten
@@ -24,6 +25,7 @@ __all__ = (
     "GuildTextChannel",
     "MessageData",
     "MessageLinker",
+    "escape_special",
     "format_or_file",
     "get_or_create_webhook",
     "is_dm",
@@ -38,6 +40,9 @@ __all__ = (
 if TYPE_CHECKING:
     from typing_extensions import TypeIs
 
+
+_INVITE_LINK_REGEX = re.compile(r"\b(?:https?://)?(discord\.gg/[^\s]+)\b")
+_ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 
 type Account = discord.User | discord.Member
 
@@ -101,3 +106,24 @@ async def remove_view_after_timeout(
     await asyncio.sleep(timeout)
     with suppress(discord.NotFound, discord.HTTPException):
         await message.edit(view=None)
+
+
+def escape_special(s: str) -> str:
+    """
+    Escape all text that Discord considers to be special.
+
+    Consider adding the following kwargs to `send()`-like functions too:
+        suppress_embeds=True,
+        allowed_mentions=discord.AllowedMentions.none(),
+    """
+    escaped = discord.utils.escape_mentions(s)
+    escaped = discord.utils.escape_markdown(escaped)
+    # escape_mentions() doesn't deal with anything other than username
+    # mentions.
+    escaped = escaped.replace("<", r"\<").replace(">", r"\>")
+    # Invite links are not embeds and are hence not suppressed by that flag.
+    escaped = _INVITE_LINK_REGEX.sub(r"<https://\1>", escaped)
+    # escape_markdown() doesn't deal with ordered lists.
+    return "\n".join(
+        _ORDERED_LIST_REGEX.sub(r"\1\. \2", l) for l in escaped.splitlines()
+    )
