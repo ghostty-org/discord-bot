@@ -1,3 +1,5 @@
+import re
+from collections.abc import Callable
 from io import BytesIO
 
 import discord
@@ -5,6 +7,20 @@ import discord
 from app.utils.message_data import MessageData, scrape_message_data
 
 GuildTextChannel = discord.TextChannel | discord.Thread
+
+_EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
+
+
+def _convert_nitro_emojis(s: str) -> str:
+    def r(match):
+        flag = match.group(1)
+        ext = "gif" if flag else "webp"
+        tag = "&animated=true" if flag else ""
+        name = match.group(2)
+        id_ = match.group(3)
+        return f"[{name}](https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name})"
+
+    return _EMOJI_REGEX.sub(r, s)
 
 
 def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> str:
@@ -44,7 +60,11 @@ async def move_message_via_webhook(
     msg_data = await scrape_message_data(message)
 
     subtext = _format_subtext(executor, msg_data)
-    content, file = format_or_file(msg_data.content, template=f"{{}}{subtext}")
+    content, file = format_or_file(
+        msg_data.content,
+        template=f"{{}}{subtext}",
+        filter=_convert_nitro_emojis,
+    )
     if file:
         msg_data.attachments.append(file)
         content += "\n-# (content attached)"
@@ -65,12 +85,17 @@ async def move_message_via_webhook(
 
 
 def format_or_file(
-    message: str, *, template: str | None = None
+    message: str,
+    *,
+    template: str | None = None,
+    filter: Callable[[str], str] | None = None,
 ) -> tuple[str, discord.File | None]:
     if template is None:
         template = "{}"
+    if filter is None:
+        filter = lambda s: s
 
-    if len(full_message := template.format(message)) > 2000:
+    if len(full_message := filter(template.format(message))) > 2000:
         return template.format(""), discord.File(
             BytesIO(message.encode()), filename="content.md"
         )
