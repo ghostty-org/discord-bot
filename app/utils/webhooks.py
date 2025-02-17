@@ -4,6 +4,7 @@ from io import BytesIO
 
 import discord
 
+from app.setup import bot, config
 from app.utils.message_data import MessageData, scrape_message_data
 
 GuildTextChannel = discord.TextChannel | discord.Thread
@@ -11,13 +12,23 @@ GuildTextChannel = discord.TextChannel | discord.Thread
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
 
 
-def _convert_nitro_emojis(s: str) -> str:
+def _convert_nitro_emojis(s: str, *, force: bool = False) -> str:
+    """
+    Converts a custom emoji to a concealed hyperlink.  Set `force` to True
+    to convert emojis in the current guild too.
+    """
+    guild = next(g for g in bot.guilds if "ghostty" in g.name.casefold())
+
     def r(match):
-        flag = match.group(1)
-        ext = "gif" if flag else "webp"
-        tag = "&animated=true" if flag else ""
+        animated = bool(match.group(1))
+        id_ = int(match.group(3))
+        emoji = bot.get_emoji(id_)
+        if not force and not animated and emoji and emoji.guild_id == guild.id:
+            return match.group(0)
+
+        ext = "gif" if animated else "webp"
+        tag = "&animated=true" * animated
         name = match.group(2)
-        id_ = match.group(3)
         return f"[{name}](https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name})"
 
     return _EMOJI_REGEX.sub(r, s)
