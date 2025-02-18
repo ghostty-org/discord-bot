@@ -1,11 +1,8 @@
-import asyncio
 import datetime as dt
-from contextlib import suppress
 
 import discord
 
-from app.setup import bot
-from app.utils import is_dm, is_mod, try_dm
+from app.utils import is_dm, is_mod, remove_view_after_timeout, try_dm
 
 from .fmt import entity_message
 
@@ -26,7 +23,7 @@ class DeleteMention(discord.ui.View):
         style=discord.ButtonStyle.gray,
     )
     async def delete(
-        self, interaction: discord.Interaction, _button: discord.ui.Button
+        self, interaction: discord.Interaction, _: discord.ui.Button
     ) -> None:
         assert not is_dm(interaction.user)
         if interaction.user.id == self.message.author.id or is_mod(interaction.user):
@@ -55,12 +52,6 @@ def _unlink_original_message(message: discord.Message) -> None:
         del message_to_mentions[original_message]
 
 
-async def remove_button_after_timeout(message: discord.Message) -> None:
-    await asyncio.sleep(30)
-    with suppress(discord.NotFound, discord.HTTPException):
-        await message.edit(view=None)
-
-
 async def reply_with_entities(message: discord.Message) -> None:
     if message.author.bot or message.type in IGNORED_MESSAGE_TYPES:
         return
@@ -80,19 +71,19 @@ async def reply_with_entities(message: discord.Message) -> None:
         msg_content, mention_author=False, view=DeleteMention(message, entity_count)
     )
     message_to_mentions[message] = sent_message
-    await remove_button_after_timeout(sent_message)
+    await remove_view_after_timeout(sent_message)
 
 
-@bot.event
-async def on_message_delete(message: discord.Message) -> None:
+async def entity_mention_delete_handler(message: discord.Message) -> None:
     if message.author.bot:
         _unlink_original_message(message)
     elif (reply := message_to_mentions.get(message)) is not None:
         await reply.delete()
 
 
-@bot.event
-async def on_message_edit(before: discord.Message, after: discord.Message) -> None:
+async def entity_mention_edit_handler(
+    before: discord.Message, after: discord.Message
+) -> None:
     if before.content == after.content:
         return
     old_entites = await entity_message(before)
@@ -127,4 +118,4 @@ async def on_message_edit(before: discord.Message, after: discord.Message) -> No
         view=DeleteMention(after, count),
         allowed_mentions=discord.AllowedMentions.none(),
     )
-    await remove_button_after_timeout(reply)
+    await remove_view_after_timeout(reply)

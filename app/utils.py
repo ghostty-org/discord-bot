@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import io
+from contextlib import suppress
 from textwrap import shorten
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -185,3 +187,12 @@ async def check_message(
     if (original_msg := await _get_original_message(msg)) is None:
         return False
     return await check_message(original_msg, predicate)
+
+
+async def remove_view_after_timeout(
+    message: discord.Message,
+    timeout: float = 30.0,  # noqa: ASYNC109
+) -> None:
+    await asyncio.sleep(timeout)
+    with suppress(discord.NotFound, discord.HTTPException):
+        await message.edit(view=None)
