@@ -28,7 +28,6 @@ SECTIONS = {
 class Entry(TypedDict):
     type: str
     path: str
-    title: str
     children: NotRequired[list[Entry]]
 
 

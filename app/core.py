@@ -28,7 +28,8 @@ from app.utils import is_dm, is_mod, try_dm
 @bot.event
 async def on_ready() -> None:
     await load_emojis()
-    autoclose_solved_posts.start()
+    if not autoclose_solved_posts.is_running():
+        autoclose_solved_posts.start()
     print(f"Bot logged on as {bot.user}!")
 
 
