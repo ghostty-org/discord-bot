@@ -108,7 +108,8 @@ async def move_message_via_webhook(
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
         files=msg_data.attachments,
-        embeds=[
+        embeds=message.embeds
+        + [
             embed
             for sticker in message.stickers
             if sticker and (embed := await _get_sticker_embed(sticker)) is not None
