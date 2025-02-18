@@ -51,7 +51,12 @@ async def move_message_via_webhook(
 
     msg = await webhook.send(
         content=content,
-        poll=message.poll or discord.utils.MISSING,
+        poll=(
+            message.poll
+            if message.poll is not None
+            and message.poll.duration.total_seconds() / 3600 >= 1
+            else discord.utils.MISSING
+        ),
         username=message.author.display_name,
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
