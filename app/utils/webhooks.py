@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import re
 from io import BytesIO
 from typing import TYPE_CHECKING
@@ -120,9 +121,20 @@ async def move_message_via_webhook(
         msg_data.attachments.append(file)
         content += "\n-# (content attached)"
 
+    # Discord does not like negative poll durations. Polls created by a Webhook
+    # cannot be ended manually, so simply discard polls which have ended.
+    if (
+        message.poll is None
+        or message.poll.expires_at is None
+        or dt.datetime.now(tz=dt.UTC) >= message.poll.expires_at
+    ):
+        poll = discord.utils.MISSING
+    else:
+        poll = message.poll
+
     msg = await webhook.send(
         content=content,
-        poll=message.poll or discord.utils.MISSING,
+        poll=poll,
         username=message.author.display_name,
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
