@@ -87,9 +87,14 @@ You can get one in two ways:
 ## 3. Preparing a Discord server
 
 The following channels will be necessary:
-* `#help`: a forum channel
+* `#help`: a forum channel with the following tags:
+  * Moved to GitHub
+  * Solved
+  * Stale
+  * Duplicate
 * `#media`: a text channel
 * `#showcase`: a text channel
+* `#botlog-everything`: a log channel
 
 The following roles will be necessary (both requiring the Manage Messages
 permission):
@@ -100,10 +105,14 @@ permission):
 
 Create a `.env` file in the root of the project based on `.env.example`.
 Below are explanations for each variable:
+* `BOT_ACCEPT_INVITE_URL`: a URL to visit to accept the Ghostty invite
 * channel/role IDs from [step 3](#3-preparing-a-discord-server):
   * `BOT_HELP_CHANNEL_ID`
+  * `BOT_HELP_CHANNEL_TAG_IDS`: a comma-seperated list of `tag_name:tag_id`
+    pairs. The tag names are `moved`, `solved`, `stale` and `duplicate`.
   * `BOT_MEDIA_CHANNEL_ID`
   * `BOT_SHOWCASE_CHANNEL_ID`
+  * `BOT_LOG_CHANNEL_ID`
   * `BOT_MOD_ROLE_ID`
   * `BOT_HELPER_ROLE_ID`
 * `BOT_TOKEN`: the Discord bot token from
