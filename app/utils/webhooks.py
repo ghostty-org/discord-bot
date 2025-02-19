@@ -4,7 +4,7 @@ from io import BytesIO
 
 import discord
 
-from app.setup import bot, config
+from app.setup import bot
 from app.utils.message_data import MessageData, scrape_message_data
 
 GuildTextChannel = discord.TextChannel | discord.Thread
@@ -19,7 +19,7 @@ def _convert_nitro_emojis(s: str, *, force: bool = False) -> str:
     """
     guild = next(g for g in bot.guilds if "ghostty" in g.name.casefold())
 
-    def r(match):
+    def r(match: re.Match) -> str:
         animated = bool(match.group(1))
         id_ = int(match.group(3))
         emoji = bot.get_emoji(id_)
@@ -74,7 +74,7 @@ async def move_message_via_webhook(
     content, file = format_or_file(
         msg_data.content,
         template=f"{{}}{subtext}",
-        filter=_convert_nitro_emojis,
+        transform=_convert_nitro_emojis,
     )
     if file:
         msg_data.attachments.append(file)
@@ -99,14 +99,16 @@ def format_or_file(
     message: str,
     *,
     template: str | None = None,
-    filter: Callable[[str], str] | None = None,
+    transform: Callable[[str], str] | None = None,
 ) -> tuple[str, discord.File | None]:
     if template is None:
         template = "{}"
-    if filter is None:
-        filter = lambda s: s
 
-    if len(full_message := filter(template.format(message))) > 2000:
+    full_message = template.format(message)
+    if transform is not None:
+        full_message = transform(full_message)
+
+    if len(full_message) > 2000:
         return template.format(""), discord.File(
             BytesIO(message.encode()), filename="content.md"
         )
