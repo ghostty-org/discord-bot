@@ -216,6 +216,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "discord-py" },
     { name = "githubkit" },
+    { name = "httpx" },
     { name = "python-dotenv" },
     { name = "sentry-sdk" },
     { name = "zig-codeblocks" },
@@ -230,6 +231,7 @@ dev = [
 requires-dist = [
     { name = "discord-py", specifier = "~=2.4" },
     { name = "githubkit", specifier = "~=0.12.4" },
+    { name = "httpx", specifier = "~=0.28.0" },
     { name = "python-dotenv", specifier = "==1.0.1" },
     { name = "sentry-sdk", specifier = ">=2.3.1,<3" },
     { name = "zig-codeblocks", specifier = "==0.2.3" },

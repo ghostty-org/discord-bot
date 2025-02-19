@@ -3,6 +3,7 @@ from collections.abc import Callable
 from io import BytesIO
 
 import discord
+import httpx
 
 from app.setup import bot
 from app.utils.message_data import MessageData, scrape_message_data
@@ -32,6 +33,26 @@ def _convert_nitro_emojis(s: str, *, force: bool = False) -> str:
         return f"[{name}](https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name})"
 
     return _EMOJI_REGEX.sub(r, s)
+
+
+async def _get_sticker_embed(sticker: discord.Sticker) -> discord.Embed | None:
+    # Lottie images can't be used in embeds, unfortunately.
+    if not sticker.url or sticker.url.split("?")[0].endswith(".json"):
+        return None
+
+    async with httpx.AsyncClient() as client:
+        for u in [
+            sticker.url,
+            # Discord sometimes returns the wrong CDN link.
+            sticker.url.replace("cdn.discordapp.com", "media.discordapp.net"),
+            # Same as above but backward, just in case.
+            sticker.url.replace("media.discordapp.net", "cdn.discordapp.com"),
+        ]:
+            async with client.stream("GET", u) as r:
+                if r.is_success:
+                    return discord.Embed().set_image(url=u)
+
+    return None
 
 
 def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> str:
@@ -88,9 +109,9 @@ async def move_message_via_webhook(
         allowed_mentions=discord.AllowedMentions.none(),
         files=msg_data.attachments,
         embeds=[
-            discord.Embed().set_image(url=sticker.url)
+            embed
             for sticker in message.stickers
-            if not sticker.url.split("?")[0].endswith(".json")  # Ignore Lottie images.
+            if sticker and (embed := await _get_sticker_embed(sticker)) is not None
         ],
         thread=thread,
         thread_name=thread_name,
