@@ -8,10 +8,11 @@ from githubkit.versions.latest.models import Issue, PullRequest
 
 from app.components.entity_mentions.resolution import resolve_repo_signatures
 from app.setup import bot, config
+from app.utils import escape_special
 
 from .cache import Entity, EntityKind, entity_cache
 
-ENTITY_TEMPLATE = "**{kind} [#{entity.number}](<{entity.html_url}>):** {entity.title}"
+ENTITY_TEMPLATE = "**{kind} [#{entity.number}](<{entity.html_url}>):** {title}"
 EMOJI_NAMES = frozenset(
     {
         "discussion_answered",
@@ -43,7 +44,8 @@ async def load_emojis() -> None:
 
 
 def _format_mention(entity: Entity, kind: EntityKind) -> str:
-    headline = ENTITY_TEMPLATE.format(kind=kind, entity=entity)
+    title = escape_special(entity.title)
+    headline = ENTITY_TEMPLATE.format(kind=kind, entity=entity, title=title)
 
     # https://github.com/owner/repo/issues/12
     # -> https://github.com  owner  repo  issues  12
