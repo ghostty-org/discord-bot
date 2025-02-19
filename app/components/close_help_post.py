@@ -165,10 +165,10 @@ async def close_post(
             # }
             # This tries to make as few assumptions of the keys of the
             # dictionary as possible, as the field is private.
-            returned_error = next(iter(next(iter(e._errors.values())).values()))[0][
+            returned_error = next(iter(next(iter(e._errors.values())).values()))[0][  # noqa: SLF001
                 "message"
             ]
-        except Exception:
+        except (StopIteration, IndexError):
             try:
                 # Parsing something of the form:
                 # "Invalid Form Body\nIn name: Must be 100 or fewer in length."
