@@ -87,6 +87,11 @@ async def move_message_via_webhook(
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
         files=msg_data.attachments,
+        embeds=[
+            discord.Embed().set_image(url=sticker.url)
+            for sticker in message.stickers
+            if not sticker.url.split("?")[0].endswith(".json")  # Ignore Lottie images.
+        ],
         thread=thread,
         thread_name=thread_name,
         wait=True,
