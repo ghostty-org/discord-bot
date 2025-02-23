@@ -51,13 +51,12 @@ async def _get_sticker_embed(sticker: discord.Sticker) -> discord.Embed:
             # Same as above but backward, just in case.
             sticker.url.replace("media.discordapp.net", "cdn.discordapp.com"),
         ]:
-            async with client.stream("GET", u) as r:
-                if r.is_success:
-                    embed = discord.Embed().set_image(url=u)
-                    if sticker.format == discord.StickerFormatType.apng:
-                        embed.set_footer(text="Unable to animate sticker.")
-                        embed.color = discord.Color.orange()
-                    return embed
+            if (await client.head(u)).is_success:
+                embed = discord.Embed().set_image(url=u)
+                if sticker.format == discord.StickerFormatType.apng:
+                    embed.set_footer(text="Unable to animate sticker.")
+                    embed.color = discord.Color.orange()
+                return embed
 
     embed = discord.Embed()
     embed.set_footer(text="Unable to attach sticker.")
