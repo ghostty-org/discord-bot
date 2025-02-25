@@ -128,7 +128,6 @@ async def close_post(
         return
 
     await interaction.response.defer(ephemeral=True)
-    followup = "Post closed."
 
     desired_tag_id = config.HELP_CHANNEL_TAG_IDS[tag]
     await post.add_tags(next(tag for tag in help_tags if tag.id == desired_tag_id))
@@ -138,6 +137,7 @@ async def close_post(
 
     try:
         await post.edit(name=f"{title_prefix} {post.name}")
+        followup = "Post closed."
     except discord.HTTPException as e:
         # Re-raise if it's not because the new post title was invalid.
         if e.status != INVALID_REQUEST_DATA or e.code != INVALID_FORM_BODY:
