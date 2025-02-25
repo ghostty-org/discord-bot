@@ -189,10 +189,8 @@ async def close_post(
 
         delim = ";" if ":" in title_prefix else ":"
         title_prefix = title_prefix.strip("[]").lower()
-        if additional_reply:
-            additional_reply = f"Closed{delim} {title_prefix}.\n{additional_reply}"
-        else:
-            additional_reply = f"Closed{delim} {title_prefix}."
+        additional_reply = f"\n{additional_reply}" if additional_reply else ""
+        additional_reply = f"Closed{delim} {title_prefix}.{additional_reply}"
 
     if additional_reply:
         await post.send(additional_reply)
