@@ -151,32 +151,16 @@ async def close_post(
         #     of Error Messages provided by an errors object.
         # in https://discord.com/developers/docs/topics/opcodes-and-status-codes#json
         # Both approaches are going to be tried... here be dragons.
-        try:
-            # The format of e._errors that is being parsed below is
-            # {
-            #     "name": {
-            #         "_errors": [
-            #             {
-            #                 "code": "BASE_TYPE_MAX_LENGTH",
-            #                 "message": "Must be 100 or fewer in length.",
-            #             }
-            #         ]
-            #     }
-            # }
-            # This tries to make as few assumptions of the keys of the
-            # dictionary as possible, as the field is private.
-            returned_error = next(iter(next(iter(e._errors.values())).values()))[0][  # noqa: SLF001
-                "message"
-            ]
-        except (StopIteration, IndexError):
-            try:
+        returned_error = ""
+        match e._errors, str(e).splitlines():  # noqa: SLF001
+            case {"name": {"_errors": [{"code": _, "message": msg}]}}, _:
+                returned_error = msg
+            case _, [_, snd]:
                 # Parsing something of the form:
                 # "Invalid Form Body\nIn name: Must be 100 or fewer in length."
-                returned_error = (
-                    str(e).splitlines()[1].removeprefix("In name: ").strip()
-                )
-            except IndexError:
-                returned_error = None
+                # where the second line is in `snd`.
+                returned_error = snd.removeprefix("In name: ").strip()
+
         if not returned_error:
             followup = "Unable to change the post title."
         else:
