@@ -151,25 +151,18 @@ async def close_post(
         #     of Error Messages provided by an errors object.
         # in https://discord.com/developers/docs/topics/opcodes-and-status-codes#json
         # Both approaches are going to be tried... here be dragons.
-        returned_error = ""
-        match e._errors, str(e).splitlines():  # noqa: SLF001
-            case {"name": {"_errors": [{"code": _, "message": msg}]}}, _:
-                returned_error = msg
-            case _, [_, snd]:
-                # Parsing something of the form:
-                # "Invalid Form Body\nIn name: Must be 100 or fewer in length."
-                # where the second line is in `snd`.
-                returned_error = snd.removeprefix("In name: ").strip()
+        try:
+            returned_error = e._errors["name"]["_errors"][0]["message"]  # noqa: SLF001
+        except (AttributeError, LookupError, TypeError):
+            returned_error = str(e)
 
-        if not returned_error:
-            followup = "Unable to change the post title."
-        else:
-            # Try to fix up some grammar and punctuation.
-            returned_error = returned_error[0].lower() + returned_error[1:]
-            if returned_error[-1] not in ".?!":
-                returned_error += "."
-            returned_error = returned_error.replace("must be", "must have been")
-            followup = f"Unable to change the post title as it {returned_error}"
+        if "or fewer in length" not in returned_error.casefold():
+            raise  # The error wasn't that the post title was too long.
+
+        followup = (
+            "I couldn't change the post title as it was over 100 characters"
+            " after modification."
+        )
 
         delim = ";" if ":" in title_prefix else ":"
         title_prefix = title_prefix.strip("[]").lower()
