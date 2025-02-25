@@ -188,7 +188,7 @@ async def close_post(
             followup = f"Unable to change the post title as it {returned_error}"
 
         delim = ";" if ":" in title_prefix else ":"
-        title_prefix = title_prefix.removeprefix("[").removesuffix("]").lower()
+        title_prefix = title_prefix.strip("[]").lower()
         if additional_reply:
             additional_reply = f"Closed{delim} {title_prefix}.\n{additional_reply}"
         else:
