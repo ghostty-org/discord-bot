@@ -21,7 +21,7 @@ community moderation more efficient.
 - [Project structure](#project-structure)
 - [Features](#features)
   - [`/docs`](#docs)
-  - [Close](#close)
+  - [`/close`](#close)
   - [Entity mentions](#entity-mentions)
   - [Message filters](#message-filters)
   - [Moving messages](#moving-messages)
