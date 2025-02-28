@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import datetime as dt
 import json
 from typing import NotRequired, TypedDict, cast
 
 import discord
 from discord.app_commands import Choice, autocomplete
 
+from app.components.status import bot_status
 from app.setup import bot, config, gh
 
 URL_TEMPLATE = "https://ghostty.org/docs/{section}{page}"
@@ -76,6 +78,7 @@ def refresh_sitemap() -> None:
     del sitemap["install-release-notes"]
     for vt_section in (s for s in SECTIONS if s.startswith("vt-")):
         sitemap["vt"].remove(vt_section.removeprefix("vt-"))
+    bot_status.last_sitemap_refresh = dt.datetime.now(tz=dt.UTC)
 
 
 sitemap: dict[str, list[str]] = {}

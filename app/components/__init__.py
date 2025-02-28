@@ -6,6 +6,7 @@ from . import (
     entity_mentions,
     message_filter,
     move_message,
+    status,
     zig_codeblocks,
 )
 
@@ -17,5 +18,6 @@ __all__ = (
     "entity_mentions",
     "message_filter",
     "move_message",
+    "status",
     "zig_codeblocks",
 )

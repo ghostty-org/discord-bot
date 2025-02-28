@@ -5,6 +5,7 @@ from typing import cast
 import discord
 from discord.ext import tasks
 
+from app.components.status import bot_status
 from app.setup import bot, config
 
 
@@ -30,6 +31,11 @@ async def autoclose_solved_posts() -> None:
             closed_posts.append(post)
 
     log_channel = cast(discord.TextChannel, bot.get_channel(config.LOG_CHANNEL_ID))
+    bot_status.last_scan_results = (
+        dt.datetime.now(tz=dt.UTC),
+        open_posts,
+        len(closed_posts),
+    )
     msg = f"Scanned {open_posts:,} open posts in {help_channel.mention}.\n"
     if closed_posts:
         msg += f"Automatically closed {_post_list(closed_posts)}"

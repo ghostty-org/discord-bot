@@ -1,3 +1,4 @@
+import datetime as dt
 import sys
 from traceback import print_tb
 from typing import cast
@@ -16,6 +17,7 @@ from app.components.entity_mentions import (
     reply_with_entities,
 )
 from app.components.message_filter import check_message_filters
+from app.components.status import bot_status, report_status
 from app.components.zig_codeblocks import (
     check_for_zig_code,
     zig_codeblock_delete_handler,
@@ -30,6 +32,7 @@ async def on_ready() -> None:
     await load_emojis()
     if not autoclose_solved_posts.is_running():
         autoclose_solved_posts.start()
+    bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
     print(f"Bot logged on as {bot.user}!")
 
 
@@ -55,9 +58,12 @@ async def on_message(message: discord.Message) -> None:
     if message.author == bot.user:
         return
 
-    # Mod-only sync command
+    # Mod-only commands
     if message.content.rstrip() == "!sync":
         await sync(bot, message)
+        return
+    if message.content == "status":
+        await report_status(message.author)
         return
 
     # Simple test
