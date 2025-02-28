@@ -10,9 +10,9 @@ from sentry_sdk import capture_exception
 from app.components.autoclose import autoclose_solved_posts
 from app.components.docs import refresh_sitemap
 from app.components.entity_mentions import (
-    has_entity_mention,
     entity_mention_delete_handler,
     entity_mention_edit_handler,
+    has_entity_mention,
     load_emojis,
     reply_with_entities,
 )
