@@ -174,6 +174,18 @@ message option:
   <img src="https://github.com/user-attachments/assets/0938881f-80ad-44d0-8414-915324f2761e" alt="/docs command message option" height="250px">
 </p>
 
+## `/close`
+
+A command group to mark help channel posts as resolved, with various options for different resolution scenarios:
+
+| Command | Applied tag | Argument | Additional information |
+|---------|-------------|----------|----------------------|
+| `/close solved` | Solved | Config option | Links to config documentation (if option provided) |
+| `/close wontfix` | Stale | - | Adds "WONTFIX" to post title |
+| `/close stale` | Stale | - | - |
+| `/close moved` | Moved to GitHub | GitHub entity number | Links to the GitHub entity |
+| `/close duplicate` | Duplicate | Help post ID/link or GitHub entity number | Links to original post or GitHub entity |
+
 ## Entity mentions
 
 Automatic links to Ghostty's GitHub issues/PRs/discussions ("entities") when a
@@ -209,7 +221,7 @@ less confusing:
 ## Moving messages
 
 Used for moving messages to more fitting channels (e.g. off-topic questions
-in `#development` to `#tech`). 
+in `#development` to `#tech`).
 
 <img src="https://github.com/user-attachments/assets/e2e77e43-6200-4ab3-87ea-33e269e5a5cd" alt="Move message example" width="70%">
 
