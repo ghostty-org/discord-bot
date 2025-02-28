@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from functools import partial
 from typing import cast
 
 import discord
@@ -8,6 +9,7 @@ from githubkit.versions.latest.models import Issue, PullRequest
 
 from app.components.entity_mentions.resolution import resolve_repo_signatures
 from app.setup import bot, config
+from app.utils import dynamic_timestamp
 
 from .cache import Entity, EntityKind, entity_cache
 
@@ -50,11 +52,11 @@ def _format_mention(entity: Entity, kind: EntityKind) -> str:
     #    0                   1      2     3       4
     domain, owner, name, *_ = entity.html_url.rsplit("/", 4)
     author = entity.user.login
-    timestamp = int(entity.created_at.timestamp())
+    fmt_ts = partial(dynamic_timestamp, entity.created_at)
     subtext = (
         f"-# by [`{author}`](<{domain}/{author}>)"
         f" in [`{owner}/{name}`](<{domain}/{owner}/{name}>)"
-        f" on <t:{timestamp}:D> (<t:{timestamp}:R>)\n"
+        f" on {fmt_ts('D')} ({fmt_ts('R')})\n"
     )
 
     if isinstance(entity, Issue):

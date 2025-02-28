@@ -101,3 +101,8 @@ async def remove_view_after_timeout(
     await asyncio.sleep(timeout)
     with suppress(discord.NotFound, discord.HTTPException):
         await message.edit(view=None)
+
+
+def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
+    fmt = f":{fmt}" if fmt is not None else ""
+    return f"<t:{int(dt.timestamp())}{fmt}>"
