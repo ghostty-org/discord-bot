@@ -4,13 +4,13 @@ from .integration import (
     entity_mention_edit_handler,
     reply_with_entities,
 )
-from .resolution import ENTITY_REGEX
+from .resolution import has_entity_mention
 
 __all__ = (
-    "ENTITY_REGEX",
     "entity_mention_delete_handler",
     "entity_mention_edit_handler",
     "entity_message",
+    "has_entity_mention",
     "load_emojis",
     "reply_with_entities",
 )
