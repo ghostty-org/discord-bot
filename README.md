@@ -179,13 +179,13 @@ message option:
 
 A command group to mark help channel posts as resolved, with various options for different resolution scenarios:
 
-| Command | Applied tag | Argument | Additional information |
-|---------|-------------|----------|----------------------|
-| `/close solved` | Solved | Config option | Links to config documentation (if option provided) |
-| `/close wontfix` | Stale | - | Adds "WONTFIX" to post title |
-| `/close stale` | Stale | - | - |
-| `/close moved` | Moved to GitHub | GitHub entity number | Links to the GitHub entity |
-| `/close duplicate` | Duplicate | Help post ID/link or GitHub entity number | Links to original post or GitHub entity |
+| Command            | Applied tag     | Argument                                  | Additional information                             |
+| ------------------ | --------------- | ----------------------------------------- | -------------------------------------------------- |
+| `/close solved`    | Solved          | Config option (optional)                  | Links to config documentation (if option provided) |
+| `/close wontfix`   | Stale           | -                                         | Adds "WONTFIX" to post title                       |
+| `/close stale`     | Stale           | -                                         | -                                                  |
+| `/close moved`     | Moved to GitHub | GitHub entity number                      | Links to the GitHub entity                         |
+| `/close duplicate` | Duplicate       | Help post ID/link or GitHub entity number | Links to original post or GitHub entity            |
 
 ## Entity mentions
 
