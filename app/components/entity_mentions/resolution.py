@@ -14,6 +14,8 @@ ENTITY_REGEX = re.compile(
     re.IGNORECASE,
 )
 
+CODEBLOCK_REGEX = re.compile(r'```.*?```', re.DOTALL)
+
 
 class OwnerCache(TTRCache[str, str]):
     async def fetch(self, key: str) -> None:
@@ -21,6 +23,11 @@ class OwnerCache(TTRCache[str, str]):
 
 
 owner_cache = OwnerCache(3600)  # 1 hour
+
+def has_entity_mention(content):
+    text_outside_codeblocks = CODEBLOCK_REGEX.sub('', content)
+
+    return ENTITY_REGEX.search(text_outside_codeblocks) is not None
 
 
 async def find_repo_owner(name: str) -> str:

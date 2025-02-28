@@ -10,7 +10,7 @@ from sentry_sdk import capture_exception
 from app.components.autoclose import autoclose_solved_posts
 from app.components.docs import refresh_sitemap
 from app.components.entity_mentions import (
-    ENTITY_REGEX,
+    has_entity_mention,
     entity_mention_delete_handler,
     entity_mention_edit_handler,
     load_emojis,
@@ -76,7 +76,7 @@ async def on_message(message: discord.Message) -> None:
         return
 
     # Look for issue/PR/discussion mentions and name/link them
-    if ENTITY_REGEX.search(message.content):
+    if has_entity_mention(message.content):
         await reply_with_entities(message)
 
     # Check for Zig code blocks and format them
