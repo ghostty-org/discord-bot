@@ -34,10 +34,19 @@ from app.utils import is_dm, is_mod, try_dm
 @bot.event
 async def on_ready() -> None:
     await load_emojis()
+
     if not autoclose_solved_posts.is_running():
         autoclose_solved_posts.start()
+
     bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
+
     print(f"Bot logged on as {bot.user}!")
+
+    await bot.change_presence(
+        activity=discord.Activity(
+            name="over the Ghostty server 👻", type=discord.ActivityType.watching
+        )
+    )
 
 
 @bot.event
