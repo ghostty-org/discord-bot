@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import discord
 
 from .fmt import entity_message
@@ -20,7 +22,7 @@ class DeleteMention(discord.ui.View):
         style=discord.ButtonStyle.gray,
     )
     async def delete(
-        self, interaction: discord.Interaction, _: discord.ui.Button
+        self, interaction: discord.Interaction, _: discord.ui.Button[DeleteMention]
     ) -> None:
         assert not is_dm(interaction.user)
         if interaction.user.id == self.message.author.id or is_mod(interaction.user):

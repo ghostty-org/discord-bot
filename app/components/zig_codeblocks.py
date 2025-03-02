@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from io import BytesIO
 from itertools import zip_longest
@@ -76,7 +78,9 @@ class ZigCodeblockActions(discord.ui.View):
         style=discord.ButtonStyle.gray,
     )
     async def dismiss(
-        self, interaction: discord.Interaction, _: discord.ui.Button
+        self,
+        interaction: discord.Interaction,
+        _: discord.ui.Button[ZigCodeblockActions],
     ) -> None:
         if await self._reject_early(interaction, "You can't dismiss this message."):
             return
@@ -89,7 +93,9 @@ class ZigCodeblockActions(discord.ui.View):
         style=discord.ButtonStyle.gray,
     )
     async def freeze(
-        self, interaction: discord.Interaction, button: discord.ui.Button
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button[ZigCodeblockActions],
     ) -> None:
         if await self._reject_early(interaction, "You can't freeze this message."):
             return
@@ -109,7 +115,9 @@ class ZigCodeblockActions(discord.ui.View):
         style=discord.ButtonStyle.gray,
     )
     async def replace(
-        self, interaction: discord.Interaction, _: discord.ui.Button
+        self,
+        interaction: discord.Interaction,
+        _: discord.ui.Button[ZigCodeblockActions],
     ) -> None:
         if await self._reject_early(interaction, "You can't use this action."):
             return
