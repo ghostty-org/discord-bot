@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from collections.abc import Iterable
 from typing import NotRequired, TypedDict, cast
 
 import discord
@@ -98,10 +99,13 @@ async def section_autocomplete(
 async def page_autocomplete(
     interaction: discord.Interaction, current: str
 ) -> list[Choice[str]]:
-    if not (interaction.data and (options := interaction.data.get("options"))):
+    if not interaction.data:
+        return []
+    options = cast(Iterable[dict[str, str]] | None, interaction.data.get("options"))
+    if not options:
         return []
     section = next(
-        (cast(str, opt["value"]) for opt in options if opt["name"] == "section"),
+        (opt["value"] for opt in options if opt["name"] == "section"),
         None,
     )
     if section is None:
