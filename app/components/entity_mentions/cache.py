@@ -45,12 +45,12 @@ class TTRCache[KT, VT](ABC):
 class EntityCache(TTRCache[CacheKey, Entity]):
     async def fetch(self, key: CacheKey) -> None:
         try:
-            entity = (await gh.rest.issues.async_get(*key)).parsed_data
-            model = Issue
-            if entity.pull_request:
-                entity = (await gh.rest.pulls.async_get(*key)).parsed_data
-                model = PullRequest
-            self[key] = model.model_validate(entity, from_attributes=True)
+            issue = (await gh.rest.issues.async_get(*key)).parsed_data
+            if issue.pull_request:
+                pull = (await gh.rest.pulls.async_get(*key)).parsed_data
+                self[key] = PullRequest.model_validate(pull, from_attributes=True)
+            else:
+                self[key] = Issue.model_validate(issue, from_attributes=True)
         except RequestFailed:
             self[key] = await get_discussion(*key)
 
