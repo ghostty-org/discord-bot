@@ -62,7 +62,8 @@ async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
                 embed = discord.Embed().set_image(url=u)
                 if sticker.format == discord.StickerFormatType.apng:
                     embed.set_footer(text="Unable to animate sticker.")
-                    embed.color = discord.Color.orange()
+                    # `colour` is a workaround for python/mypy#6700.
+                    embed.colour = discord.Color.orange()
                 return embed
 
     return discord.Embed(color=discord.Color.brand_red()).set_footer(
