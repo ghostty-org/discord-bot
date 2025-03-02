@@ -19,7 +19,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["ruff~=0.9.6"]
+dev = [
+    "ruff~=0.9.6",
+    "mypy~=1.15.0",
+]
 
 [tool.ruff]
 target-version = "py312"
