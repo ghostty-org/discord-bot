@@ -4,6 +4,8 @@ from githubkit import GitHub
 
 from app import config
 
+__all__ = ["bot", "config", "gh"]
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
