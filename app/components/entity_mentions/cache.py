@@ -7,6 +7,16 @@ from .discussions import get_discussion
 from .models import Entity, Issue, PullRequest
 from app.setup import gh
 
+__all__ = [
+    "CacheKey",
+    "Entity",
+    "EntityCache",
+    "Issue",
+    "PullRequest",
+    "TTRCache",
+    "entity_cache",
+]
+
 type CacheKey = tuple[str, str, int]
 
 
