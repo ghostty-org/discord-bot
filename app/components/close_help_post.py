@@ -43,7 +43,7 @@ class Close(app_commands.Group):
                     f"Invalid config option: `{config_option}`", ephemeral=True
                 )
                 return
-            title_prefix = f"[SOLVED: {config_option}]"
+            title_prefix: str | None = f"[SOLVED: {config_option}]"
         else:
             title_prefix = additional_reply = None
         await close_post(interaction, "solved", title_prefix, additional_reply)
