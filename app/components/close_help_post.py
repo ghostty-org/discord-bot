@@ -152,7 +152,7 @@ async def close_post(
         # in https://discord.com/developers/docs/topics/opcodes-and-status-codes#json
         # Both approaches are going to be tried... here be dragons.
         try:
-            returned_error = e._errors["name"]["_errors"][0]["message"]  # noqa: SLF001
+            returned_error = e._errors["name"]["_errors"][0]["message"]  # type: ignore[index] # noqa: SLF001
         except (AttributeError, LookupError, TypeError):
             returned_error = str(e)
 
