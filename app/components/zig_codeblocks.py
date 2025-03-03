@@ -217,8 +217,8 @@ async def zig_codeblock_edit_handler(
     if not (new_contents or new_files or before in frozen_messages):
         # All code was edited out
         codeblock_linker.unlink(before)
-        for reply in replies:
-            await reply.delete()
+        for r in replies:
+            await r.delete()
         return
 
     if codeblock_linker.unlink_if_expired(replies[0]):
