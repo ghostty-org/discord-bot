@@ -26,6 +26,8 @@ from app.components.zig_codeblocks import (
 from app.setup import bot, config
 from app.utils import is_dm, is_mod, try_dm
 
+__all__ = ["bot", "config"]
+
 
 @bot.event
 async def on_ready() -> None:
