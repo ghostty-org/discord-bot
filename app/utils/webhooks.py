@@ -28,6 +28,48 @@ def get_ghostty_guild() -> discord.Guild:
         raise ValueError(msg) from None
 
 
+async def _get_original_message(message: discord.Message) -> discord.Message | None:
+    """Can throw discord.errors.NotFound if the original message was deleted."""
+    if (msg_ref := message.reference) is None:
+        return None
+    if msg_ref.cached_message is not None:
+        return msg_ref.cached_message
+    if message.guild is None or msg_ref.message_id is None:
+        return None
+    channel = message.guild.get_channel(msg_ref.channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        return None
+    return await channel.fetch_message(msg_ref.message_id)
+
+
+async def _get_reference(message: discord.Message) -> discord.Message | None:
+    ref = await _get_original_message(message)
+    if ref is None:
+        # There was no reference whatsoever.
+        return None
+    assert message.reference is not None
+    if message.reference.type != discord.MessageReferenceType.forward:
+        # We don't have a forward, fantastic, we're done here.
+        return ref
+    # And now, we have a forward. Discord doesn't collapse forwarded forwards,
+    # so we shall do it ourselves. This loop should not run for replies, as if
+    # that happens we would end up dereferencing all the way back to the start
+    # of a reply chain, which would be a horendous idea.
+    message = ref
+    while (ref := await _get_original_message(message)) is not None:
+        assert message.reference is not None
+        if message.reference.type != discord.MessageReferenceType.forward:
+            # This check is subtly different from the one at the top. If we
+            # have a reference that's not a forward, we don't want to continue,
+            # of course. *But*, unlike up top where we return the reference, we
+            # want to return the current message itself, as otherwise we would
+            # be returning the reply the last forward is replying to rather than
+            # the last forward itself.
+            return message
+        message = ref
+    return message
+
+
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
     """
     Converts a custom emoji to a concealed hyperlink.  Set `force` to True
