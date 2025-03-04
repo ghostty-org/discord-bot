@@ -168,6 +168,7 @@ async def _format_forward(
     if forward is discord.utils.MISSING:
         return [_unattachable_embed("forward")]
 
+    msg_data = await scrape_message_data(forward)
     embeds = [
         *forward.embeds,
         *await asyncio.gather(*map(_get_sticker_embed, forward.stickers)),
@@ -194,6 +195,9 @@ async def _format_forward(
         embed.add_field(
             name="", value="-# (other forwarded content is above)", inline=False
         )
+
+    for line in _format_subtext(None, msg_data).splitlines()[1:]:
+        embed.add_field(name="", value=line, inline=False)
     embed.add_field(name="", value=f"-# [**Jump**](<{link}>) 📎", inline=False)
 
     embeds.insert(0, embed)
@@ -208,7 +212,7 @@ def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> s
         assert isinstance(msg_data.channel, GuildTextChannel)
         lines.append(f"Moved from {msg_data.channel.mention} by {executor.mention}")
     if skipped := msg_data.skipped_attachments:
-        lines.append(f"(skipped {skipped} large attachment(s))")
+        lines.append(f"(skipped {skipped} large attachment{'s' * (skipped != 1)})")
     return "".join(f"\n-# {line}" for line in lines)
 
 
