@@ -118,6 +118,34 @@ def _format_reply(
     )
 
 
+def _format_forward(
+    forward: discord.Message, message_map: dict[int, str] | None = None
+) -> discord.Embed:
+    link = (
+        forward.jump_url
+        if message_map is None
+        else message_map.get(forward.id, forward.jump_url)
+    )
+
+    embed = (
+        discord.Embed(
+            description=forward.content, timestamp=forward.created_at, url=link
+        )
+        .set_author(name="➜ Forwarded")
+        .add_field(name="", value=f"-# [Jump](<{link}>)")
+    )
+
+    if hasattr(forward.channel, "name"):
+        # Some channel types don't have a `name` and Pyright can't figure out
+        # that we certainly have a `name` here.
+        assert not isinstance(
+            forward.channel, discord.DMChannel | discord.PartialMessageable
+        )
+        embed.set_footer(text=f"#{forward.channel.name}")
+
+    return embed
+
+
 def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> str:
     lines: list[str] = []
     if reactions := msg_data.reactions.items():
@@ -160,7 +188,11 @@ async def move_message_via_webhook(
     ]
 
     if (ref := await _get_reference(message)) is not None:
-        embeds.append(_format_reply(ref))
+        assert message.reference is not None
+        if message.reference.type == discord.MessageReferenceType.reply:
+            embeds.append(_format_reply(ref))
+        else:
+            embeds.insert(0, _format_forward(ref))
 
     subtext = _format_subtext(executor, msg_data)
     content, file = format_or_file(
