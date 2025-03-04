@@ -90,6 +90,25 @@ async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
     )
 
 
+def _format_reply(
+    reply: discord.Message, message_map: dict[int, str] | None = None
+) -> discord.Embed:
+    # Avoid circular import.
+    from app.utils import truncate
+
+    link = (
+        reply.jump_url
+        if message_map is None
+        else message_map.get(reply.id, reply.jump_url)
+    )
+    return discord.Embed(
+        description=f"[**Reply to**](<{link}>): {truncate(reply.content, 100)} 📎"
+    ).set_author(
+        name=discord.utils.escape_markdown(reply.author.display_name) + " ↩️",
+        icon_url=reply.author.display_avatar,
+    )
+
+
 def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> str:
     lines: list[str] = []
     if reactions := msg_data.reactions.items():
@@ -126,6 +145,14 @@ async def move_message_via_webhook(
 ) -> discord.WebhookMessage:
     msg_data = await scrape_message_data(message)
 
+    embeds = [
+        *message.embeds,
+        *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
+    ]
+
+    if (ref := await _get_reference(message)) is not None:
+        embeds.append(_format_reply(ref))
+
     subtext = _format_subtext(executor, msg_data)
     content, file = format_or_file(
         msg_data.content,
@@ -143,10 +170,7 @@ async def move_message_via_webhook(
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
         files=msg_data.attachments,
-        embeds=[
-            *message.embeds,
-            *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
-        ],
+        embeds=embeds,
         thread=thread,
         thread_name=thread_name,
         wait=True,
