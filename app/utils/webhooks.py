@@ -28,6 +28,30 @@ def get_ghostty_guild() -> discord.Guild:
         raise ValueError(msg) from None
 
 
+async def _get_original_message(message: discord.Message) -> discord.Message | None:
+    if (msg_ref := message.reference) is None:
+        return None
+    if msg_ref.cached_message is not None:
+        return msg_ref.cached_message
+    if message.guild is None or msg_ref.message_id is None:
+        return None
+    channel = message.guild.get_channel(msg_ref.channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        return None
+    return await channel.fetch_message(msg_ref.message_id)
+
+
+async def _get_reference(message: discord.Message) -> discord.Message | None:
+    old = None
+    msg = await _get_original_message(message)
+    # Discord doesn't collapse references to references, so we shall do it
+    # ourselves.
+    while msg is not None:
+        old = msg
+        msg = await _get_original_message(msg)
+    return old
+
+
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
     """
     Converts a custom emoji to a concealed hyperlink.  Set `force` to True
