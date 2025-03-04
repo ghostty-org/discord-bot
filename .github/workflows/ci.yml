@@ -8,9 +8,9 @@ env:
   PY_COLORS: 1
   UV_VERSION: 0.6.1
 
-name: Ruff
+name: Checks
 jobs:
-  check-ruff:
+  ci:
     if: github.repository == 'ghostty-org/discord-bot'
     runs-on: namespace-profile-ghostty-sm
     steps:
@@ -23,6 +23,8 @@ jobs:
       - name: Install project
         run: uv sync
       - name: Lint code
-        run: |
-          uv run ruff check
-          uv run ruff format --check
+        run: uv run ruff check
+      - name: Check formatting
+        run: uv run ruff format --check
+      - name: Type-check code
+        run: uv run mypy --strict app
