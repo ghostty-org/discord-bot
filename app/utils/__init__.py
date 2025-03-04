@@ -20,6 +20,7 @@ from .webhooks import (
     get_ghostty_guild,
     get_or_create_webhook,
     move_message_via_webhook,
+    truncate,
 )
 from app.setup import config
 
@@ -42,6 +43,7 @@ __all__ = (
     "move_message_via_webhook",
     "remove_view_after_timeout",
     "scrape_message_data",
+    "truncate",
     "try_dm",
 )
 
@@ -128,9 +130,3 @@ def escape_special(content: str) -> str:
     return "\n".join(
         _ORDERED_LIST_REGEX.sub(r"\1\. \2", line) for line in escaped.splitlines()
     )
-
-
-def truncate(s: str, length: int, *, suffix: str = "…") -> str:
-    if len(s) <= length:
-        return s
-    return s[: length - len(suffix)] + suffix
