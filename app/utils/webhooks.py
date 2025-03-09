@@ -27,6 +27,22 @@ def get_ghostty_guild() -> discord.Guild:
         raise ValueError(msg) from None
 
 
+async def _get_reference(message: discord.Message) -> discord.Message | None:
+    if (msg_ref := message.reference) is None:
+        return None
+    if msg_ref.cached_message is not None:
+        return msg_ref.cached_message
+    if message.guild is None or msg_ref.message_id is None:
+        return None
+    channel = message.guild.get_channel(msg_ref.channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        return None
+    msg = await channel.fetch_message(msg_ref.message_id)
+    if msg is not None:
+        return msg
+    return await _get_reference(msg)
+
+
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
     """
     Converts a custom emoji to a concealed hyperlink.  Set `force` to True
@@ -74,6 +90,53 @@ async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
     )
 
 
+def _format_reply(
+    reply: discord.Message, message_map: dict[int, str] | None = None
+) -> discord.Embed:
+    # Avoid circular import.
+    from app.utils import truncate
+
+    link = (
+        reply.jump_url
+        if message_map is None
+        else message_map.get(reply.id, reply.jump_url)
+    )
+    return discord.Embed(
+        description=f"[**Reply to**](<{link}>): {truncate(reply.content, 100)} 📎"
+    ).set_author(
+        name=discord.utils.escape_markdown(reply.author.display_name) + " ↩️",
+        icon_url=reply.author.display_avatar,
+    )
+
+
+def _format_forward(
+    forward: discord.Message, message_map: dict[int, str] | None = None
+) -> discord.Embed:
+    link = (
+        forward.jump_url
+        if message_map is None
+        else message_map.get(forward.id, forward.jump_url)
+    )
+
+    embed = (
+        discord.Embed(
+            description=forward.content, timestamp=forward.created_at, url=link
+        )
+        .set_author(name="➜ Forwarded")
+        .add_field(name="", value=f"-# [Jump](<{link}>)")
+    )
+
+    if hasattr(forward.channel, "name"):
+        # Some channel types don't have a `name` and Pyright can't figure out
+        # that we certainly have a `name` here.
+        assert not isinstance(
+            forward.channel, discord.DMChannel | discord.PartialMessageable
+        )
+        embed.set_footer(text=f"#{forward.channel.name}")
+
+    return embed
+
+
 def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> str:
     lines: list[str] = []
     if reactions := msg_data.reactions.items():
@@ -110,6 +173,18 @@ async def move_message_via_webhook(
 ) -> discord.WebhookMessage:
     msg_data = await scrape_message_data(message)
 
+    embeds = [
+        *message.embeds,
+        *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
+    ]
+
+    if (ref := await _get_reference(message)) is not None:
+        assert message.reference is not None
+        if message.reference.type == discord.MessageReferenceType.reply:
+            embeds.append(_format_reply(ref))
+        else:
+            embeds.insert(0, _format_forward(ref))
+
     subtext = _format_subtext(executor, msg_data)
     content, file = format_or_file(
         msg_data.content,
@@ -127,10 +202,7 @@ async def move_message_via_webhook(
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
         files=msg_data.attachments,
-        embeds=[
-            *message.embeds,
-            *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
-        ],
+        embeds=embeds,
         thread=thread,
         thread_name=thread_name,
         wait=True,
