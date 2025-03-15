@@ -76,9 +76,9 @@ async def comment_processor(msg: discord.Message) -> tuple[list[discord.Embed], 
     return comments, len(comments)
 
 
-entity_comment_delete_handler = create_delete_hook(linker=comment_linker)
+entity_comment_delete_hook = create_delete_hook(linker=comment_linker)
 
-entity_comment_edit_handler = create_edit_hook(
+entity_comment_edit_hook = create_edit_hook(
     linker=comment_linker,
     message_processor=comment_processor,
     interactor=reply_with_comments,

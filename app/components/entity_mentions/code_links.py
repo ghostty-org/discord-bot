@@ -138,9 +138,9 @@ async def reply_with_code(message: discord.Message) -> None:
     await remove_view_after_timeout(sent_message)
 
 
-code_link_delete_handler = create_delete_hook(linker=code_linker)
+code_link_delete_hook = create_delete_hook(linker=code_linker)
 
-code_link_edit_handler = create_edit_hook(
+code_link_edit_hook = create_edit_hook(
     linker=code_linker,
     message_processor=snippet_message,
     interactor=reply_with_code,

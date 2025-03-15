@@ -52,9 +52,9 @@ async def reply_with_entities(message: discord.Message) -> None:
     await remove_view_after_timeout(sent_message)
 
 
-entity_mention_delete_handler = create_delete_hook(linker=mention_linker)
+entity_mention_delete_hook = create_delete_hook(linker=mention_linker)
 
-entity_mention_edit_handler = create_edit_hook(
+entity_mention_edit_hook = create_edit_hook(
     linker=mention_linker,
     message_processor=entity_message,
     interactor=reply_with_entities,
