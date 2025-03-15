@@ -9,7 +9,13 @@ from zig_codeblocks import highlight_zig_code
 from .cache import TTRCache
 from app.components.zig_codeblocks import THEME
 from app.setup import gh
-from app.utils import DeleteMessage, MessageLinker, remove_view_after_timeout
+from app.utils import (
+    DeleteMessage,
+    MessageLinker,
+    create_delete_hook,
+    create_edit_hook,
+    remove_view_after_timeout,
+)
 
 CODE_LINK_PATTERN = re.compile(
     r"https?://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/([^\?#]+)(?:[^\#]*)?#L(\d+)(?:-L(\d+))?"
@@ -132,47 +138,11 @@ async def reply_with_code(message: discord.Message) -> None:
     await remove_view_after_timeout(sent_message)
 
 
-async def code_link_delete_handler(message: discord.Message) -> None:
-    if message.author.bot:
-        code_linker.unlink_from_reply(message)
-    elif replies := code_linker.get(message):
-        for reply in replies:
-            await reply.delete()
+code_link_delete_hook = create_delete_hook(linker=code_linker)
 
-
-async def code_link_edit_handler(
-    before: discord.Message, after: discord.Message
-) -> None:
-    if before.content == after.content:
-        return
-    old_snippets = await snippet_message(before)
-    new_snippets = await snippet_message(after)
-    if old_snippets == new_snippets:
-        # Message changed but snippets are the same
-        return
-
-    if not (replies := code_linker.get(before)):
-        if not old_snippets[1]:
-            # There were no snippets before, so treat this as a new message
-            await reply_with_code(after)
-        # The message was removed from the M2C map at some point
-        return
-
-    reply = replies[0]
-    content, count = new_snippets
-    if not count:
-        # All snippets were edited out
-        code_linker.unlink(before)
-        await reply.delete()
-        return
-
-    if code_linker.unlink_if_expired(reply):
-        return
-
-    await reply.edit(
-        content=content,
-        suppress=True,
-        view=DeleteCodeLink(after, count),
-        allowed_mentions=discord.AllowedMentions.none(),
-    )
-    await remove_view_after_timeout(reply)
+code_link_edit_hook = create_edit_hook(
+    linker=code_linker,
+    message_processor=snippet_message,
+    interactor=reply_with_code,
+    view_type=DeleteCodeLink,
+)

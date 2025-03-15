@@ -6,6 +6,8 @@ from .fmt import entity_message
 from app.utils import (
     DeleteMessage,
     MessageLinker,
+    create_delete_hook,
+    create_edit_hook,
     is_dm,
     remove_view_after_timeout,
     try_dm,
@@ -50,47 +52,11 @@ async def reply_with_entities(message: discord.Message) -> None:
     await remove_view_after_timeout(sent_message)
 
 
-async def entity_mention_delete_handler(message: discord.Message) -> None:
-    if message.author.bot:
-        mention_linker.unlink_from_reply(message)
-    elif replies := mention_linker.get(message):
-        for reply in replies:
-            await reply.delete()
+entity_mention_delete_hook = create_delete_hook(linker=mention_linker)
 
-
-async def entity_mention_edit_handler(
-    before: discord.Message, after: discord.Message
-) -> None:
-    if before.content == after.content:
-        return
-    old_entities = await entity_message(before)
-    new_entities = await entity_message(after)
-    if old_entities == new_entities:
-        # Message changed but mentions are the same
-        return
-
-    if not (replies := mention_linker.get(before)):
-        if not old_entities[1]:
-            # There were no mentions before, so treat this as a new message
-            await reply_with_entities(after)
-        # The message was removed from the M2M map at some point
-        return
-
-    reply = replies[0]
-    content, count = new_entities
-    if not count:
-        # All mentions were edited out
-        mention_linker.unlink(before)
-        await reply.delete()
-        return
-
-    if mention_linker.unlink_if_expired(reply):
-        return
-
-    await reply.edit(
-        content=content,
-        suppress=True,
-        view=DeleteMention(after, count),
-        allowed_mentions=discord.AllowedMentions.none(),
-    )
-    await remove_view_after_timeout(reply)
+entity_mention_edit_hook = create_edit_hook(
+    linker=mention_linker,
+    message_processor=entity_message,
+    interactor=reply_with_entities,
+    view_type=DeleteMention,
+)

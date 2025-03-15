@@ -13,12 +13,12 @@ from app.components.autoclose import autoclose_solved_posts
 from app.components.docs import refresh_sitemap
 from app.components.entity_mentions import (
     ENTITY_REGEX,
-    code_link_delete_handler,
-    code_link_edit_handler,
-    entity_comment_delete_handler,
-    entity_comment_edit_handler,
-    entity_mention_delete_handler,
-    entity_mention_edit_handler,
+    code_link_delete_hook,
+    code_link_edit_hook,
+    entity_comment_delete_hook,
+    entity_comment_edit_hook,
+    entity_mention_delete_hook,
+    entity_mention_edit_hook,
     load_emojis,
     reply_with_code,
     reply_with_comments,
@@ -100,18 +100,18 @@ async def on_message(message: discord.Message) -> None:
 
 @bot.event
 async def on_message_edit(before: discord.Message, after: discord.Message) -> None:
-    await entity_mention_edit_handler(before, after)
+    await entity_mention_edit_hook(before, after)
     await zig_codeblock_edit_handler(before, after)
-    await entity_comment_edit_handler(before, after)
-    await code_link_edit_handler(before, after)
+    await entity_comment_edit_hook(before, after)
+    await code_link_edit_hook(before, after)
 
 
 @bot.event
 async def on_message_delete(message: discord.Message) -> None:
-    await entity_mention_delete_handler(message)
+    await entity_mention_delete_hook(message)
     await zig_codeblock_delete_handler(message)
-    await entity_comment_delete_handler(message)
-    await code_link_delete_handler(message)
+    await entity_comment_delete_hook(message)
+    await code_link_delete_hook(message)
 
 
 async def sync(bot: commands.Bot, message: discord.Message) -> None:
