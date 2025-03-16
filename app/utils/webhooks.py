@@ -38,15 +38,16 @@ async def _get_original_message(message: discord.Message) -> discord.Message | N
         return None
     channel = message.guild.get_channel(msg_ref.channel_id)
     if not isinstance(channel, discord.TextChannel):
-        return None
+        # There *is* a reference, but we can't access it.
+        return discord.utils.MISSING
     return await channel.fetch_message(msg_ref.message_id)
 
 
 async def _get_reference(message: discord.Message) -> discord.Message | None:
     ref = await _get_original_message(message)
-    if ref is None:
+    if ref is None or ref is discord.utils.MISSING:
         # There was no reference whatsoever.
-        return None
+        return ref
     assert message.reference is not None
     if message.reference.type != discord.MessageReferenceType.forward:
         # We don't have a forward, fantastic, we're done here.
@@ -57,6 +58,12 @@ async def _get_reference(message: discord.Message) -> discord.Message | None:
     # of a reply chain, which would be a horendous idea.
     message = ref
     while (ref := await _get_original_message(message)) is not None:
+        if ref is discord.utils.MISSING:
+            # We don't have the forward, but there *should* have been one; this
+            # isn't included in the check above with `is not None` because
+            # otherwise it would return an empty message in the middle of the
+            # forward chain, rather than being converted into an error embed.
+            return discord.utils.MISSING
         assert message.reference is not None
         if message.reference.type != discord.MessageReferenceType.forward:
             # This check is subtly different from the one at the top. If we
@@ -67,7 +74,14 @@ async def _get_reference(message: discord.Message) -> discord.Message | None:
             # the last forward itself.
             return message
         message = ref
+        ref = await _get_original_message(message)
     return message
+
+
+def _unattachable_embed(unattachable_elem: str) -> discord.Embed:
+    return discord.Embed(color=discord.Color.brand_red()).set_footer(
+        text=f"Unable to attach {unattachable_elem}."
+    )
 
 
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
@@ -93,10 +107,7 @@ def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
 async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
     # Lottie images can't be used in embeds, unfortunately.
     if sticker.format == discord.StickerFormatType.lottie:
-        return discord.Embed(color=discord.Color.brand_red()).set_footer(
-            text="Unable to attach sticker."
-        )
-
+        return _unattachable_embed("sticker")
     async with httpx.AsyncClient() as client:
         for u in (
             sticker.url,
@@ -111,10 +122,7 @@ async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
                     embed.set_footer(text="Unable to animate sticker.")
                     embed.color = discord.Color.orange()
                 return embed
-
-    return discord.Embed(color=discord.Color.brand_red()).set_footer(
-        text="Unable to attach sticker."
-    )
+    return _unattachable_embed("sticker")
 
 
 def truncate(s: str, length: int, *, suffix: str = "…") -> str:
@@ -126,6 +134,8 @@ def truncate(s: str, length: int, *, suffix: str = "…") -> str:
 def _format_reply(
     reply: discord.Message, message_map: dict[int, str] | None = None
 ) -> discord.Embed:
+    if reply is discord.utils.MISSING:
+        return _unattachable_embed("reply")
     link = (
         reply.jump_url
         if message_map is None
@@ -144,6 +154,8 @@ def _format_reply(
 def _format_forward(
     forward: discord.Message, message_map: dict[int, str] | None = None
 ) -> discord.Embed:
+    if forward is discord.utils.MISSING:
+        return _unattachable_embed("forward")
     link = (
         forward.jump_url
         if message_map is None
