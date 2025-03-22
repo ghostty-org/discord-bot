@@ -28,6 +28,61 @@ def get_ghostty_guild() -> discord.Guild:
         raise ValueError(msg) from None
 
 
+async def _get_original_message(message: discord.Message) -> discord.Message | None:
+    if (msg_ref := message.reference) is None:
+        return None
+    if msg_ref.cached_message is not None:
+        return msg_ref.cached_message
+    if message.guild is None or msg_ref.message_id is None:
+        return None
+    channel = message.guild.get_channel(msg_ref.channel_id)
+    if not isinstance(channel, discord.TextChannel):
+        # There *is* a reference, but we can't access it.
+        return discord.utils.MISSING
+    return await channel.fetch_message(msg_ref.message_id)
+
+
+async def _get_reference(message: discord.Message) -> discord.Message | None:
+    ref = await _get_original_message(message)
+    if ref is None or ref is discord.utils.MISSING:
+        # There was no reference whatsoever.
+        return ref
+    assert message.reference is not None
+    if message.reference.type != discord.MessageReferenceType.forward:
+        # We don't have a forward, fantastic, we're done here.
+        return ref
+    # And now, we have a forward. Discord doesn't collapse forwarded forwards,
+    # so we shall do it ourselves. This loop should not run for replies, as if
+    # that happens we would end up dereferencing all the way back to the start
+    # of a reply chain, which would be a horendous idea.
+    message = ref
+    while (ref := await _get_original_message(message)) is not None:
+        if ref is discord.utils.MISSING:
+            # We don't have the forward, but there *should* have been one; this
+            # isn't included in the check above with `is not None` because
+            # otherwise it would return an empty message in the middle of the
+            # forward chain, rather than being converted into an error embed.
+            return discord.utils.MISSING
+        assert message.reference is not None
+        if message.reference.type != discord.MessageReferenceType.forward:
+            # This check is subtly different from the one at the top. If we
+            # have a reference that's not a forward, we don't want to continue,
+            # of course. *But*, unlike up top where we return the reference, we
+            # want to return the current message itself, as otherwise we would
+            # be returning the reply the last forward is replying to rather than
+            # the last forward itself.
+            return message
+        message = ref
+        ref = await _get_original_message(message)
+    return message
+
+
+def _unattachable_embed(unattachable_elem: str) -> discord.Embed:
+    return discord.Embed(color=discord.Color.brand_red()).set_footer(
+        text=f"Unable to attach {unattachable_elem}."
+    )
+
+
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
     """
     Converts a custom emoji to a concealed hyperlink.  Set `force` to True
@@ -51,10 +106,7 @@ def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
 async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
     # Lottie images can't be used in embeds, unfortunately.
     if sticker.format == discord.StickerFormatType.lottie:
-        return discord.Embed(color=discord.Color.brand_red()).set_footer(
-            text="Unable to attach sticker."
-        )
-
+        return _unattachable_embed("sticker")
     async with httpx.AsyncClient() as client:
         for u in (
             sticker.url,
@@ -69,10 +121,89 @@ async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
                     embed.set_footer(text="Unable to animate sticker.")
                     embed.color = discord.Color.orange()
                 return embed
+    return _unattachable_embed("sticker")
 
-    return discord.Embed(color=discord.Color.brand_red()).set_footer(
-        text="Unable to attach sticker."
+
+def truncate(s: str, length: int, *, suffix: str = "…") -> str:
+    if len(s) <= length:
+        return s
+    return s[: length - len(suffix)] + suffix
+
+
+async def _format_reply(
+    reply: discord.Message, message_map: dict[int, str] | None = None
+) -> discord.Embed:
+    if reply is discord.utils.MISSING:
+        return _unattachable_embed("reply")
+
+    description_prefix = ""
+    description = reply.content
+    if (ref := await _get_reference(reply)) is not None:
+        assert reply.reference is not None
+        if reply.reference.type == discord.MessageReferenceType.forward:
+            description_prefix = "➜ Forwarded\n"
+            if ref is discord.utils.MISSING:
+                description = "> *Unable to attach forward.*"
+            elif ref.content:
+                description = f"> {ref.content}"
+            else:
+                description = "> *Some forwarded content elided.*"
+
+    link = (
+        reply.jump_url
+        if message_map is None
+        else message_map.get(reply.id, reply.jump_url)
     )
+    return (
+        discord.Embed(description=f"{description_prefix}{truncate(description, 100)}")
+        .set_author(
+            name=f"↪️ Replying to {reply.author.display_name}",
+            icon_url=reply.author.display_avatar,
+        )
+        .add_field(name="", value=f"-# [**Jump**](<{link}>) 📎")
+    )
+
+
+async def _format_forward(
+    forward: discord.Message, message_map: dict[int, str] | None = None
+) -> tuple[list[discord.Embed], list[discord.File]]:
+    if forward is discord.utils.MISSING:
+        return [_unattachable_embed("forward")], []
+
+    msg_data = await scrape_message_data(forward)
+    embeds = [
+        *forward.embeds,
+        *await asyncio.gather(*map(_get_sticker_embed, forward.stickers)),
+    ]
+
+    link = (
+        forward.jump_url
+        if message_map is None
+        else message_map.get(forward.id, forward.jump_url)
+    )
+    embed = discord.Embed(
+        description=forward.content, timestamp=forward.created_at, url=link
+    ).set_author(name="➜ Forwarded")
+
+    if hasattr(forward.channel, "name"):
+        # Some channel types don't have a `name` and Pyright can't figure out
+        # that we certainly have a `name` here.
+        assert not isinstance(
+            forward.channel, discord.DMChannel | discord.PartialMessageable
+        )
+        embed.set_footer(text=f"#{forward.channel.name}")
+
+    if embeds or msg_data.attachments:
+        embed.add_field(
+            name="", value="-# (other forwarded content is above)", inline=False
+        )
+
+    for line in _format_subtext(None, msg_data).splitlines()[1:]:
+        embed.add_field(name="", value=line, inline=False)
+    embed.add_field(name="", value=f"-# [**Jump**](<{link}>) 📎", inline=False)
+
+    embeds.insert(0, embed)
+    return embeds, msg_data.attachments
 
 
 def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> str:
@@ -83,7 +214,7 @@ def _format_subtext(executor: discord.Member | None, msg_data: MessageData) -> s
         assert isinstance(msg_data.channel, GuildTextChannel)
         lines.append(f"Moved from {msg_data.channel.mention} by {executor.mention}")
     if skipped := msg_data.skipped_attachments:
-        lines.append(f"(skipped {skipped} large attachment(s))")
+        lines.append(f"(skipped {skipped} large attachment{'s' * (skipped != 1)})")
     return "".join(f"\n-# {line}" for line in lines)
 
 
@@ -110,6 +241,20 @@ async def move_message_via_webhook(
     thread_name: str = discord.utils.MISSING,
 ) -> discord.WebhookMessage:
     msg_data = await scrape_message_data(message)
+
+    embeds = [
+        *message.embeds,
+        *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
+    ]
+
+    if (ref := await _get_reference(message)) is not None:
+        assert message.reference is not None
+        if message.reference.type == discord.MessageReferenceType.forward:
+            forward_embeds, forward_attachments = await _format_forward(ref)
+            embeds = forward_embeds + embeds
+            msg_data.attachments.extend(forward_attachments)
+        else:
+            embeds.append(await _format_reply(ref))
 
     subtext = _format_subtext(executor, msg_data)
     content, file = format_or_file(
@@ -141,10 +286,7 @@ async def move_message_via_webhook(
         avatar_url=message.author.display_avatar.url,
         allowed_mentions=discord.AllowedMentions.none(),
         files=msg_data.attachments,
-        embeds=[
-            *message.embeds,
-            *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
-        ],
+        embeds=embeds,
         thread=thread,
         thread_name=thread_name,
         wait=True,
