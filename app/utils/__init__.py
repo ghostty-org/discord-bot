@@ -14,6 +14,7 @@ from .hooks import (
 )
 from .message_data import MessageData, scrape_message_data
 from .webhooks import (
+    SUPPORTED_IMAGE_FORMATS,
     GuildTextChannel,
     dynamic_timestamp,
     format_or_file,
@@ -25,6 +26,7 @@ from .webhooks import (
 from app.setup import config
 
 __all__ = (
+    "SUPPORTED_IMAGE_FORMATS",
     "Account",
     "DeleteMessage",
     "GuildTextChannel",

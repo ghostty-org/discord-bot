@@ -4,6 +4,7 @@ import asyncio
 import datetime as dt
 import re
 from io import BytesIO
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import discord
@@ -18,6 +19,10 @@ if TYPE_CHECKING:
 GuildTextChannel = discord.TextChannel | discord.Thread
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
+
+# A list of image formats supported by Discord, in the form of their file
+# extension (including the leading dot).
+SUPPORTED_IMAGE_FORMATS = (".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp")
 
 
 def get_ghostty_guild() -> discord.Guild:
@@ -194,7 +199,15 @@ async def _format_forward(
         )
         embed.set_footer(text=f"#{forward.channel.name}")
 
-    if embeds or msg_data.attachments:
+    images = [
+        attachment
+        for attachment in msg_data.attachments
+        if Path(attachment.filename).suffix in SUPPORTED_IMAGE_FORMATS
+    ]
+    if len(images) == 1:
+        # https://discordpy.readthedocs.io/en/stable/faq.html#how-do-i-use-a-local-image-file-for-an-embed-image
+        embed.set_image(url="attachment://" + images[0].filename)
+    if embeds or len(msg_data.attachments) > (1 if images else 0):
         embed.add_field(
             name="", value="-# (other forwarded content is attached)", inline=False
         )
