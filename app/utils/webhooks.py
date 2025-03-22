@@ -204,9 +204,21 @@ async def _format_forward(
         for attachment in msg_data.attachments
         if Path(attachment.filename).suffix in SUPPORTED_IMAGE_FORMATS
     ]
-    if len(images) == 1:
-        # https://discordpy.readthedocs.io/en/stable/faq.html#how-do-i-use-a-local-image-file-for-an-embed-image
-        embed.set_image(url="attachment://" + images[0].filename)
+    image_only_embeds = [
+        embed
+        for embed in embeds
+        if embed.image and not (embed.title or embed.description or embed.fields)
+    ]
+    if len(images) == 1 or len(image_only_embeds) == 1:
+        if images:
+            # https://discordpy.readthedocs.io/en/stable/faq.html#how-do-i-use-a-local-image-file-for-an-embed-image
+            embed.set_image(url="attachment://" + images[0].filename)
+        else:
+            image = image_only_embeds[0].image
+            # Try both, as embeds which have not yet been sent to Discord will
+            # not have a proxy_url.
+            embed.set_image(url=image.proxy_url or image.url)
+            embeds.remove(image_only_embeds[0])
     if embeds or len(msg_data.attachments) > (1 if images else 0):
         embed.add_field(
             name="", value="-# (other forwarded content is attached)", inline=False
