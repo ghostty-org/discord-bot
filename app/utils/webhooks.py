@@ -144,8 +144,10 @@ async def _format_reply(
             description_prefix = "➜ Forwarded\n"
             if ref is discord.utils.MISSING:
                 description = "> *Unable to attach forward.*"
-            else:
+            elif ref.content:
                 description = f"> {ref.content}"
+            else:
+                description = "> *Some forwarded content elided.*"
 
     link = (
         reply.jump_url
