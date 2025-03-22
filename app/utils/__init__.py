@@ -15,6 +15,7 @@ from .hooks import (
 from .message_data import MessageData, scrape_message_data
 from .webhooks import (
     GuildTextChannel,
+    dynamic_timestamp,
     format_or_file,
     get_ghostty_guild,
     get_or_create_webhook,
@@ -30,6 +31,7 @@ __all__ = (
     "MessageLinker",
     "create_delete_hook",
     "create_edit_hook",
+    "dynamic_timestamp",
     "escape_special",
     "format_or_file",
     "get_ghostty_guild",
@@ -44,8 +46,6 @@ __all__ = (
 )
 
 if TYPE_CHECKING:
-    import datetime as dt
-
     from typing_extensions import TypeIs
 
 
@@ -107,11 +107,6 @@ async def try_dm(account: Account, content: str, **extras: Any) -> None:
         await account.send(content, **extras)
     except discord.Forbidden:
         print(f"Failed to DM {account} with: {shorten(content, width=50)}")
-
-
-def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
-    fmt = f":{fmt}" if fmt is not None else ""
-    return f"<t:{int(dt.timestamp())}{fmt}>"
 
 
 def escape_special(content: str) -> str:
