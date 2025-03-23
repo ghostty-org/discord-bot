@@ -20,6 +20,7 @@ from .webhooks import (
     format_or_file,
     get_ghostty_guild,
     get_or_create_webhook,
+    message_can_be_moved,
     move_message_via_webhook,
     truncate,
 )
@@ -42,6 +43,7 @@ __all__ = (
     "is_dm",
     "is_helper",
     "is_mod",
+    "message_can_be_moved",
     "move_message_via_webhook",
     "remove_view_after_timeout",
     "scrape_message_data",

@@ -284,6 +284,18 @@ async def get_or_create_webhook(
     return await channel.create_webhook(name=name)
 
 
+def message_can_be_moved(message: discord.Message) -> bool:
+    # Non-system-message types taken from the description of
+    # https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
+    # However, also allow bot commands, despite them being system messages.
+    return message.type in (
+        discord.MessageType.default,
+        discord.MessageType.reply,
+        discord.MessageType.chat_input_command,
+        discord.MessageType.context_menu_command,
+    )
+
+
 async def move_message_via_webhook(
     webhook: discord.Webhook,
     message: discord.Message,
@@ -292,6 +304,12 @@ async def move_message_via_webhook(
     thread: discord.abc.Snowflake = discord.utils.MISSING,
     thread_name: str = discord.utils.MISSING,
 ) -> discord.WebhookMessage:
+    """
+    WARNING: it is the caller's responsibility to check message_can_be_moved()
+    and to display an informative warning message.
+    """
+    assert message_can_be_moved(message)
+
     msg_data = await scrape_message_data(message)
 
     embeds = [
