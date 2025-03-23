@@ -11,6 +11,7 @@ from app.utils import (
     is_dm,
     is_helper,
     is_mod,
+    message_can_be_moved,
     move_message_via_webhook,
 )
 
@@ -135,6 +136,12 @@ async def move_message(
         )
         return
 
+    if not message_can_be_moved(message):
+        await interaction.response.send_message(
+            "System messages cannot be moved.", ephemeral=True
+        )
+        return
+
     await interaction.response.send_message(
         "Select a channel to move this message to.",
         view=SelectChannel(message, executor=interaction.user),
@@ -157,6 +164,13 @@ async def turn_into_help_post(
     if not (is_mod(interaction.user) or is_helper(interaction.user)):
         await interaction.response.send_message(
             "You do not have permission to use this action.", ephemeral=True
+        )
+        return
+
+    if not message_can_be_moved(message):
+        await interaction.response.send_message(
+            f"System messages cannot be turned into <#{config.HELP_CHANNEL_ID}> posts.",
+            ephemeral=True,
         )
         return
 
