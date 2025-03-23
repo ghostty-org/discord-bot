@@ -178,6 +178,15 @@ async def _format_reply(
     )
 
 
+async def _format_context_menu_command(
+    reply: discord.Message, message_map: dict[int, str] | None = None
+) -> discord.Embed:
+    return (await _format_reply(reply, message_map)).set_author(
+        name=f"⚡️ Acting on {reply.author.display_name}'s message",
+        icon_url=reply.author.display_avatar,
+    )
+
+
 async def _format_forward(
     forward: discord.Message, message_map: dict[int, str] | None = None
 ) -> tuple[list[discord.Embed], list[discord.File]]:
@@ -254,7 +263,11 @@ def _format_missing_reference(
             name="➜ Forwarded"
         )
     return discord.Embed(description="*Original message was deleted.*").set_author(
-        name="↪️ Reply"
+        name=(
+            "⚡️ Message"
+            if message.type == discord.MessageType.context_menu_command
+            else "↪️ Reply"
+        )
     )
 
 
@@ -349,6 +362,8 @@ async def move_message_via_webhook(
                 forward_embeds, forward_attachments = await _format_forward(ref)
                 embeds = [*forward_embeds, *embeds]
                 msg_data.attachments.extend(forward_attachments)
+            elif message.type == discord.MessageType.context_menu_command:
+                embeds.append(await _format_context_menu_command(ref))
             else:
                 embeds.append(await _format_reply(ref))
 
