@@ -144,11 +144,19 @@ async def _format_reply(
 
     description_prefix = ""
     description = reply.content
-    if (ref := await _get_reference(reply)) is not None:
+    ref_exists = True
+    try:
+        ref = await _get_reference(reply)
+    except discord.errors.NotFound:
+        ref = discord.utils.MISSING
+        ref_exists = False
+    if ref is not None:
         assert reply.reference is not None
         if reply.reference.type == discord.MessageReferenceType.forward:
             description_prefix = "➜ Forwarded\n"
-            if ref is discord.utils.MISSING:
+            if not ref_exists:
+                description = "> *Forwarded message was deleted.*"
+            elif ref is discord.utils.MISSING:
                 description = "> *Unable to attach forward.*"
             elif ref.content:
                 description = f"> {ref.content}"
