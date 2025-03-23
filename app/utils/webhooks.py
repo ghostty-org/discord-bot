@@ -237,6 +237,12 @@ async def _format_forward(
     return embeds, msg_data.attachments
 
 
+def _format_missing_reference() -> discord.Embed:
+    return discord.Embed(description="*Original message was deleted.*").set_author(
+        name="↪️ Reply"
+    )
+
+
 def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
     fmt = f":{fmt}" if fmt is not None else ""
     return f"<t:{int(dt.timestamp())}{fmt}>"
@@ -317,14 +323,22 @@ async def move_message_via_webhook(
         *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
     ]
 
-    if (ref := await _get_reference(message)) is not None:
+    try:
+        ref = await _get_reference(message)
+    except discord.errors.NotFound:
+        # If this error was thrown, we're way past the checking for reference
+        # stage.
         assert message.reference is not None
-        if message.reference.type == discord.MessageReferenceType.forward:
-            forward_embeds, forward_attachments = await _format_forward(ref)
-            embeds = forward_embeds + embeds
-            msg_data.attachments.extend(forward_attachments)
-        else:
-            embeds.append(await _format_reply(ref))
+        embeds.append(_format_missing_reference())
+    else:
+        if ref is not None:
+            assert message.reference is not None
+            if message.reference.type == discord.MessageReferenceType.forward:
+                forward_embeds, forward_attachments = await _format_forward(ref)
+                embeds = [*forward_embeds, *embeds]
+                msg_data.attachments.extend(forward_attachments)
+            else:
+                embeds.append(await _format_reply(ref))
 
     subtext = _format_subtext(executor, msg_data)
     content, file = format_or_file(
