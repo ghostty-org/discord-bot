@@ -237,7 +237,14 @@ async def _format_forward(
     return embeds, msg_data.attachments
 
 
-def _format_missing_reference() -> discord.Embed:
+def _format_missing_reference(
+    message: discord.Message,
+) -> discord.Embed:
+    assert message.reference is not None
+    if message.reference.type == discord.MessageReferenceType.forward:
+        return discord.Embed(description="*Forwarded message was deleted.*").set_author(
+            name="➜ Forwarded"
+        )
     return discord.Embed(description="*Original message was deleted.*").set_author(
         name="↪️ Reply"
     )
@@ -326,10 +333,7 @@ async def move_message_via_webhook(
     try:
         ref = await _get_reference(message)
     except discord.errors.NotFound:
-        # If this error was thrown, we're way past the checking for reference
-        # stage.
-        assert message.reference is not None
-        embeds.append(_format_missing_reference())
+        embeds.append(_format_missing_reference(message))
     else:
         if ref is not None:
             assert message.reference is not None
