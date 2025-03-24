@@ -1,9 +1,11 @@
 import re
 from collections.abc import AsyncIterator
 from contextlib import suppress
+from functools import reduce
 
 import discord
 from githubkit.exception import RequestFailed
+from zig_codeblocks import extract_codeblocks
 
 from .cache import TTRCache
 from app.setup import config, gh
@@ -26,6 +28,14 @@ class OwnerCache(TTRCache[str, str]):
 owner_cache = OwnerCache(hours=1)
 
 
+def remove_codeblocks(content: str) -> str:
+    return reduce(
+        lambda acc, cb: acc.replace(f"```{cb.lang or ''}{cb.body}```", ""),
+        extract_codeblocks(content),
+        content,
+    )
+
+
 async def find_repo_owner(name: str) -> str:
     resp = await gh.rest.search.async_repos(
         q=name, sort="stars", order="desc", per_page=20
@@ -41,7 +51,7 @@ async def resolve_repo_signatures(
     message: discord.Message,
 ) -> AsyncIterator[tuple[str, str, int]]:
     valid_signatures = 0
-    for match in ENTITY_REGEX.finditer(message.content):
+    for match in ENTITY_REGEX.finditer(remove_codeblocks(message.content)):
         site, sep = match["site"], match["sep"]
         # Ensure that the correct separator is used.
         if bool(site) == (sep == "#"):
