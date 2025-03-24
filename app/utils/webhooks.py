@@ -123,7 +123,7 @@ def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
 
 async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
     # Lottie images can't be used in embeds, unfortunately.
-    if sticker.format == discord.StickerFormatType.lottie:
+    if sticker.format is discord.StickerFormatType.lottie:
         return _unattachable_embed("sticker")
     async with httpx.AsyncClient() as client:
         for u in (
@@ -135,7 +135,7 @@ async def _get_sticker_embed(sticker: discord.StickerItem) -> discord.Embed:
         ):
             if (await client.head(u)).is_success:
                 embed = discord.Embed().set_image(url=u)
-                if sticker.format == discord.StickerFormatType.apng:
+                if sticker.format is discord.StickerFormatType.apng:
                     embed.set_footer(text="Unable to animate sticker.")
                     embed.color = discord.Color.orange()
                 return embed
@@ -164,7 +164,7 @@ async def _format_reply(
         ref_exists = False
     if ref is not None:
         assert reply.reference is not None
-        if reply.reference.type == discord.MessageReferenceType.forward:
+        if reply.reference.type is discord.MessageReferenceType.forward:
             description_prefix = "➜ Forwarded\n"
             if not ref_exists:
                 description = "> *Forwarded message was deleted.*"
@@ -270,14 +270,14 @@ def _format_missing_reference(
     message: discord.Message,
 ) -> discord.Embed:
     assert message.reference is not None
-    if message.reference.type == discord.MessageReferenceType.forward:
+    if message.reference.type is discord.MessageReferenceType.forward:
         return discord.Embed(description="*Forwarded message was deleted.*").set_author(
             name="➜ Forwarded"
         )
     return discord.Embed(description="*Original message was deleted.*").set_author(
         name=(
             "⚡️ Message"
-            if message.type == discord.MessageType.context_menu_command
+            if message.type is discord.MessageType.context_menu_command
             else "↪️ Reply"
         )
     )
@@ -378,11 +378,11 @@ async def move_message_via_webhook(
     else:
         if ref is not None:
             assert message.reference is not None
-            if message.reference.type == discord.MessageReferenceType.forward:
+            if message.reference.type is discord.MessageReferenceType.forward:
                 forward_embeds, forward_attachments = await _format_forward(ref)
                 embeds = [*forward_embeds, *embeds]
                 msg_data.attachments.extend(forward_attachments)
-            elif message.type == discord.MessageType.context_menu_command:
+            elif message.type is discord.MessageType.context_menu_command:
                 embeds.append(await _format_context_menu_command(ref))
             else:
                 embeds.append(await _format_reply(ref))
