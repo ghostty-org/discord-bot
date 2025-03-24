@@ -271,6 +271,22 @@ def _format_missing_reference(
     )
 
 
+def _format_interaction(message: discord.Message) -> str:
+    if not message.interaction_metadata:
+        return message.content
+    # HACK: Message.interaction is deprecated, and discord.py disables any
+    # warning filter resulting in a bunch of warnings spammed in the logs even
+    # if it is ignored. There is no other way to get the name, and
+    # Message._interaction is not marked deprecated. Delectable.
+    if hasattr(message, "_interaction") and (interaction := message._interaction):  # pyright: ignore [reportPrivateUsage] # noqa: SLF001
+        prefix = "/" * (message.type != discord.MessageType.context_menu_command)
+        name = f"`{prefix}{interaction.name}`"
+    else:
+        name = "a command"
+    user = message.interaction_metadata.user
+    return f"-# *{user.mention} used {name}*\n{message.content}"
+
+
 def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
     fmt = f":{fmt}" if fmt is not None else ""
     return f"<t:{int(dt.timestamp())}{fmt}>"
@@ -369,7 +385,7 @@ async def move_message_via_webhook(
 
     subtext = _format_subtext(executor, msg_data)
     content, file = format_or_file(
-        msg_data.content,
+        _format_interaction(message),
         template=f"{{}}{subtext}",
         transform=_convert_nitro_emojis,
     )
