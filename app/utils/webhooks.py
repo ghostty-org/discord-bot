@@ -22,7 +22,19 @@ _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
 
 # A list of image formats supported by Discord, in the form of their file
 # extension (including the leading dot).
-SUPPORTED_IMAGE_FORMATS = (".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp")
+SUPPORTED_IMAGE_FORMATS = frozenset({".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"})
+
+# Non-system-message types taken from the description of
+# https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
+# However, also include bot commands, despite them being system messages.
+NON_SYSTEM_MESSAGE_TYPES = frozenset(
+    {
+        discord.MessageType.default,
+        discord.MessageType.reply,
+        discord.MessageType.chat_input_command,
+        discord.MessageType.context_menu_command,
+    }
+)
 
 
 def get_ghostty_guild() -> discord.Guild:
@@ -335,15 +347,7 @@ async def get_or_create_webhook(
 
 
 def message_can_be_moved(message: discord.Message) -> bool:
-    # Non-system-message types taken from the description of
-    # https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
-    # However, also allow bot commands, despite them being system messages.
-    return message.type in (
-        discord.MessageType.default,
-        discord.MessageType.reply,
-        discord.MessageType.chat_input_command,
-        discord.MessageType.context_menu_command,
-    )
+    return message.type in NON_SYSTEM_MESSAGE_TYPES
 
 
 async def move_message_via_webhook(
