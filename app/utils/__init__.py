@@ -119,6 +119,17 @@ async def try_dm(account: Account, content: str, **extras: Any) -> None:
         print(f"Failed to DM {account} with: {shorten(content, width=50)}")
 
 
+def post_has_tag(post: discord.Thread, substring: str) -> bool:
+    return any(substring in tag.name.casefold() for tag in post.applied_tags)
+
+
+def post_is_solved(post: discord.Thread) -> bool:
+    return any(
+        post_has_tag(post, tag)
+        for tag in ("solved", "moved to github", "duplicate", "stale")
+    )
+
+
 def escape_special(content: str) -> str:
     """
     Escape all text that Discord considers to be special.
