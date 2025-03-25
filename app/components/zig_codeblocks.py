@@ -25,7 +25,7 @@ MAX_CONTENT = 51_200  # 50 KiB
 MAX_ZIG_FILE_SIZE = 8_388_608  # 8 MiB
 VIEW_TIMEOUT = 60.0
 
-SGR_PATTERN = re.compile(r"\x1b\[[0-9;]+m")
+SGR_PATTERN = re.compile(r"\x1b\[[0-9;:]+m")
 THEME = DEFAULT_THEME.copy()
 del THEME["comments"]
 
