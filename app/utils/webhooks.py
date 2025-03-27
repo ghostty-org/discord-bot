@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import re
+from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -509,6 +510,51 @@ def format_or_file(
             BytesIO(message.encode()), filename="content.md"
         )
     return full_message, None
+
+
+class MovedMessageLookupFailed(Enum):
+    NOT_FOUND = -1
+    NOT_MOVED = -2
+
+
+async def get_moved_message(
+    message: discord.Message, *, webhook_name: str = "Ghostty Moderator"
+) -> discord.WebhookMessage | MovedMessageLookupFailed:
+    if message.webhook_id is None or isinstance(
+        message.channel,
+        # These types can't even have a webhook.
+        discord.DMChannel | discord.GroupChannel | discord.PartialMessageable,
+    ):
+        return MovedMessageLookupFailed.NOT_MOVED
+
+    if isinstance(message.channel, discord.Thread):
+        thread = message.channel
+        if (channel := thread.parent) is None:
+            return MovedMessageLookupFailed.NOT_FOUND
+    else:
+        channel = message.channel
+        thread = discord.utils.MISSING
+
+    for webhook in await channel.webhooks():
+        if webhook.id == message.webhook_id:
+            break
+    else:
+        return MovedMessageLookupFailed.NOT_MOVED
+    if webhook.name != webhook_name:
+        # More heuristics to determine if a webhook message is a moved message.
+        return MovedMessageLookupFailed.NOT_MOVED
+
+    try:
+        return await webhook.fetch_message(message.id, thread=thread)
+    except discord.Forbidden:
+        return MovedMessageLookupFailed.NOT_FOUND
+    except discord.NotFound:
+        # NOTE: while it may seem like this should be returning `NotFound`,
+        # this branch is run when the *webhook* couldn't find the associated
+        # message, rather than when the message doesn't exist. Since all moved
+        # messages are sent by the webhook, this branch symbolizes a message
+        # that isn't a moved message.
+        return MovedMessageLookupFailed.NOT_MOVED
 
 
 def _find_snowflake(content: str, type_: str) -> tuple[int, int] | tuple[None, None]:
