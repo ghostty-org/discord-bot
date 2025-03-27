@@ -51,7 +51,7 @@ class SelectChannel(discord.ui.View):
         )
         assert isinstance(webhook_channel, discord.TextChannel | discord.ForumChannel)
 
-        webhook = await get_or_create_webhook("Ghostty Moderator", webhook_channel)
+        webhook = await get_or_create_webhook(webhook_channel)
         await move_message_via_webhook(
             webhook, self.message, self.executor, thread=thread
         )
@@ -102,7 +102,7 @@ class HelpPostTitle(discord.ui.Modal, title="Turn into #help post"):
         )
         await interaction.response.defer(ephemeral=True)
 
-        webhook = await get_or_create_webhook("Ghostty Moderator", help_channel)
+        webhook = await get_or_create_webhook(help_channel)
         msg = await move_message_via_webhook(
             webhook,
             self._message,

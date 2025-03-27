@@ -132,7 +132,7 @@ class ZigCodeblockActions(discord.ui.View):
         )
         assert isinstance(webhook_channel, discord.TextChannel | discord.ForumChannel)
 
-        webhook = await get_or_create_webhook("Ghostty Moderator", webhook_channel)
+        webhook = await get_or_create_webhook(webhook_channel)
         self._message.content = self._replaced_message_content
         await move_message_via_webhook(
             webhook, self._message, thread=thread, include_move_marks=False
