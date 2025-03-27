@@ -511,6 +511,45 @@ def format_or_file(
     return full_message, None
 
 
+async def get_moved_message(
+    message: discord.Message, *, webhook_name: str = "Ghostty Moderator"
+) -> discord.WebhookMessage | None:
+    """
+    Returns None if it could not be acquired, and discord.utils.MISSING if the
+    provided message is not a moved message.
+    """
+    if message.webhook_id is None or isinstance(
+        message.channel,
+        # These types can't even have a webhook.
+        discord.DMChannel | discord.GroupChannel | discord.PartialMessageable,
+    ):
+        return discord.utils.MISSING
+
+    if isinstance(message.channel, discord.Thread):
+        thread = message.channel
+        if (channel := thread.parent) is None:
+            return None
+    else:
+        channel = message.channel
+        thread = discord.utils.MISSING
+
+    for webhook in await channel.webhooks():
+        if webhook.id == message.webhook_id:
+            break
+    else:
+        return discord.utils.MISSING
+    if webhook.name != webhook_name:
+        # More heuristics to determine if a webhook message is a moved message.
+        return discord.utils.MISSING
+
+    try:
+        return await webhook.fetch_message(message.id, thread=thread)
+    except discord.Forbidden:
+        return None
+    except discord.NotFound:
+        return discord.utils.MISSING
+
+
 def _find_snowflake(content: str, type_: str) -> tuple[int, int] | tuple[None, None]:
     """
     WARNING: this function does not account for Markdown features such as code
