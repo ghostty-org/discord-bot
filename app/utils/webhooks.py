@@ -394,7 +394,7 @@ class _SubText:
 
 
 async def get_or_create_webhook(
-    name: str, channel: discord.TextChannel | discord.ForumChannel
+    channel: discord.TextChannel | discord.ForumChannel, name: str = "Ghostty Moderator"
 ) -> discord.Webhook:
     webhooks = await channel.webhooks()
     for webhook in webhooks:
