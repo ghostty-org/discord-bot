@@ -146,6 +146,26 @@ class DeleteOriginalMessage(discord.ui.View):
         )
 
 
+class EditMessage(discord.ui.Modal, title="Edit Message"):
+    new_text: discord.ui.TextInput[Self] = discord.ui.TextInput(
+        label="New message content",
+        style=discord.TextStyle.long,
+        default=discord.utils.MISSING,
+        max_length=2000,
+    )
+
+    def __init__(self, message: MovedMessage) -> None:
+        self.new_text.default = message.content
+        super().__init__()
+        self._message = message
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        await self._message.edit(
+            content=self.new_text.value, allowed_mentions=discord.AllowedMentions.none()
+        )
+        await interaction.response.send_message("Message edited.", ephemeral=True)
+
+
 @bot.tree.context_menu(name="Move message")
 @discord.app_commands.default_permissions(manage_messages=True)
 @discord.app_commands.guild_only()
@@ -243,3 +263,34 @@ async def delete_moved_message(
 
     await message.delete()
     await interaction.response.send_message("Message deleted.", ephemeral=True)
+
+
+@bot.tree.context_menu(name="Edit moved message")
+@discord.app_commands.guild_only()
+async def edit_moved_message(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
+    assert not is_dm(interaction.user)
+
+    if message.created_at < MOVED_MESSAGE_MODIFICATION_CUTOFF or (
+        (moved_message := await MovedMessage.from_message(message))
+        is MovedMessageLookupFailed.NOT_FOUND
+    ):
+        await interaction.response.send_message(
+            "This message cannot be edited.", ephemeral=True
+        )
+        return
+
+    if moved_message is MovedMessageLookupFailed.NOT_MOVED:
+        await interaction.response.send_message(
+            "This message is not a moved message.", ephemeral=True
+        )
+        return
+
+    if interaction.user.id != moved_message.original_author_id:
+        await interaction.response.send_message(
+            "Only the author of a message can edit it.", ephemeral=True
+        )
+        return
+
+    await interaction.response.send_modal(EditMessage(moved_message))
