@@ -5,6 +5,9 @@ import discord
 from app.setup import bot, config
 from app.utils import (
     GuildTextChannel,
+    MovedMessageLookupFailed,
+    get_moved_message,
+    get_moved_message_author_id,
     get_or_create_webhook,
     is_dm,
     is_helper,
@@ -199,3 +202,42 @@ async def turn_into_help_post(
         return
 
     await interaction.response.send_modal(HelpPostTitle(message))
+
+
+@bot.tree.context_menu(name="Delete moved message")
+@discord.app_commands.guild_only()
+async def delete_moved_message(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
+    assert not is_dm(interaction.user)
+
+    if (
+        webhook_message := await get_moved_message(message)
+    ) is MovedMessageLookupFailed.NOT_FOUND:
+        await interaction.response.send_message(
+            "This message cannot be deleted.", ephemeral=True
+        )
+        return
+
+    if (
+        webhook_message is MovedMessageLookupFailed.NOT_MOVED
+        or (author_id := get_moved_message_author_id(webhook_message)) is None
+    ):
+        await interaction.response.send_message(
+            "This message is not a moved message.", ephemeral=True
+        )
+        return
+
+    if not (
+        interaction.user.id == author_id
+        or message.channel.permissions_for(interaction.user).manage_messages
+    ):
+        await interaction.response.send_message(
+            "You are either not the author, or do not have the required "
+            "permissions to delete messages.",
+            ephemeral=True,
+        )
+        return
+
+    await message.delete()
+    await interaction.response.send_message("Message deleted.", ephemeral=True)
