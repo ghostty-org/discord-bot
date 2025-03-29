@@ -178,6 +178,9 @@ message option:
   <img src="https://github.com/user-attachments/assets/0938881f-80ad-44d0-8414-915324f2761e" alt="/docs command message option" height="250px">
 </p>
 
+If a message is provided, a webhook will be used to send the message under the
+interactor's username.
+
 ## `/close`
 
 A command group to mark help channel posts as resolved, with various options for different resolution scenarios:

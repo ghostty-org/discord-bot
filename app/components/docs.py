@@ -9,6 +9,7 @@ from discord.app_commands import Choice, autocomplete
 
 from app.components.status import bot_status
 from app.setup import bot, config, gh
+from app.utils import get_or_create_webhook
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -125,11 +126,28 @@ async def docs(
     interaction: discord.Interaction, section: str, page: str, message: str = ""
 ) -> None:
     try:
-        await interaction.response.send_message(
-            f"{message}\n{get_docs_link(section, page)}"
-        )
+        if message and isinstance(
+            interaction.channel, discord.TextChannel | discord.ForumChannel
+        ):
+            webhook = await get_or_create_webhook(
+                "Ghostty Moderator", interaction.channel
+            )
+            await webhook.send(
+                f"{message}\n{get_docs_link(section, page)}",
+                username=interaction.user.display_name,
+                avatar_url=interaction.user.display_avatar.url,
+            )
+            await interaction.response.send_message(
+                "Documentation linked.", ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(get_docs_link(section, page))
     except ValueError as exc:
         await interaction.response.send_message(str(exc), ephemeral=True)
+    except discord.HTTPException:
+        await interaction.response.send_message(
+            "Message content too long.", ephemeral=True
+        )
 
 
 def get_docs_link(section: str, page: str) -> str:
