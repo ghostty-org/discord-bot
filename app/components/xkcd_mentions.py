@@ -59,7 +59,7 @@ async def xkcd_mention_message(
     message: discord.Message,
 ) -> tuple[list[discord.Embed], int]:
     embeds = []
-    matches = [m[1] for m in XKCD_REGEX.finditer(message.content)]
+    matches = list(dict.fromkeys(m[1] for m in XKCD_REGEX.finditer(message.content)))
     if len(matches) > 10:
         embeds = [
             discord.Embed(color=discord.Color.orange()).set_footer(
