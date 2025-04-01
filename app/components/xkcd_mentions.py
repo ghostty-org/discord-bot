@@ -58,10 +58,19 @@ class DeleteXKCDMention(DeleteMessage):
 async def xkcd_mention_message(
     message: discord.Message,
 ) -> tuple[list[discord.Embed], int]:
-    matches = (
-        xkcd_mention_cache.get(int(m[1])) for m in XKCD_REGEX.finditer(message.content)
-    )
-    embeds = await asyncio.gather(*matches)
+    embeds = []
+    matches = [m[1] for m in XKCD_REGEX.finditer(message.content)]
+    if len(matches) > 10:
+        embeds = [
+            discord.Embed(color=discord.Color.orange()).set_footer(
+                text="Some XKCD comics were omitted."
+            )
+        ]
+        matches = matches[:9]
+    embeds = [
+        *await asyncio.gather(*(xkcd_mention_cache.get(int(m)) for m in matches)),
+        *embeds,
+    ]
     return embeds, len(embeds)
 
 
