@@ -22,6 +22,14 @@ class XKCDMentionCache(TTRCache[int, discord.Embed]):
         url = f"https://xkcd.com/{key}"
         async with httpx.AsyncClient() as client:
             r = await client.get(f"{url}/info.0.json")
+        if not r.is_success:
+            error = (
+                f"XKCD #{key} does not exist."
+                if r.status_code == 404
+                else f"Unable to fetch XKCD #{key}."
+            )
+            self[key] = discord.Embed(color=discord.Color.red()).set_footer(text=error)
+            return
 
         xkcd = r.json()
         date = dt.datetime(
