@@ -68,7 +68,7 @@ xkcd_mention_linker = MessageLinker()
 class TranscriptPicker(discord.ui.View):
     select: discord.ui.Select[TranscriptPicker]
 
-    def __init__(self, transcripts: dict[int, tuple[str, str]]) -> None:
+    def __init__(self, transcripts: dict[int, tuple[str, str | None]]) -> None:
         super().__init__()
         self.transcripts = transcripts
         self._add_selection_box()
@@ -91,11 +91,16 @@ class TranscriptPicker(discord.ui.View):
 
     @staticmethod
     def format_transcript(
-        comic: int | str, name: str, transcript: str
+        comic: int | str, name: str, transcript: str | None
     ) -> discord.Embed:
-        return discord.Embed(
-            title=name, url=f"https://xkcd.com/{comic}", description=transcript
+        embed = discord.Embed(
+            title=name,
+            url=f"https://xkcd.com/{comic}",
+            description=transcript or "This comic has no transcript.",
         )
+        if not transcript:
+            embed.color = discord.Color.red()
+        return embed
 
 
 class XKCDMentionActions(DeleteMessage):
@@ -105,8 +110,8 @@ class XKCDMentionActions(DeleteMessage):
 
     async def _get_transcripts(
         self, embeds: list[discord.Embed]
-    ) -> tuple[dict[int, tuple[str, str]], int]:
-        transcripts: dict[int, tuple[str, str]] = {}
+    ) -> tuple[dict[int, tuple[str, str | None]], int]:
+        transcripts: dict[int, tuple[str, str | None]] = {}
         failed = 0
         for embed in embeds:
             if not (embed.url and embed.title):
@@ -117,7 +122,7 @@ class XKCDMentionActions(DeleteMessage):
                 continue
             if not transcript:
                 failed += 1
-                transcript = "This comic has no transcript."
+                transcript = None
             transcripts[number] = (embed.title, transcript)
         return transcripts, failed
 
