@@ -105,8 +105,9 @@ class XKCDMentionActions(DeleteMessage):
 
     async def _get_transcripts(
         self, embeds: list[discord.Embed]
-    ) -> dict[int, tuple[str, str]]:
+    ) -> tuple[dict[int, tuple[str, str]], int]:
         transcripts: dict[int, tuple[str, str]] = {}
+        failed = 0
         for embed in embeds:
             if not (embed.url and embed.title):
                 continue
@@ -114,8 +115,11 @@ class XKCDMentionActions(DeleteMessage):
             _, transcript = await xkcd_mention_cache.get(number)
             if transcript is None:
                 continue
+            if not transcript:
+                failed += 1
+                transcript = "This comic has no transcript."
             transcripts[number] = (embed.title, transcript)
-        return transcripts
+        return transcripts, failed
 
     @discord.ui.button(
         label="Show Transcript", emoji="📜", style=discord.ButtonStyle.gray
@@ -126,11 +130,30 @@ class XKCDMentionActions(DeleteMessage):
         _button: discord.ui.Button[XKCDMentionActions],
     ) -> None:
         reply, *_ = self.linker.get(self.message)
-        transcripts = await self._get_transcripts(reply.embeds)
-        await interaction.response.send_message(
-            view=TranscriptPicker(transcripts),
-            ephemeral=True,
-        )
+        transcripts, failed = await self._get_transcripts(reply.embeds)
+        match len(transcripts) - failed:
+            case 0:
+                # None of the XKCD comics have a transcript available.
+                await interaction.response.send_message(
+                    "There are no transcripts available.", ephemeral=True
+                )
+            case 1:
+                # Exactly one XKCD comic has a transcript available.
+                # NOTE: this does not mean that there is only one comic, which
+                # is why a list comprehension is still needed. When there is no
+                # transcript, the embed simply contains an error message.
+                await interaction.response.send_message(
+                    embeds=[
+                        TranscriptPicker.format_transcript(comic, name, transcript)
+                        for comic, (name, transcript) in transcripts.items()
+                    ],
+                    ephemeral=True,
+                )
+            case _:
+                await interaction.response.send_message(
+                    view=TranscriptPicker(transcripts),
+                    ephemeral=True,
+                )
 
 
 async def xkcd_mention_message(
