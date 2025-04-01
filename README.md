@@ -201,6 +201,10 @@ closed after one day when they have been marked as such using the post tags.
 Information about a `#help` channel scan is also published in the bot log
 channel.
 
+Bumps to old solved posts (older than one month) are also handled by warning the
+user and locking the thread, to prevent often unrelated help requests in posts
+that are no longer relevant.
+
 ## Entity mentions
 
 Automatic links to Ghostty's GitHub issues/PRs/discussions ("entities") when a
