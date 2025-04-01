@@ -4,6 +4,7 @@ import re
 
 import discord
 import httpx
+from pydantic import BaseModel
 
 from app.utils import (
     DeleteMessage,
@@ -15,6 +16,15 @@ from app.utils import (
 )
 
 XKCD_REGEX = re.compile(r"\bxkcd#(\d+)", re.IGNORECASE)
+
+
+class XKCD(BaseModel):
+    day: int
+    month: int
+    year: int
+    img: str
+    title: str
+    alt: str
 
 
 class XKCDMentionCache(TTRCache[int, discord.Embed]):
@@ -31,17 +41,17 @@ class XKCDMentionCache(TTRCache[int, discord.Embed]):
             self[key] = discord.Embed(color=discord.Color.red()).set_footer(text=error)
             return
 
-        xkcd = r.json()
+        xkcd = XKCD(**r.json())
         date = dt.datetime(
-            day=int(xkcd["day"]),
-            month=int(xkcd["month"]),
-            year=int(xkcd["year"]),
+            day=xkcd.day,
+            month=xkcd.month,
+            year=xkcd.year,
             tzinfo=dt.UTC,
         ).strftime("%B %-d, %Y")
         self[key] = (
-            discord.Embed(title=xkcd["title"], url=url)
-            .set_image(url=xkcd["img"])
-            .set_footer(text=f"{xkcd['alt']} • {date}")
+            discord.Embed(title=xkcd.title, url=url)
+            .set_image(url=xkcd.img)
+            .set_footer(text=f"{xkcd.alt} • {date}")
         )
 
 
