@@ -22,6 +22,7 @@ community moderation more efficient.
 - [Features](#features)
   - [`/docs`](#docs)
   - [`/close`](#close)
+  - [`#help` channel moderation](#help-channel-moderation)
   - [Entity mentions](#entity-mentions)
   - [Message filters](#message-filters)
   - [Moving messages](#moving-messages)
@@ -192,6 +193,13 @@ A command group to mark help channel posts as resolved, with various options for
 | `/close stale`     | Stale           | -                                         | -                                                  |
 | `/close moved`     | Moved to GitHub | GitHub entity number                      | Links to the GitHub entity                         |
 | `/close duplicate` | Duplicate       | Help post ID/link or GitHub entity number | Links to original post or GitHub entity            |
+
+## `#help` channel moderation
+
+Similar to [`/close`](#close), posts in the `#help` channel are automatically
+closed after one day when they have been marked as such using the post tags.
+Information about a `#help` channel scan is also published in the bot log
+channel.
 
 ## Entity mentions
 
