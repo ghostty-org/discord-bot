@@ -100,6 +100,9 @@ class TranscriptPicker(discord.ui.View):
         )
         if not transcript:
             embed.color = discord.Color.red()
+        if len(embed) > 6000:
+            embed.color = discord.Color.red()
+            embed.description = "This comic's transcript is too long to send."
         return embed
 
 
