@@ -100,11 +100,13 @@ class TranscriptPicker(discord.ui.View):
         self.add_item(self.select)
 
     async def _callback(self, interaction: discord.Interaction) -> None:
-        embeds: list[discord.Embed] = []
-        for comic in self.select.values:
-            name, transcript = self.transcripts[int(comic)]
-            embeds.append(format_transcript(comic, name, transcript))
-        await interaction.response.edit_message(embeds=embeds, view=None)
+        await interaction.response.edit_message(
+            embeds=[
+                format_transcript(comic, *self.transcripts[int(comic)])
+                for comic in self.select.values
+            ],
+            view=None,
+        )
 
 
 class XKCDMentionActions(DeleteMessage):
