@@ -65,6 +65,22 @@ xkcd_mention_cache = XKCDMentionCache(hours=12)
 xkcd_mention_linker = MessageLinker()
 
 
+def format_transcript(
+    comic: int | str, name: str, transcript: str | None
+) -> discord.Embed:
+    embed = discord.Embed(
+        title=name,
+        url=f"https://xkcd.com/{comic}",
+        description=transcript or "This comic has no transcript.",
+    )
+    if not transcript:
+        embed.color = discord.Color.red()
+    if len(embed) > 6000:
+        embed.color = discord.Color.red()
+        embed.description = "This comic's transcript is too long to send."
+    return embed
+
+
 class TranscriptPicker(discord.ui.View):
     select: discord.ui.Select[TranscriptPicker]
 
@@ -86,24 +102,8 @@ class TranscriptPicker(discord.ui.View):
         embeds: list[discord.Embed] = []
         for comic in self.select.values:
             name, transcript = self.transcripts[int(comic)]
-            embeds.append(self.format_transcript(comic, name, transcript))
+            embeds.append(format_transcript(comic, name, transcript))
         await interaction.response.edit_message(embeds=embeds, view=None)
-
-    @staticmethod
-    def format_transcript(
-        comic: int | str, name: str, transcript: str | None
-    ) -> discord.Embed:
-        embed = discord.Embed(
-            title=name,
-            url=f"https://xkcd.com/{comic}",
-            description=transcript or "This comic has no transcript.",
-        )
-        if not transcript:
-            embed.color = discord.Color.red()
-        if len(embed) > 6000:
-            embed.color = discord.Color.red()
-            embed.description = "This comic's transcript is too long to send."
-        return embed
 
 
 class XKCDMentionActions(DeleteMessage):
@@ -152,7 +152,7 @@ class XKCDMentionActions(DeleteMessage):
                 # transcript, the embed simply contains an error message.
                 await interaction.response.send_message(
                     embeds=[
-                        TranscriptPicker.format_transcript(comic, name, transcript)
+                        format_transcript(comic, name, transcript)
                         for comic, (name, transcript) in transcripts.items()
                     ],
                     ephemeral=True,
