@@ -128,7 +128,7 @@ Below are explanations for each variable:
 
 ## 5. Running the bot
 
-This bot runs on Python 3.12+ and is managed with [uv]. To get started:
+This bot runs on Python 3.12 and is managed with [uv]. To get started:
 1. Install [uv].
 2. Run the bot:
    ```console
