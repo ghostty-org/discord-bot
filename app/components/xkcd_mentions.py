@@ -19,6 +19,7 @@ from app.utils import (
 
 SECONDS_IN_HOUR = 3600
 XKCD_REGEX = re.compile(r"\bxkcd#(\d+)", re.IGNORECASE)
+XKCD_URL = "https://xkcd.com/{}"
 
 
 class XKCD(BaseModel):
@@ -33,7 +34,7 @@ class XKCD(BaseModel):
 
 class XKCDMentionCache(TTRCache[int, tuple[discord.Embed, str | None]]):
     async def fetch(self, key: int) -> None:
-        url = f"https://xkcd.com/{key}"
+        url = XKCD_URL.format(key)
         async with httpx.AsyncClient() as client:
             r = await client.get(f"{url}/info.0.json")
         if not r.is_success:
@@ -70,7 +71,7 @@ def format_transcript(
 ) -> discord.Embed:
     embed = discord.Embed(
         title=name,
-        url=f"https://xkcd.com/{comic}",
+        url=XKCD_URL.format(comic),
         description=transcript or "This comic has no transcript.",
     )
     if not transcript:
