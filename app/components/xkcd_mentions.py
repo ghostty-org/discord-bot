@@ -209,5 +209,6 @@ xkcd_mention_edit_hook = create_edit_hook(
     message_processor=xkcd_mention_message,
     interactor=handle_xkcd_mentions,
     view_type=XKCDMentionActions,
+    view_timeout=SECONDS_IN_HOUR,
     embed_mode=True,
 )
