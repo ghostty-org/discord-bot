@@ -17,6 +17,9 @@ from app.utils import (
     remove_view_after_timeout,
 )
 
+type Transcripts = dict[int, tuple[str, str | None]]
+
+
 SECONDS_IN_HOUR = 3600
 XKCD_REGEX = re.compile(r"\bxkcd#(\d+)", re.IGNORECASE)
 XKCD_URL = "https://xkcd.com/{}"
@@ -85,7 +88,7 @@ def format_transcript(
 class TranscriptPicker(discord.ui.View):
     select: discord.ui.Select[TranscriptPicker]
 
-    def __init__(self, transcripts: dict[int, tuple[str, str | None]]) -> None:
+    def __init__(self, transcripts: Transcripts) -> None:
         super().__init__()
         self.transcripts = transcripts
         self._add_selection_box()
@@ -116,8 +119,8 @@ class XKCDMentionActions(DeleteMessage):
 
     async def _get_transcripts(
         self, embeds: list[discord.Embed]
-    ) -> tuple[dict[int, tuple[str, str | None]], int]:
-        transcripts: dict[int, tuple[str, str | None]] = {}
+    ) -> tuple[Transcripts, int]:
+        transcripts: Transcripts = {}
         failed = 0
         for embed in embeds:
             if not (embed.url and embed.title):
