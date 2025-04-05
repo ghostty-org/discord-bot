@@ -48,7 +48,7 @@ class MessageLinker:
         return False
 
 
-def create_edit_hook(
+def create_edit_hook(  # noqa: PLR0913
     *,
     linker: MessageLinker,
     message_processor: Callable[
@@ -56,6 +56,7 @@ def create_edit_hook(
     ],
     interactor: Callable[[discord.Message], Awaitable[None]],
     view_type: Callable[[discord.Message, int], discord.ui.View],
+    view_timeout: float = 30.0,
     embed_mode: bool = False,
 ) -> Callable[[discord.Message, discord.Message], Awaitable[None]]:
     def resolve_embed_mode(
@@ -100,7 +101,7 @@ def create_edit_hook(
             view=view_type(after, count),
             allowed_mentions=discord.AllowedMentions.none(),
         )
-        await remove_view_after_timeout(reply)
+        await remove_view_after_timeout(reply, view_timeout)
 
     return edit_hook
 

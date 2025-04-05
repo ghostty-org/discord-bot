@@ -66,6 +66,9 @@ async def resolve_repo_signatures(
             case None, "bobr":
                 # A touch of personalization
                 yield config.GITHUB_ORG, config.GITHUB_REPOS["bot"], number
+            case None, "xkcd":
+                # Ignore the xkcd prefix, as it is handled by xkcd_mentions.py.
+                continue
             case None, repo:
                 # Only a name provided, e.g. uv#8020.
                 with suppress(RequestFailed, RuntimeError):
