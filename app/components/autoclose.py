@@ -7,6 +7,7 @@ from discord.ext import tasks
 
 from app.components.status import bot_status
 from app.setup import bot, config
+from app.utils import post_is_solved
 
 
 @tasks.loop(hours=1)
@@ -17,10 +18,7 @@ async def autoclose_solved_posts() -> None:
     help_channel = cast(discord.ForumChannel, bot.get_channel(config.HELP_CHANNEL_ID))
     open_posts = len(help_channel.threads)
     for post in help_channel.threads:
-        if post.archived or not any(
-            _has_tag(post, tag)
-            for tag in ("solved", "moved to github", "duplicate", "stale")
-        ):
+        if post.archived or not post_is_solved(post):
             continue
         if post.last_message_id is None:
             failures.append(post)
@@ -42,10 +40,6 @@ async def autoclose_solved_posts() -> None:
     if failures:
         msg += f"Failed to check {_post_list(failures)}"
     await log_channel.send(msg)
-
-
-def _has_tag(post: discord.Thread, substring: str) -> bool:
-    return any(substring in tag.name.casefold() for tag in post.applied_tags)
 
 
 def _post_list(posts: Sequence[discord.Thread]) -> str:

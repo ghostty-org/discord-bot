@@ -24,6 +24,7 @@ from app.components.entity_mentions import (
     reply_with_comments,
     reply_with_entities,
 )
+from app.components.lock_old_posts import check_for_old_posts
 from app.components.message_filter import check_message_filters
 from app.components.status import bot_status, report_status
 from app.components.zig_codeblocks import (
@@ -90,6 +91,7 @@ async def on_message(message: discord.Message) -> None:
         check_for_zig_code(message),  # Check for Zig code blocks and format them
         reply_with_code(message),  # Look for GitHub code links and reply with contents
         reply_with_comments(message),  # Check for entity comments and reply with embeds
+        check_for_old_posts(message),  # Check for bumps of old help posts and lock them
     ]
 
     # Look for issue/PR/discussion mentions and name/link them
