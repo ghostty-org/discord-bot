@@ -175,8 +175,9 @@ async def xkcd_mention_message(
     omitted = None
     if len(matches) > 10:
         omitted = discord.Embed(color=discord.Color.orange()).set_footer(
-            text="Some XKCD comics were omitted."
+            text=f"{len(matches) - 9} XKCD comics were omitted."
         )
+        # Nine instead of ten to account for the `omitted` embed.
         matches = matches[:9]
     tasks = (xkcd_mention_cache.get(int(m)) for m in matches)
     embeds = [embed for embed, _ in await asyncio.gather(*tasks)]
