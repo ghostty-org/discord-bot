@@ -52,15 +52,12 @@ class XKCDMentionCache(TTRCache[int, tuple[discord.Embed, str | None]]):
 
         xkcd = XKCD(**r.json())
         date = dt.datetime(
-            day=xkcd.day,
-            month=xkcd.month,
-            year=xkcd.year,
-            tzinfo=dt.UTC,
-        ).strftime("%B %-d, %Y")
+            day=xkcd.day, month=xkcd.month, year=xkcd.year, tzinfo=dt.UTC
+        )
         self[key] = (
             discord.Embed(title=xkcd.title, url=url)
             .set_image(url=xkcd.img)
-            .set_footer(text=f"{xkcd.alt} • {date}"),
+            .set_footer(text=f"{xkcd.alt} • {date:%B %-d, %Y}"),
             xkcd.transcript,
         )
 
