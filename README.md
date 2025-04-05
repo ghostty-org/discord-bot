@@ -23,6 +23,7 @@ community moderation more efficient.
   - [`/docs`](#docs)
   - [`/close`](#close)
   - [Entity mentions](#entity-mentions)
+  - [XKCD mentions](#xkcd-mentions)
   - [Message filters](#message-filters)
   - [Moving messages](#moving-messages)
 
@@ -220,6 +221,19 @@ subsequent lookups).
 
 <img src="https://github.com/user-attachments/assets/ce0df1f6-baac-43d7-9bee-1f2bdfda2ac4" alt="Entity mentions example" width="75%">
 
+## XKCD mentions
+
+Similar to the above feature, entity mentions with a prefix of `xkcd`, such as
+`xkcd#1172`, will be replied to with an embed containing the XKCD's contents.
+Message edits and deletion are also handled, and a “🗑️ Delete” button is
+provided for one hour.
+
+Alongside the delete button, a “📜 Show Transcript” button is provided to read
+the transcript of any XKCD comic that is attached to a message, if one is
+available. The user is given a select box to pick the XKCD comic(s) they want to
+see the transcript of if multiple are present.
+
+<img src="TODO" alt="XKCD mentions example" width=75%">
 
 ## Message filters
 
