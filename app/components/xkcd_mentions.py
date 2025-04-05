@@ -172,22 +172,16 @@ async def xkcd_mention_message(
 ) -> tuple[list[discord.Embed], int]:
     embeds = []
     matches = list(dict.fromkeys(m[1] for m in XKCD_REGEX.finditer(message.content)))
+    omitted = None
     if len(matches) > 10:
-        embeds = [
-            discord.Embed(color=discord.Color.orange()).set_footer(
-                text="Some XKCD comics were omitted."
-            )
-        ]
+        omitted = discord.Embed(color=discord.Color.orange()).set_footer(
+            text="Some XKCD comics were omitted."
+        )
         matches = matches[:9]
-    embeds = [
-        *(
-            embed
-            for embed, _ in await asyncio.gather(
-                *(xkcd_mention_cache.get(int(m)) for m in matches)
-            )
-        ),
-        *embeds,
-    ]
+    tasks = (xkcd_mention_cache.get(int(m)) for m in matches)
+    embeds = [embed for embed, _ in await asyncio.gather(*tasks)]
+    if omitted:
+        embeds.append(omitted)
     return embeds, len(embeds)
 
 
