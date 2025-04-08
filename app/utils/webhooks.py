@@ -102,8 +102,8 @@ def _unattachable_embed(unattachable_elem: str) -> discord.Embed:
 
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
     """
-    Converts a custom emoji to a concealed hyperlink.  Set `force` to True
-    to convert emojis in the current guild too.
+    Convert custom emojis to concealed hyperlinks.  Set `force` to True to
+    convert emojis in the current guild too.
     """
     guild = get_ghostty_guild()
 
