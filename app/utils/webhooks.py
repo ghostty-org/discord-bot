@@ -115,7 +115,7 @@ def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
 
         ext = "gif" if animated else "webp"
         tag = animated and "&animated=true"
-        return f"[{name}](https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name})"
+        return f"[{name}](<https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name}>)"
 
     return _EMOJI_REGEX.sub(replace_nitro_emoji, content)
 
@@ -302,7 +302,7 @@ def _format_subtext(
             f"{emoji} x{reaction.count}"
             if isinstance(emoji := reaction.emoji, str)
             or getattr(emoji, "is_usable", lambda: False)()
-            else f"[{emoji.name}]({emoji.url}) x{reaction.count}"
+            else f"[{emoji.name}](<{emoji.url}>) x{reaction.count}"
             for reaction in reactions
         ]
         lines.append("   ".join(formatted_reactions))
