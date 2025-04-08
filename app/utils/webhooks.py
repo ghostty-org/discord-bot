@@ -299,10 +299,10 @@ def _format_subtext(
     lines: list[str] = []
     if reactions := msg_data.raw_reactions:
         formatted_reactions = [
-            f"{emoji} x{reaction.count}"
+            f"{emoji} ×{reaction.count}"  # noqa: RUF001
             if isinstance(emoji := reaction.emoji, str)
             or getattr(emoji, "is_usable", lambda: False)()
-            else f"[{emoji.name}](<{emoji.url}>) x{reaction.count}"
+            else f"[{emoji.name}](<{emoji.url}>) ×{reaction.count}"  # noqa: RUF001
             for reaction in reactions
         ]
         lines.append("   ".join(formatted_reactions))
