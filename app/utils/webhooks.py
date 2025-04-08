@@ -297,8 +297,15 @@ def _format_subtext(
     include_timestamp: bool = True,
 ) -> str:
     lines: list[str] = []
-    if reactions := msg_data.reactions.items():
-        lines.append("   ".join(f"{emoji} x{count}" for emoji, count in reactions))
+    if reactions := msg_data.raw_reactions:
+        formatted_reactions = [
+            f"{emoji} x{reaction.count}"
+            if isinstance(emoji := reaction.emoji, str)
+            or getattr(emoji, "is_usable", lambda: False)()
+            else f"[{emoji.name}]({emoji.url}) x{reaction.count}"
+            for reaction in reactions
+        ]
+        lines.append("   ".join(formatted_reactions))
     if msg_data.created_at > dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=12):
         include_timestamp = False
     if include_timestamp:
