@@ -1,4 +1,5 @@
 import re
+import string
 import urllib.parse
 from collections.abc import AsyncIterator
 from typing import NamedTuple
@@ -100,10 +101,13 @@ def _format_snippet(snippet: Snippet) -> str:
         else f"[line {line_num}](<{file_url}#L{line_num}>)"
     )
     unquoted_path = urllib.parse.unquote(snippet.path)
+    ref_type = (
+        "revision" if all(c in string.hexdigits for c in snippet.rev) else "branch"
+    )
     return (
         f"[`{unquoted_path}`](<{file_url}>), {range_info}"
         f"\n-# Repo: [`{snippet.repo}`](<{repo_url}>),"
-        f" revision: [`{snippet.rev}`](<{tree_url}>)"
+        f" {ref_type}: [`{snippet.rev}`](<{tree_url}>)"
         f"\n```{snippet.lang}\n{snippet.body}\n```"
     )
 
