@@ -102,8 +102,8 @@ def _unattachable_embed(unattachable_elem: str) -> discord.Embed:
 
 def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
     """
-    Converts a custom emoji to a concealed hyperlink.  Set `force` to True
-    to convert emojis in the current guild too.
+    Convert custom emojis to concealed hyperlinks.  Set `force` to True to
+    convert emojis in the current guild too.
     """
     guild = get_ghostty_guild()
 
@@ -115,7 +115,7 @@ def _convert_nitro_emojis(content: str, *, force: bool = False) -> str:
 
         ext = "gif" if animated else "webp"
         tag = animated and "&animated=true"
-        return f"[{name}](https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name})"
+        return f"[{name}](<https://cdn.discordapp.com/emojis/{id_}.{ext}?size=48{tag}&name={name}>)"
 
     return _EMOJI_REGEX.sub(replace_nitro_emoji, content)
 
@@ -297,8 +297,15 @@ def _format_subtext(
     include_timestamp: bool = True,
 ) -> str:
     lines: list[str] = []
-    if reactions := msg_data.reactions.items():
-        lines.append("   ".join(f"{emoji} x{count}" for emoji, count in reactions))
+    if reactions := msg_data.raw_reactions:
+        formatted_reactions = [
+            f"{emoji} ×{reaction.count}"  # noqa: RUF001
+            if isinstance(emoji := reaction.emoji, str)
+            or getattr(emoji, "is_usable", lambda: False)()
+            else f"[{emoji.name}](<{emoji.url}>) ×{reaction.count}"  # noqa: RUF001
+            for reaction in reactions
+        ]
+        lines.append("   ".join(formatted_reactions))
     if msg_data.created_at > dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=12):
         include_timestamp = False
     if include_timestamp:
