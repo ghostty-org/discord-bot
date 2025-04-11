@@ -89,15 +89,21 @@ async def get_snippets(content: str) -> AsyncIterator[Snippet]:
 
 
 def _format_snippet(snippet: Snippet) -> str:
+    repo_url = f"https://github.com/{snippet.repo}"
+    tree_url = f"{repo_url}/tree/{snippet.rev}"
+    file_url = f"{repo_url}/blob/{snippet.rev}/{snippet.path}"
+    line_num = snippet.range.start + 1
     range_info = (
-        f"lines {snippet.range.start + 1}–{snippet.range.stop}"  # noqa: RUF001
-        if snippet.range.stop > snippet.range.start + 1
-        else f"line {snippet.range.start + 1}"
+        f"[lines {line_num}–{snippet.range.stop}]"  # noqa: RUF001
+        f"(<{file_url}#L{line_num}-L{snippet.range.stop}>)"  # Not an en dash.
+        if snippet.range.stop > line_num
+        else f"[line {line_num}](<{file_url}#L{line_num}>)"
     )
     unquoted_path = urllib.parse.unquote(snippet.path)
     return (
-        f"`{unquoted_path}`, {range_info}"
-        f"\n-# Repo: `{snippet.repo}`, revision: `{snippet.rev}`"
+        f"[`{unquoted_path}`](<{file_url}>), {range_info}"
+        f"\n-# Repo: [`{snippet.repo}`](<{repo_url}>),"
+        f" revision: [`{snippet.rev}`](<{tree_url}>)"
         f"\n```{snippet.lang}\n{snippet.body}\n```"
     )
 
