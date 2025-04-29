@@ -402,13 +402,14 @@ def message_can_be_moved(message: discord.Message) -> bool:
     return message.type in NON_SYSTEM_MESSAGE_TYPES
 
 
-async def move_message_via_webhook(
+async def move_message_via_webhook(  # noqa: PLR0913
     webhook: discord.Webhook,
     message: discord.Message,
     executor: discord.Member | None = None,
     *,
     thread: discord.abc.Snowflake = discord.utils.MISSING,
     thread_name: str = discord.utils.MISSING,
+    include_move_marks: bool = True,
 ) -> discord.WebhookMessage:
     """
     WARNING: it is the caller's responsibility to check message_can_be_moved()
@@ -452,9 +453,8 @@ async def move_message_via_webhook(
         poll = message.poll
 
     # The if expression is to skip the poll ended message if there was no poll.
-    subtext = _SubText(
-        msg_data, executor, poll if message.poll is not None else None
-    ).format()
+    s = _SubText(msg_data, executor, poll if message.poll is not None else None)
+    subtext = s.format() if include_move_marks else s.format_simple()
     content, file = format_or_file(
         _format_interaction(message),
         template=f"{{}}\n{subtext}",
