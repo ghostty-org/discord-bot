@@ -306,6 +306,7 @@ def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
 class _SubText:
     reactions: str
     timestamp: str
+    author: str
     move_hint: str
     skipped: str
     poll_error: str
@@ -319,6 +320,7 @@ class _SubText:
         self.msg_data = msg_data
         self._format_reactions()
         self._format_timestamp()
+        self.author = f"Authored by {msg_data.author.mention}"
         assert isinstance(self.msg_data.channel, GuildTextChannel)
         self.move_hint = (
             f"Moved from {self.msg_data.channel.mention} by {executor.mention}"
@@ -361,8 +363,13 @@ class _SubText:
         return f"Skipped {skipped} large attachment{'s' * (skipped != 1)}"
 
     def format(self) -> str:
-        context = (
+        original_message_info = (
+            self.author,
+            " on " if self.author and self.timestamp else "",
             self.timestamp,
+        )
+        context = (
+            "".join(original_message_info),
             self.move_hint,
             self.skipped,
             self.poll_error,
