@@ -20,6 +20,8 @@ GuildTextChannel = discord.TextChannel | discord.Thread
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
 
+_SNOWFLAKE_REGEX = re.compile(r"<(\D{0,2})(\d+)>", re.ASCII)
+
 # A list of image formats supported by Discord, in the form of their file
 # extension (including the leading dot).
 SUPPORTED_IMAGE_FORMATS = frozenset({".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"})
@@ -304,6 +306,13 @@ def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
 
 
 class _SubText:
+    # WARNING: get_moved_message_author_id() makes a lot of assumptions about
+    # the structure of the subtext; be careful when editing this as
+    # invalidating the previous expected structure can break editing and
+    # deletion of messages moved before the change was merged or ALLOW THE
+    # WRONG PERSON TO EDIT OR DELETE A MOVED MESSAGE, *even if* that function
+    # is updated to match the new structure, as this subtext change won't
+    # retroactively apply to previously moved messages on Discord's servers.
     reactions: str
     timestamp: str
     author: str
@@ -457,6 +466,8 @@ async def move_message_via_webhook(  # noqa: PLR0913
     subtext = s.format() if include_move_marks else s.format_simple()
     content, file = format_or_file(
         _format_interaction(message),
+        # WARNING: the subtext must always be on the very last line for
+        # get_moved_message_author_id() to function.
         template=f"{{}}\n{subtext}",
         transform=_convert_nitro_emojis,
     )
@@ -498,3 +509,47 @@ def format_or_file(
             BytesIO(message.encode()), filename="content.md"
         )
     return full_message, None
+
+
+def _find_snowflake(content: str, type_: str) -> tuple[int, int] | tuple[None, None]:
+    """
+    WARNING: this function does not account for Markdown features such as code
+    blocks that may disarm a snowflake.
+    """
+    # NOTE: while this function could just return tuple[int, int] | None, that
+    # makes it less convenient to destructure the return value.
+    snowflake = _SNOWFLAKE_REGEX.search(content)
+    if snowflake is None or snowflake[1] != type_:
+        return None, None
+    return int(snowflake[2]), snowflake.span()[0]
+
+
+def get_moved_message_author_id(message: discord.WebhookMessage) -> int | None:
+    # NOTE: this function takes a discord.WebhookMessage instead of
+    # a discord.Message to force the caller to ensure that the requested
+    # message is actually from a webhook.
+
+    # HACK: as far as I know, Discord does not provide any way to attach
+    # a hidden number to a webhook message, nor does it provide a way to link
+    # a webhook message to a user. Thus, this information is extracted from the
+    # subtext of moved messages.
+    try:
+        subtext = message.content.splitlines()[-1]
+    except IndexError:
+        return None
+    # Heuristics to determine if a message is really a moved message.
+    if not subtext.startswith("-# "):
+        return None
+    # One other thing that could be checked is whether content.splitlines() is
+    # at least two elements long; that would backfire when moved media or
+    # forwards is passed through this function, however, as those move messages
+    # don't contain anything except the subtext in their `Message.content`.
+
+    # If we have a channel mention, the executor is present; discard that part
+    # so that the executor is not accidentally picked as the author.
+    _, pos = _find_snowflake(subtext, "#")
+    if pos is not None:
+        subtext = subtext[:pos]
+
+    snowflake, _ = _find_snowflake(subtext, "@")
+    return snowflake
