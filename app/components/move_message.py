@@ -8,6 +8,7 @@ from app.utils import (
     GuildTextChannel,
     MovedMessage,
     MovedMessageLookupFailed,
+    SplitSubtext,
     get_or_create_webhook,
     is_dm,
     is_helper,
@@ -290,11 +291,12 @@ class ChooseMessageAction(discord.ui.View):
         await interaction.response.edit_message(
             content=f"Created a thread: {thread.mention}.", view=None
         )
+        split_subtext = SplitSubtext(self._message)
         await thread.send(
             f"{interaction.user.mention}, here are the contents of your message:"
         )
         await thread.send(
-            self._message.content, allowed_mentions=discord.AllowedMentions.none()
+            split_subtext.content, allowed_mentions=discord.AllowedMentions.none()
         )
         await thread.send(EDIT_IN_THREAD_HINT)
 
@@ -310,17 +312,21 @@ class EditMessage(discord.ui.Modal, title="Edit Message"):
         label="New message content",
         style=discord.TextStyle.long,
         default=discord.utils.MISSING,
-        max_length=2000,
     )
 
     def __init__(self, message: MovedMessage) -> None:
-        self.new_text.default = message.content
+        split_subtext = SplitSubtext(message)
+        self._subtext = split_subtext.format()
+        self.new_text.default = split_subtext.content
+        # Subtract one to account for the newline character.
+        self.new_text.max_length = 2000 - len(self._subtext) - 1
         super().__init__()
         self._message = message
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await self._message.edit(
-            content=self.new_text.value, allowed_mentions=discord.AllowedMentions.none()
+            content=f"{self.new_text.value}\n{self._subtext}",
+            allowed_mentions=discord.AllowedMentions.none(),
         )
         await interaction.response.send_message("Message edited.", ephemeral=True)
 
