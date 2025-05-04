@@ -51,18 +51,23 @@ def create_edit_hook(
     *,
     linker: MessageLinker,
     message_processor: Callable[
-        [discord.Message], Awaitable[tuple[str | list[discord.Embed], int]]
+        [discord.Message],
+        Awaitable[
+            tuple[str | tuple[str, list[discord.File]] | list[discord.Embed], int]
+        ],
     ],
     interactor: Callable[[discord.Message], Awaitable[None]],
     view_type: Callable[[discord.Message, int], discord.ui.View],
     view_timeout: float = 30.0,
 ) -> Callable[[discord.Message, discord.Message], Awaitable[None]]:
     def extract_content(
-        content: str | list[discord.Embed],
-    ) -> tuple[str, list[discord.Embed]]:
+        content: str | tuple[str, list[discord.File]] | list[discord.Embed],
+    ) -> tuple[str, list[discord.File], list[discord.Embed]]:
         if isinstance(content, list):
-            return "", content
-        return content, []
+            return "", [], content
+        if isinstance(content, str):
+            return content, [], []
+        return content[0], content[1], []
 
     async def edit_hook(before: discord.Message, after: discord.Message) -> None:
         if before.content == after.content:
@@ -74,7 +79,7 @@ def create_edit_hook(
             return
 
         if not (replies := linker.get(before)):
-            if not old_objects[1]:
+            if old_objects[1] <= 0:
                 # There were no objects before, so treat this as a new message
                 await interactor(after)
             # The message was removed from the linker at some point
@@ -91,10 +96,16 @@ def create_edit_hook(
         if linker.unlink_if_expired(reply):
             return
 
-        content, embeds = extract_content(content)
+        content, files, embeds = extract_content(content)
+        if not (content or files or embeds):
+            # The message is empty, don't send a message with only a view
+            linker.unlink(before)
+            await reply.delete()
+            return
         await reply.edit(
             content=content,
             embeds=embeds,
+            attachments=files,
             suppress=not embeds,
             view=view_type(after, count),
             allowed_mentions=discord.AllowedMentions.none(),
