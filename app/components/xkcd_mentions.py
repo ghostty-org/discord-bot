@@ -104,5 +104,4 @@ xkcd_mention_edit_hook = create_edit_hook(
     message_processor=xkcd_mention_message,
     interactor=handle_xkcd_mentions,
     view_type=DeleteButton,
-    embed_mode=True,
 )
