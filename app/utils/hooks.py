@@ -3,7 +3,6 @@ import datetime as dt
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from typing import cast
 
 import discord
 
@@ -48,7 +47,7 @@ class MessageLinker:
         return False
 
 
-def create_edit_hook(  # noqa: PLR0913
+def create_edit_hook(
     *,
     linker: MessageLinker,
     message_processor: Callable[
@@ -57,14 +56,13 @@ def create_edit_hook(  # noqa: PLR0913
     interactor: Callable[[discord.Message], Awaitable[None]],
     view_type: Callable[[discord.Message, int], discord.ui.View],
     view_timeout: float = 30.0,
-    embed_mode: bool = False,
 ) -> Callable[[discord.Message, discord.Message], Awaitable[None]]:
-    def resolve_embed_mode(
+    def extract_content(
         content: str | list[discord.Embed],
     ) -> tuple[str, list[discord.Embed]]:
-        if embed_mode:
-            return "", cast("list[discord.Embed]", content)
-        return cast("str", content), []
+        if isinstance(content, list):
+            return "", content
+        return content, []
 
     async def edit_hook(before: discord.Message, after: discord.Message) -> None:
         if before.content == after.content:
@@ -93,11 +91,11 @@ def create_edit_hook(  # noqa: PLR0913
         if linker.unlink_if_expired(reply):
             return
 
-        content, embeds = resolve_embed_mode(content)
+        content, embeds = extract_content(content)
         await reply.edit(
             content=content,
             embeds=embeds,
-            suppress=not embed_mode,
+            suppress=not embeds,
             view=view_type(after, count),
             allowed_mentions=discord.AllowedMentions.none(),
         )
