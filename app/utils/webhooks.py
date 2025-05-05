@@ -182,10 +182,7 @@ async def _format_reply(reply: discord.Message) -> discord.Embed:
             else:
                 description = "> *Some forwarded content elided.*"
     return (
-        discord.Embed(
-            description=f"{description_prefix}{truncate(description, 100)}",
-            url=reply.jump_url,
-        )
+        discord.Embed(description=f"{description_prefix}{truncate(description, 100)}")
         .set_author(
             name=f"↪️ Replying to {reply.author.display_name}",
             icon_url=reply.author.display_avatar,
@@ -213,12 +210,11 @@ async def _format_forward(
 
     msg_data = await MessageData.scrape(forward)
     embeds = [
-        *forward.embeds,
+        *(e for e in forward.embeds if not e.url),
         *await asyncio.gather(*map(_get_sticker_embed, forward.stickers)),
     ]
-    embed = discord.Embed(
-        description=content, timestamp=forward.created_at, url=forward.jump_url
-    ).set_author(name="➜ Forwarded")
+    embed = discord.Embed(description=content, timestamp=forward.created_at)
+    embed.set_author(name="➜ Forwarded")
 
     if hasattr(forward.channel, "name"):
         # Some channel types don't have a `name` and Pyright can't figure out
@@ -412,7 +408,7 @@ async def move_message_via_webhook(
     msg_data = await MessageData.scrape(message)
 
     embeds = [
-        *message.embeds,
+        *(e for e in message.embeds if not e.url),
         *await asyncio.gather(*map(_get_sticker_embed, message.stickers)),
     ]
 
