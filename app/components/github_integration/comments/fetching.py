@@ -14,13 +14,18 @@ from app.components.github_integration.comments.discussions import (
 from app.components.github_integration.mentions.cache import entity_cache
 from app.components.github_integration.models import Comment, EntityGist, GitHubUser
 from app.setup import gh
-from app.utils import TTRCache
+from app.utils import TTRCache, escape_special
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Callable
 
-    from githubkit.versions.latest.models import PullRequestReviewComment
+    from githubkit.versions.latest.models import (
+        Issue,
+        IssueEvent,
+        IssueEventRename,
+        PullRequestReviewComment,
+    )
     from pydantic import BaseModel
 
 COMMENT_PATTERN = re.compile(
@@ -36,14 +41,52 @@ STATE_TO_COLOR = {
     "CHANGES_REQUESTED": 0xE74C3C,  # red
 }
 EVENT_COLOR = 0x3498DB  # blue
-ENTITY_UPDATE_EVENTS = frozenset({"closed", "locked", "merged", "reopened", "unlocked"})
-SUPPORTED_EVENTS = {
-    "assigned": "Assigned `{event.assignee.login}`",
-    "labeled": "Added the `{event.label.name}` label",
-    "milestoned": "Added this to the `{event.milestone.title}` milestone",
-    "review_requested": "Requested review from `{reviewer}`",
-    "unassigned": "Unassigned `{event.assignee.login}`",
-    "unlabeled": "Removed the `{event.label.name}` label",
+ENTITY_UPDATE_EVENTS = frozenset(
+    {"closed", "locked", "merged", "reopened", "unlocked", "pinned"}
+)
+SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
+    "assigned": "Assigned `{event.assignee.login}`.",
+    "unassigned": "Unassigned `{event.assignee.login}`.",
+    "labeled": "Added the `{event.label.name}` label.",
+    "unlabeled": "Removed the `{event.label.name}` label.",
+    "milestoned": "Added this to the `{event.milestone.title}` milestone.",
+    "demilestoned": "Removed this from the `{event.milestone.title}` milestone.",
+    "convert_to_draft": "Marked this pull request as draft.",
+    "ready_for_review": "Marked this pull request as ready for review.",
+    "review_requested": "Requested review from `{reviewer}`.",
+    "auto_merge_enabled": "Enabled auto-merge.",
+    "auto_merge_disabled": "Disabled auto-merge.",
+    "head_ref_deleted": "Deleted the head branch.",
+    "head_ref_force_pushed": lambda event: (
+        # HACK: there does not seem to be any easy way to get the HTML URL of the
+        # repository.
+        f"Force-pushed the head branch to [`{cast('str', event.commit_id)[:7]}`](<{
+            cast('Issue', event.issue)
+            .repository_url.replace('//api.', '//')
+            .replace('/repos/', '/')
+        }/commit/{event.commit_id}>)."
+    ),
+    "automatic_base_change_succeeded": "Base automatically changed.",
+    "converted_to_discussion": "Converted this issue to a discussion.",
+    "parent_issue_added": "Added a parent issue.",
+    "sub_issue_added": "Added a sub-issue.",
+    "referenced": lambda event: (
+        f"Referenced this issue in commit [`{cast('str', event.commit_id)[:7]}`]"
+        # HACK: once again, there does not seem to be any other way. And for
+        # some reason the HTML URL requires `commit` while the API URL requires
+        # `commits` (note the `s`)...
+        f"(<{
+            cast('str', event.commit_url)
+            .replace('//api.', '//')
+            .replace('/repos/', '/')
+            .replace('commits', 'commit')
+        }>)."
+    ),
+    "renamed": lambda event: (
+        f"Changed the title ~~{
+            escape_special((rename := cast('IssueEventRename', event.rename)).from_)
+        }~~ {escape_special(rename.to)}."
+    ),
 }
 
 
@@ -160,7 +203,7 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment:
     owner, repo, entity_no = entity_gist
     event = (await gh.rest.issues.async_get_event(owner, repo, comment_id)).parsed_data
     if event.event not in SUPPORTED_EVENTS.keys() | ENTITY_UPDATE_EVENTS:
-        body = f":ghost: Unsupported event: `{event.event}`"
+        body = f":ghost: Unsupported event: `{event.event}`."
     elif event.event == "review_requested":
         # Special-cased to handle requests for both users and teams
         if event.requested_reviewer:
@@ -170,14 +213,19 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment:
             # Throwing in the org name to make it clear that it's a team
             org_name = event.requested_team.html_url.split("/", 5)[4]
             reviewer = f"{org_name}/{event.requested_team.name}"
-        body = SUPPORTED_EVENTS[event.event].format(reviewer=reviewer)
+        formatter = SUPPORTED_EVENTS[event.event]
+        assert not callable(formatter)
+        body = formatter.format(reviewer=reviewer)
     elif event.event in ENTITY_UPDATE_EVENTS:
         entity = await entity_cache.get(entity_gist)
-        body = f"{event.event.capitalize()} the {entity.kind}"
+        body = f"{event.event.capitalize()} the {entity.kind.lower()}."
         if event.lock_reason:
-            body += f"\nReason: `{event.lock_reason or 'unspecified'}`"
+            body += f"\nReason: `{event.lock_reason}`."
     else:
-        body = SUPPORTED_EVENTS[event.event].format(event=event)
+        formatter = SUPPORTED_EVENTS[event.event]
+        body = (
+            formatter(event) if callable(formatter) else formatter.format(event=event)
+        )
     # The API doesn't return an html_url, gotta construct it manually.
     # It's fine to say "issues" here, GitHub will resolve the correct type
     url = f"https://github.com/{owner}/{repo}/issues/{entity_no}#event-{comment_id}"
