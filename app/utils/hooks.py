@@ -3,7 +3,6 @@ import datetime as dt
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from typing import cast
 
 import discord
 
@@ -48,23 +47,27 @@ class MessageLinker:
         return False
 
 
-def create_edit_hook(  # noqa: PLR0913
+def create_edit_hook(
     *,
     linker: MessageLinker,
     message_processor: Callable[
-        [discord.Message], Awaitable[tuple[str | list[discord.Embed], int]]
+        [discord.Message],
+        Awaitable[
+            tuple[str | tuple[str, list[discord.File]] | list[discord.Embed], int]
+        ],
     ],
     interactor: Callable[[discord.Message], Awaitable[None]],
     view_type: Callable[[discord.Message, int], discord.ui.View],
     view_timeout: float = 30.0,
-    embed_mode: bool = False,
 ) -> Callable[[discord.Message, discord.Message], Awaitable[None]]:
-    def resolve_embed_mode(
-        content: str | list[discord.Embed],
-    ) -> tuple[str, list[discord.Embed]]:
-        if embed_mode:
-            return "", cast("list[discord.Embed]", content)
-        return cast("str", content), []
+    def extract_content(
+        content: str | tuple[str, list[discord.File]] | list[discord.Embed],
+    ) -> tuple[str, list[discord.File], list[discord.Embed]]:
+        if isinstance(content, list):
+            return "", [], content
+        if isinstance(content, str):
+            return content, [], []
+        return content[0], content[1], []
 
     async def edit_hook(before: discord.Message, after: discord.Message) -> None:
         if before.content == after.content:
@@ -76,7 +79,7 @@ def create_edit_hook(  # noqa: PLR0913
             return
 
         if not (replies := linker.get(before)):
-            if not old_objects[1]:
+            if old_objects[1] <= 0:
                 # There were no objects before, so treat this as a new message
                 await interactor(after)
             # The message was removed from the linker at some point
@@ -93,11 +96,17 @@ def create_edit_hook(  # noqa: PLR0913
         if linker.unlink_if_expired(reply):
             return
 
-        content, embeds = resolve_embed_mode(content)
+        content, files, embeds = extract_content(content)
+        if not (content or files or embeds):
+            # The message is empty, don't send a message with only a view
+            linker.unlink(before)
+            await reply.delete()
+            return
         await reply.edit(
             content=content,
             embeds=embeds,
-            suppress=not embed_mode,
+            attachments=files,
+            suppress=not embeds,
             view=view_type(after, count),
             allowed_mentions=discord.AllowedMentions.none(),
         )

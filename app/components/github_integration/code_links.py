@@ -2,6 +2,7 @@ import re
 import string
 import urllib.parse
 from collections.abc import AsyncIterator
+from io import BytesIO
 from typing import NamedTuple
 
 import discord
@@ -96,7 +97,7 @@ async def get_snippets(content: str) -> AsyncIterator[Snippet]:
         )
 
 
-def _format_snippet(snippet: Snippet) -> str:
+def _format_snippet(snippet: Snippet, *, include_body: bool = True) -> str:
     repo_url = f"https://github.com/{snippet.repo}"
     tree_url = f"{repo_url}/tree/{snippet.rev}"
     file_url = f"{repo_url}/blob/{snippet.rev}/{snippet.path}"
@@ -115,30 +116,38 @@ def _format_snippet(snippet: Snippet) -> str:
         f"[`{unquoted_path}`](<{file_url}>), {range_info}"
         f"\n-# Repo: [`{snippet.repo}`](<{repo_url}>),"
         f" {ref_type}: [`{snippet.rev}`](<{tree_url}>)"
-        f"\n```{snippet.lang}\n{snippet.body}\n```"
-    )
+    ) + (f"\n```{snippet.lang}\n{snippet.body}\n```" * include_body)
 
 
-async def snippet_message(message: discord.Message) -> tuple[str, int]:
+async def snippet_message(
+    message: discord.Message,
+) -> tuple[tuple[str, list[discord.File]], int]:
     snippets = [s async for s in get_snippets(message.content)]
     if not snippets:
-        return "", 0
+        return ("", []), 0
 
     blobs = list(map(_format_snippet, snippets))
+
+    if len(blobs) == 1 and len(blobs[0]) > 2000:
+        # When there is only a single blob which goes over the limit, upload it
+        # as a file instead.
+        fp = BytesIO(snippets[0].body.encode())
+        file = discord.File(fp, filename=f"code.{snippets[0].lang}")
+        return (_format_snippet(snippets[0], include_body=False), [file]), 1
 
     if len("\n\n".join(blobs)) > 2000:
         while len("\n\n".join(blobs)) > 1970:  # Accounting for omission note
             blobs.pop()
         if not blobs:
-            return "", -1  # Signal that all snippets were omitted
+            return ("", []), -1  # Signal that all snippets were omitted
         blobs.append("-# Some snippets were omitted")
-    return "\n".join(blobs), len(snippets)
+    return ("\n".join(blobs), []), len(snippets)
 
 
 async def reply_with_code(message: discord.Message) -> None:
     if message.author.bot:
         return
-    msg_content, snippet_count = await snippet_message(message)
+    (msg_content, files), snippet_count = await snippet_message(message)
     if snippet_count != 0:
         await message.edit(suppress=True)
     if snippet_count < 1:
@@ -146,6 +155,7 @@ async def reply_with_code(message: discord.Message) -> None:
 
     sent_message = await message.reply(
         msg_content,
+        files=files,
         suppress_embeds=True,
         mention_author=False,
         allowed_mentions=discord.AllowedMentions.none(),
