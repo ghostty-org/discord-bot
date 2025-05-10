@@ -129,7 +129,7 @@ async def docs(
         ):
             await interaction.response.send_message(get_docs_link(section, page))
             return
-        webhook = await get_or_create_webhook("Ghostty Moderator", interaction.channel)
+        webhook = await get_or_create_webhook(interaction.channel)
         await webhook.send(
             f"{message}\n{get_docs_link(section, page)}",
             username=interaction.user.display_name,
