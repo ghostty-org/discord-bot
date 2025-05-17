@@ -39,8 +39,8 @@ def get_github_data() -> SimpleNamespace:
     except RequestFailed:
         api_ok = False
     return SimpleNamespace(
-        auth=":white_check_mark:" if correct_token else ":x:",
-        api=":white_check_mark:" if api_ok else ":x:",
+        auth="✅" if correct_token else "❌",
+        api="✅" if api_ok else "❌",
     )
 
 

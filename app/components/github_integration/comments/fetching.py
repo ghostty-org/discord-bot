@@ -160,7 +160,7 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment:
     owner, repo, entity_no = entity_gist
     event = (await gh.rest.issues.async_get_event(owner, repo, comment_id)).parsed_data
     if event.event not in SUPPORTED_EVENTS.keys() | ENTITY_UPDATE_EVENTS:
-        body = f":ghost: Unsupported event: `{event.event}`"
+        body = f"👻 Unsupported event: `{event.event}`"
     elif event.event == "review_requested":
         # Special-cased to handle requests for both users and teams
         if event.requested_reviewer:

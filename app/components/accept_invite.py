@@ -12,7 +12,7 @@ async def accept_invite(interaction: discord.Interaction) -> None:
     await try_dm(interaction.user, config.ACCEPT_INVITE_URL, silent=True)
     await try_dm(
         interaction.user,
-        "Ghostty is already out! :point_right: https://ghostty.org/",
+        "Ghostty is already out! 👉️ https://ghostty.org/",
     )
     await interaction.response.send_message("Check your DMs!", ephemeral=True)
 
