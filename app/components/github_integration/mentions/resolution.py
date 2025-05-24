@@ -71,6 +71,17 @@ async def resolve_repo_signatures(
             case None, "main" | "web" | "bot" as repo:
                 # Special ghostty-org prefixes
                 yield config.GITHUB_ORG, config.GITHUB_REPOS[repo], number
+            case None, "website":
+                # Alias to match the Ghostty website repository name.
+                yield config.GITHUB_ORG, config.GITHUB_REPOS["web"], number
+            case None, "discord-bot":
+                # Alias to match the Ghostty Bot repository name.
+                yield config.GITHUB_ORG, config.GITHUB_REPOS["bot"], number
+            case None, "ghostty":
+                # An unnecessary alias intended to match the code above while
+                # also saving the time needed to fetch the owner of the Ghostty
+                # repository below.
+                yield config.GITHUB_ORG, config.GITHUB_REPOS["main"], number
             case None, "bobr":
                 # A touch of personalization
                 yield config.GITHUB_ORG, config.GITHUB_REPOS["bot"], number
