@@ -5,6 +5,8 @@ import discord
 from app.setup import bot, config
 from app.utils import (
     GuildTextChannel,
+    get_moved_message,
+    get_moved_message_author_id,
     get_or_create_webhook,
     is_dm,
     is_helper,
@@ -51,7 +53,7 @@ class SelectChannel(discord.ui.View):
         )
         assert isinstance(webhook_channel, discord.TextChannel | discord.ForumChannel)
 
-        webhook = await get_or_create_webhook("Ghostty Moderator", webhook_channel)
+        webhook = await get_or_create_webhook(webhook_channel)
         await move_message_via_webhook(
             webhook, self.message, self.executor, thread=thread
         )
@@ -102,7 +104,7 @@ class HelpPostTitle(discord.ui.Modal, title="Turn into #help post"):
         )
         await interaction.response.defer(ephemeral=True)
 
-        webhook = await get_or_create_webhook("Ghostty Moderator", help_channel)
+        webhook = await get_or_create_webhook(help_channel)
         msg = await move_message_via_webhook(
             webhook,
             self._message,
@@ -199,3 +201,40 @@ async def turn_into_help_post(
         return
 
     await interaction.response.send_modal(HelpPostTitle(message))
+
+
+@bot.tree.context_menu(name="Delete moved message")
+@discord.app_commands.guild_only()
+async def delete_moved_message(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
+    assert not is_dm(interaction.user)
+
+    if (webhook_message := await get_moved_message(message)) is None:
+        await interaction.response.send_message(
+            "This message cannot be deleted.", ephemeral=True
+        )
+        return
+
+    if (
+        webhook_message is discord.utils.MISSING
+        or (author_id := get_moved_message_author_id(webhook_message)) is None
+    ):
+        await interaction.response.send_message(
+            "This message is not a moved message.", ephemeral=True
+        )
+        return
+
+    if not (
+        interaction.user.id == author_id
+        or message.channel.permissions_for(interaction.user).manage_messages
+    ):
+        await interaction.response.send_message(
+            "You are either not the author, or do not have the required "
+            "permissions to delete messages.",
+            ephemeral=True,
+        )
+        return
+
+    await message.delete()
+    await interaction.response.send_message("Message deleted.", ephemeral=True)
