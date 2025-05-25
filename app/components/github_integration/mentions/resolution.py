@@ -15,7 +15,7 @@ ENTITY_REGEX = re.compile(
     r"(?P<owner>\b[a-z0-9\-]+/)?"
     r"(?P<repo>\b[a-z0-9\-\._]+)?"
     r"(?P<sep>/(?:issues|pull|discussions)/|#)"
-    r"(?P<number>\d{1,6})(?!\.\d|#)\b",
+    r"(?P<number>\d{1,6})(?!\.\d|/?#)\b",
     re.IGNORECASE,
 )
 

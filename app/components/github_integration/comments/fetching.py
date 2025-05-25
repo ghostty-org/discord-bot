@@ -24,7 +24,8 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 COMMENT_PATTERN = re.compile(
-    r"https?://(?:www\.)?github\.com/([^/]+)/([^/]+)/(issues|discussions|pull)/(\d+)#(\w+?-?)(\d+)"
+    r"https?://(?:www\.)?github\.com/([^/\s]+)/([^/\s]+)/"
+    r"(issues|discussions|pull)/(\d+)/?#(\w+?-?)(\d+)"
 )
 FALLBACK_AUTHOR = GitHubUser(
     login="GitHub",
