@@ -83,5 +83,4 @@ entity_comment_edit_hook = create_edit_hook(
     message_processor=comment_processor,
     interactor=reply_with_comments,
     view_type=DeleteMention,
-    embed_mode=True,
 )
