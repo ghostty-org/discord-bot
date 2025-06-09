@@ -6,13 +6,19 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 
 from githubkit.exception import RequestFailed
+from githubkit.versions.latest.models import PullRequestReviewComment, ReactionRollup
 from zig_codeblocks import extract_codeblocks
 
 from app.components.github_integration.comments.discussions import (
     get_discussion_comment,
 )
 from app.components.github_integration.mentions.cache import entity_cache
-from app.components.github_integration.models import Comment, EntityGist, GitHubUser
+from app.components.github_integration.models import (
+    Comment,
+    EntityGist,
+    GitHubUser,
+    Reactions,
+)
 from app.setup import gh
 from app.utils import TTRCache
 
@@ -20,7 +26,7 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncIterator
 
-    from githubkit.versions.latest.models import PullRequestReviewComment
+    from githubkit.typing import Missing
     from pydantic import BaseModel
 
 COMMENT_PATTERN = re.compile(
@@ -70,9 +76,19 @@ comment_cache = CommentCache(minutes=30)
 
 
 def _make_author(user: BaseModel | None) -> GitHubUser:
-    if not user:
-        return FALLBACK_AUTHOR
-    return GitHubUser(**user.model_dump())
+    return GitHubUser(**user.model_dump()) if user else FALLBACK_AUTHOR
+
+
+def _make_reactions(rollup: ReactionRollup | Missing[ReactionRollup]) -> Reactions:
+    """Asserts that `rollup` is not Missing."""
+    if not isinstance(rollup, ReactionRollup):
+        # While every usage of this function takes Reactions | None, this
+        # function shouldn't even be called if the API doesn't return reactions
+        # for some case, so a TypeError is thrown instead of returning None to
+        # catch any bugs instead of silently removing the reactions.
+        msg = f"expected type ReactionRollup, found {type(rollup)}"
+        raise TypeError(msg)
+    return Reactions(**rollup.model_dump())
 
 
 async def _get_issue_comment(entity_gist: EntityGist, comment_id: int) -> Comment:
@@ -85,6 +101,7 @@ async def _get_issue_comment(entity_gist: EntityGist, comment_id: int) -> Commen
     return Comment(
         author=_make_author(comment.user),
         body=cast("str", comment.body),
+        reactions=_make_reactions(comment.reactions),
         entity=entity,
         entity_gist=entity_gist,
         created_at=comment.created_at,
@@ -99,6 +116,9 @@ async def _get_pr_review(entity_gist: EntityGist, comment_id: int) -> Comment:
     return Comment(
         author=_make_author(comment.user),
         body=comment.body,
+        # For some reason, GitHub's API doesn't include them for PR reviews,
+        # despite there being reactions visible in the UI.
+        reactions=None,
         entity=await entity_cache.get(entity_gist),
         entity_gist=entity_gist,
         created_at=cast("dt.datetime", comment.submitted_at),
@@ -116,6 +136,7 @@ async def _get_pr_review_comment(entity_gist: EntityGist, comment_id: int) -> Co
     return Comment(
         author=_make_author(comment.user),
         body=_prettify_suggestions(comment),
+        reactions=_make_reactions(comment.reactions),
         entity=await entity_cache.get(entity_gist),
         entity_gist=entity_gist,
         created_at=comment.created_at,
@@ -199,6 +220,7 @@ async def _get_entity_starter(entity_gist: EntityGist, _: int) -> Comment:
     return Comment(
         author=entity.user,
         body=entity.body or "",
+        reactions=entity.reactions,
         entity=entity,
         entity_gist=entity_gist,
         created_at=entity.created_at,

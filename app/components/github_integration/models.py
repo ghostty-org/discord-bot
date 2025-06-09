@@ -34,12 +34,26 @@ class GitHubUser(BaseModel):
     icon_url: str = Field(validation_alias=AliasChoices("icon_url", "avatar_url"))
 
 
+class Reactions(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    plus_one: int
+    minus_one: int
+    laugh: int
+    confused: int
+    heart: int
+    hooray: int
+    eyes: int
+    rocket: int
+
+
 class Entity(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     number: int
     title: str
     body: str | None
+    reactions: Reactions | None = None
     html_url: str
     user: GitHubUser
     created_at: dt.datetime
@@ -80,6 +94,7 @@ class Comment(BaseModel):
 
     author: GitHubUser
     body: str
+    reactions: Reactions | None = None
     entity: Entity
     entity_gist: EntityGist
     created_at: dt.datetime
