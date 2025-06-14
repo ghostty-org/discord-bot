@@ -18,6 +18,19 @@ if TYPE_CHECKING:
     from app.components.github_integration.models import Comment
 
 
+REACTION_EMOJIS = {
+    "plus_one": "👍",
+    "minus_one": "👎",
+    "laugh": "😄",  # NOTE: while laugh is actually 😆, GitHub's UI uses smile.
+    "confused": "😕",
+    "heart": "❤️",
+    "hooray": "🎉",
+    "eyes": "👀",
+    "rocket": "🚀",
+}
+
+_FIGURE_SPACE = "\u2007"
+
 comment_linker = MessageLinker()
 
 
@@ -33,7 +46,16 @@ def comment_to_embed(comment: Comment) -> discord.Embed:
         if (emoji := get_entity_emoji(comment.entity))
         else comment.entity.title
     )
-    return (
+    formatted_reactions = (
+        [
+            f"{REACTION_EMOJIS[reaction]} ×{count}"  # noqa: RUF001
+            for reaction, count in comment.reactions
+            if count
+        ]
+        if comment.reactions is not None
+        else []
+    )
+    embed = (
         discord.Embed(
             description=comment.body,
             title=title,
@@ -44,6 +66,15 @@ def comment_to_embed(comment: Comment) -> discord.Embed:
         .set_author(**comment.author.model_dump())
         .set_footer(text=f"{comment.kind} on {comment.entity_gist}")
     )
+    if formatted_reactions:
+        embed.add_field(
+            # Discord collapses multiple spaces, so a figure space (which is
+            # one of the ones which don't seem to be collapsed) has to be used
+            # instead of multiple adjacent spaces.
+            name="",
+            value="-# " + f" {_FIGURE_SPACE} ".join(formatted_reactions),
+        )
+    return embed
 
 
 async def reply_with_comments(message: discord.Message) -> None:
