@@ -324,6 +324,8 @@ related feature:
 
 <img src="https://github.com/user-attachments/assets/9943a31c-3b0e-4606-99a0-5182ce114b87" alt="Turn into #help post example" width="70%">
 
+The author of a message and people with the “Manage Messages” permission can
+also delete moved messages using an entry in the context menu.
 
 [bot-repo]: https://github.com/ghostty-org/discord-bot
 [discord-docs]: https://discord.com/developers/applications
