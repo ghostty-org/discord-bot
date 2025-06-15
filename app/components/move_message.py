@@ -131,7 +131,7 @@ class DeleteOriginalMessage(discord.ui.View):
 
     @discord.ui.button(
         label="Delete instead",
-        emoji="🗑️",
+        emoji="🗑️",  # test: allow-vs16
         style=discord.ButtonStyle.danger,
     )
     async def delete(

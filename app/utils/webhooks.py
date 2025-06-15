@@ -185,7 +185,7 @@ async def _format_reply(reply: discord.Message) -> discord.Embed:
     return (
         discord.Embed(description=f"{description_prefix}{truncate(description, 100)}")
         .set_author(
-            name=f"↪️ Replying to {reply.author.display_name}",
+            name=f"↪️ Replying to {reply.author.display_name}",  # test: allow-vs16
             icon_url=reply.author.display_avatar,
         )
         .add_field(name="", value=f"-# [**Jump**](<{reply.jump_url}>) 📎")
@@ -274,7 +274,7 @@ def _format_missing_reference(
         name=(
             "⚡ Message"
             if message.type is discord.MessageType.context_menu_command
-            else "↪️ Reply"
+            else "↪️ Reply"  # test: allow-vs16
         )
     )
 

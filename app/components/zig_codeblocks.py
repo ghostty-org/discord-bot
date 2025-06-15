@@ -90,7 +90,7 @@ class ZigCodeblockActions(discord.ui.View):
 
     @discord.ui.button(
         label="Freeze",
-        emoji="❄️",
+        emoji="❄️",  # test: allow-vs16
         style=discord.ButtonStyle.gray,
     )
     async def freeze(
