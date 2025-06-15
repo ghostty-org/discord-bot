@@ -193,7 +193,7 @@ async def _format_reply(reply: discord.Message) -> discord.Embed:
 
 async def _format_context_menu_command(reply: discord.Message) -> discord.Embed:
     return (await _format_reply(reply)).set_author(
-        name=f"⚡️ Acting on {reply.author.display_name}'s message",
+        name=f"⚡ Acting on {reply.author.display_name}'s message",
         icon_url=reply.author.display_avatar,
     )
 
@@ -271,7 +271,7 @@ def _format_missing_reference(
         )
     return discord.Embed(description="*Original message was deleted.*").set_author(
         name=(
-            "⚡️ Message"
+            "⚡ Message"
             if message.type is discord.MessageType.context_menu_command
             else "↪️ Reply"
         )

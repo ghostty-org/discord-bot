@@ -83,7 +83,7 @@ def _format_mention(entity: Entity) -> str:
         f" on {fmt_ts('D')} ({fmt_ts('R')})\n"
     )
 
-    emoji = get_entity_emoji(entity) or "❓️"
+    emoji = get_entity_emoji(entity) or "❓"
     return f"{emoji} {headline}\n{subtext}"
 
 
