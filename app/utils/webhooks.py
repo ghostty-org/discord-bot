@@ -376,9 +376,9 @@ class _Subtext:
         )
         context = (
             "".join(original_message_info),
-            self.move_hint,
             self.skipped,
             self.poll_error,
+            self.move_hint,
         )
         return self._sub_join(self.reactions, " • ".join(filter(None, context)))
 
@@ -415,6 +415,17 @@ class SplitSubtext:
                 return {}
             d[emoji] = int(count)
         return d
+
+    def update(self, message: discord.Message, executor: discord.Member | None) -> None:
+        if executor:
+            assert isinstance(message.channel, GuildTextChannel)
+            self.subtext += (
+                f", then from {message.channel.mention} by {executor.mention}"
+            )
+        for reaction in message.reactions:
+            emoji = _format_emoji(reaction.emoji)
+            self.reactions.setdefault(emoji, 0)
+            self.reactions[emoji] += reaction.count
 
     def format(self) -> str:
         if not self.reactions:
