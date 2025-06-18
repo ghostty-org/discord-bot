@@ -416,6 +416,15 @@ class SplitSubtext:
             d[emoji] = int(count)
         return d
 
+    def format(self) -> str:
+        if not self.reactions:
+            return self.subtext
+        formatted_reactions = "   ".join([
+            f"{emoji} ×{count}"  # noqa: RUF001
+            for emoji, count in self.reactions.items()
+        ])
+        return f"-# {formatted_reactions}\n{self.subtext}"
+
 
 async def get_or_create_webhook(
     channel: discord.TextChannel | discord.ForumChannel, name: str = "Ghostty Moderator"
