@@ -1,15 +1,64 @@
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
+# pyright: reportPrivateUsage=false
 
+from types import SimpleNamespace
+from typing import cast
+from unittest.mock import Mock
+
+import discord
 import pytest
 
 from app.utils.webhooks import (
-    _find_snowflake,  # pyright: ignore [reportPrivateUsage]
+    _find_snowflake,
+    _format_emoji,
     get_moved_message_author_id,
 )
 
-if TYPE_CHECKING:
-    import discord
+# A random list of Unicode emojis that default to the emoji presentation.
+UNICODE_EMOJIS = "📨🌼🎬⌛🧆🦯🤩👤🥈🏑🌊🤲👦🛝🍏🥫🐙👰🇫🤏🚋🏽🐾🌄🔛🐸🤣🐎💿👃🔘🍋🚈👘🚹"
+
+
+@pytest.mark.parametrize("emoji", list(UNICODE_EMOJIS))
+def test_format_unicode_emoji(emoji: str) -> None:
+    assert _format_emoji(emoji) == emoji
+
+
+@pytest.mark.parametrize("emoji", list(UNICODE_EMOJIS))
+def test_format_unicode_partialemoji(emoji: str) -> None:
+    assert _format_emoji(discord.PartialEmoji(name=emoji)) == emoji
+
+
+@pytest.mark.parametrize(
+    ("name", "animated", "id_"),
+    [
+        ("apple_logo", False, 1322303418651508819),
+        ("bobr~1", True, 1332673162160246784),
+        ("bobr_explod", True, 1339003097493672016),
+        ("del", False, 1296742294732673095),
+        ("ete", False, 1296742293893681242),
+        ("discussion_answered", False, 1326130753272025090),
+        ("xd", False, 1317644781169672204),
+        ("fooBaRb__az_loR_em", False, 1328977544984268890),
+    ],
+)
+def test_format_partial_emoji(*, name: str, animated: bool, id_: int) -> None:
+    url = f"https://cdn.discordapp.com/emojis/{id_}.{'gif' if animated else 'png'}"
+    assert (
+        _format_emoji(discord.PartialEmoji(name=name, animated=animated, id=id_))
+        == f"[{name}](<{url}>)"
+    )
+
+
+@pytest.mark.parametrize(
+    ("is_usable", "output"), [(True, "<foo>"), (False, "[foo](<bar>)")]
+)
+def test_format_emoji_is_usable(*, is_usable: bool, output: str) -> None:
+    fake_emoji = Mock(
+        discord.Emoji,
+        is_usable=Mock(return_value=is_usable),
+        __str__=Mock(return_value="<foo>"),
+    )
+    fake_emoji.configure_mock(name="foo", url="bar")
+    assert _format_emoji(fake_emoji) == output
 
 
 @pytest.mark.parametrize(

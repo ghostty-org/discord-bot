@@ -300,6 +300,16 @@ def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
     return f"<t:{int(dt.timestamp())}{fmt}>"
 
 
+def _format_emoji(emoji: str | discord.PartialEmoji | discord.Emoji) -> str:
+    if (
+        isinstance(emoji, str)
+        or (isinstance(emoji, discord.PartialEmoji) and emoji.is_unicode_emoji())
+        or (isinstance(emoji, discord.Emoji) and emoji.is_usable())
+    ):
+        return str(emoji)
+    return f"[{emoji.name}](<{emoji.url}>)"
+
+
 class _Subtext:
     # NOTE: when changing the subtext's format in ways that are not
     # backward-compatible, don't forget to bump the cut-off time in
@@ -337,14 +347,10 @@ class _Subtext:
         )
 
     def _format_reactions(self) -> None:
-        formatted_reactions = [
-            f"{emoji} ×{reaction.count}"  # noqa: RUF001
-            if isinstance(emoji := reaction.emoji, str)
-            or getattr(emoji, "is_usable", lambda: False)()
-            else f"[{emoji.name}](<{emoji.url}>) ×{reaction.count}"  # noqa: RUF001
+        self.reactions = "   ".join([
+            f"{_format_emoji(reaction.emoji)} ×{reaction.count}"  # noqa: RUF001
             for reaction in self.msg_data.reactions
-        ]
-        self.reactions = "   ".join(formatted_reactions)
+        ])
 
     def _format_timestamp(self) -> None:
         if self.msg_data.created_at > dt.datetime.now(tz=dt.UTC) - dt.timedelta(
