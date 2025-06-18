@@ -593,3 +593,12 @@ def get_moved_message_author_id(message: discord.WebhookMessage) -> int | None:
 
     snowflake, _ = _find_snowflake(subtext, "@")
     return snowflake
+
+
+async def is_moved_message(message: discord.Message) -> bool:
+    webhook_message = await get_moved_message(message)
+    return (
+        isinstance(webhook_message, discord.WebhookMessage)
+        # Also check if the message has an author, to reduce false positives.
+        and get_moved_message_author_id(webhook_message) is not None
+    )
