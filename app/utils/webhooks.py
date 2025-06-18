@@ -6,7 +6,7 @@ import re
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 import httpx
@@ -396,6 +396,9 @@ class SplitSubtext:
         # to ensure that the requested message is actually a moved message. And
         # since we know that we definitely have a moved message here, the last
         # line must be the subtext.
+        # There is a notable exception of format_simple(), but all current
+        # callers of this function only give moved messages with the full
+        # subtext present.
         *lines, reactions_line, self.subtext = message.content.splitlines()
         self.reactions = self._get_reactions(reactions_line)
         self.content = "\n".join(lines if self.reactions else (*lines, reactions_line))
@@ -505,9 +508,16 @@ async def move_message_via_webhook(  # noqa: PLR0913
     else:
         poll = message.poll
 
-    # The if expression is to skip the poll ended message if there was no poll.
-    s = _Subtext(msg_data, executor, poll if message.poll is not None else None)
-    subtext = s.format() if include_move_marks else s.format_simple()
+    if include_move_marks and await is_moved_message(message):
+        # Append the new move mark to the existing subtext. We cast as
+        # is_moved_message() guarantees that we have a moved message.
+        split_subtext = SplitSubtext(cast("discord.WebhookMessage", message))
+        split_subtext.update(message, executor)
+        message.content, subtext = split_subtext.content, split_subtext.format()
+    else:
+        # The if expression skips the poll ended message if there was no poll.
+        s = _Subtext(msg_data, executor, poll if message.poll is not None else None)
+        subtext = s.format() if include_move_marks else s.format_simple()
     content, file = format_or_file(
         _format_interaction(message),
         template=f"{{}}\n{subtext}",
