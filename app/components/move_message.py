@@ -57,6 +57,11 @@ TOO_MANY_THREADS = (
     "⚠️ There are too many active threads in this server! Use the "  # test: allow-vs16
     "modal instead, or try again later."
 )
+NO_CONTENT_TO_EDIT = (
+    "{}, your message does not currently have any content. Sending a message "
+    "would add the specified content to the message. Any attachments you "
+    "upload are also added to your message."
+)
 EDIT_IN_THREAD_HINT = (
     "Please send a message containing the message's new content.\n"
     "-# **Hint:** you can copy your message's content by pressing "
@@ -292,13 +297,16 @@ class ChooseMessageAction(discord.ui.View):
             content=f"Created a thread: {thread.mention}.", view=None
         )
         split_subtext = SplitSubtext(self._message)
-        await thread.send(
-            f"{interaction.user.mention}, here are the contents of your message:"
-        )
-        await thread.send(
-            split_subtext.content, allowed_mentions=discord.AllowedMentions.none()
-        )
-        await thread.send(EDIT_IN_THREAD_HINT)
+        if split_subtext.content:
+            await thread.send(
+                f"{interaction.user.mention}, here are the contents of your message:"
+            )
+            await thread.send(
+                split_subtext.content, allowed_mentions=discord.AllowedMentions.none()
+            )
+            await thread.send(EDIT_IN_THREAD_HINT)
+        else:
+            await thread.send(NO_CONTENT_TO_EDIT.format(interaction.user.mention))
 
     async def show_help(self, interaction: discord.Interaction) -> None:
         self.help_button.disabled = True
