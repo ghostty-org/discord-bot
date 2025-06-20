@@ -17,8 +17,27 @@ from app.utils import (
     truncate,
 )
 
+# From https://discord.com/developers/docs/topics/opcodes-and-status-codes#json-json-error-codes.
+MAXIMUM_NUMBER_OF_ACTIVE_THREADS_REACHED = 160006
+
 MOVED_MESSAGE_MODIFICATION_CUTOFF = dt.datetime(
     year=2025, month=6, day=18, hour=23, minute=10, tzinfo=dt.UTC
+)
+
+NO_THREAD_PERMS = (
+    "⚠️ I don't have the required permissions to create private "  # test: allow-vs16
+    "threads; please contact a moderator! In the meantime, use the modal "
+    "instead."
+)
+TOO_MANY_THREADS = (
+    "⚠️ There are too many active threads in this server! Use the "  # test: allow-vs16
+    "modal instead, or try again later."
+)
+EDIT_IN_THREAD_HINT = (
+    "Please send a message containing the message's new content.\n"
+    "-# **Hint:** you can copy your message's content by pressing "
+    '"Copy Text" in the context menu. Any attachments you upload are '
+    "also added to your message."
 )
 
 
@@ -149,11 +168,13 @@ class DeleteOriginalMessage(discord.ui.View):
 
 class ChooseMessageAction(discord.ui.View):
     attachment_button: discord.ui.Button[Self]
+    thread_button: discord.ui.Button[Self]
 
     def __init__(self, message: MovedMessage) -> None:
         super().__init__()
         self._message = message
         self._add_attachment_button()
+        self._add_thread_button()
 
     @discord.ui.button(label="Delete", emoji="🗑️")  # test: allow-vs16
     async def delete_message(
@@ -198,6 +219,52 @@ class ChooseMessageAction(discord.ui.View):
             content="Select attachments to delete.",
             view=DeleteAttachments(self._message),
         )
+
+    def _add_thread_button(self) -> None:
+        self._channel = self._message.channel
+        if isinstance(self._channel, discord.Thread):
+            # Threads can't have nested threads, try its parent.
+            self._channel = self._channel.parent
+        if not isinstance(self._channel, discord.TextChannel):
+            # Only text channels can have threads.
+            return
+        self.thread_button = discord.ui.Button(label="Edit in thread", emoji="🧵")
+        self.thread_button.callback = self.edit_in_thread
+        self.add_item(self.thread_button)
+
+    async def edit_in_thread(self, interaction: discord.Interaction) -> None:
+        # Guaranteed by _add_thread_button().
+        assert isinstance(self._channel, discord.TextChannel)
+        try:
+            thread = await self._channel.create_thread(
+                name="Edit moved message",
+                auto_archive_duration=60,
+                reason=f"{interaction.user.name} wants to edit a moved message",
+                invitable=False,
+            )
+        except discord.Forbidden:
+            self.thread_button.disabled = True
+            await interaction.response.edit_message(content=NO_THREAD_PERMS, view=self)
+            raise  # Also log it in Sentry.
+        except discord.HTTPException as e:
+            if e.code != MAXIMUM_NUMBER_OF_ACTIVE_THREADS_REACHED:
+                # None of the other errors are relevant here.
+                raise
+            self.thread_button.disabled = True
+            await interaction.response.edit_message(content=TOO_MANY_THREADS, view=self)
+            return
+        # Notify the user as soon as possible to prevent the need to defer() to
+        # avoid issues on days when the API is slower.
+        await interaction.response.edit_message(
+            content=f"Created a thread: {thread.mention}.", view=None
+        )
+        await thread.send(
+            f"{interaction.user.mention}, here are the contents of your message:"
+        )
+        await thread.send(
+            self._message.content, allowed_mentions=discord.AllowedMentions.none()
+        )
+        await thread.send(EDIT_IN_THREAD_HINT)
 
 
 class EditMessage(discord.ui.Modal, title="Edit Message"):
