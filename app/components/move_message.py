@@ -208,6 +208,7 @@ class ChooseMessageAction(discord.ui.View):
     def __init__(self, message: MovedMessage) -> None:
         super().__init__()
         self._message = message
+        self._split_subtext = SplitSubtext(message)
         self._add_attachment_button()
         self._add_thread_button()
 
@@ -229,6 +230,18 @@ class ChooseMessageAction(discord.ui.View):
         match len(self._message.attachments):
             case 0:
                 # Don't allow removing attachments when there aren't any.
+                pass
+            case 1 if not any((
+                self._message.components,
+                self._split_subtext.content,
+                self._message.embeds,
+                self._message.poll,
+                self._message.stickers,
+            )):
+                # Don't allow removing the attachment of a message with only
+                # one attachment, as that would make the message empty. This is
+                # in line with Discord's UI (it does not show the remove button
+                # on the attachment if there is only one).
                 pass
             case 1:
                 self.attachment_button = discord.ui.Button(
@@ -301,13 +314,13 @@ class ChooseMessageAction(discord.ui.View):
         await interaction.response.edit_message(
             content=f"Created a thread: {thread.mention}.", view=None
         )
-        split_subtext = SplitSubtext(self._message)
-        if split_subtext.content:
+        if self._split_subtext.content:
             await thread.send(
                 f"{interaction.user.mention}, here are the contents of your message:"
             )
             await thread.send(
-                split_subtext.content, allowed_mentions=discord.AllowedMentions.none()
+                self._split_subtext.content,
+                allowed_mentions=discord.AllowedMentions.none(),
             )
             await thread.send(EDIT_IN_THREAD_HINT, view=CancelEditing(thread))
         else:
@@ -315,7 +328,7 @@ class ChooseMessageAction(discord.ui.View):
                 NO_CONTENT_TO_EDIT.format(interaction.user.mention),
                 view=CancelEditing(thread),
             )
-        edit_threads[thread.id] = (self._message, split_subtext.format())
+        edit_threads[thread.id] = (self._message, self._split_subtext.format())
 
     async def show_help(self, interaction: discord.Interaction) -> None:
         self.help_button.disabled = True
