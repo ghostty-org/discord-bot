@@ -14,6 +14,7 @@ from app.utils import (
     is_mod,
     message_can_be_moved,
     move_message_via_webhook,
+    truncate,
 )
 
 MOVED_MESSAGE_MODIFICATION_CUTOFF = dt.datetime(
@@ -147,9 +148,12 @@ class DeleteOriginalMessage(discord.ui.View):
 
 
 class ChooseMessageAction(discord.ui.View):
+    attachment_button: discord.ui.Button[Self]
+
     def __init__(self, message: MovedMessage) -> None:
         super().__init__()
         self._message = message
+        self._add_attachment_button()
 
     @discord.ui.button(label="Delete", emoji="🗑️")  # test: allow-vs16
     async def delete_message(
@@ -164,6 +168,36 @@ class ChooseMessageAction(discord.ui.View):
     ) -> None:
         await interaction.response.send_modal(EditMessage(self._message))
         await interaction.delete_original_response()
+
+    def _add_attachment_button(self) -> None:
+        match len(self._message.attachments):
+            case 0:
+                # Don't allow removing attachments when there aren't any.
+                pass
+            case 1:
+                self.attachment_button = discord.ui.Button(
+                    label="Remove attachment", emoji="🔗"
+                )
+                self.attachment_button.callback = self.remove_attachment
+                self.add_item(self.attachment_button)
+            case _:
+                self.attachment_button = discord.ui.Button(
+                    label="Remove attachments", emoji="🔗"
+                )
+                self.attachment_button.callback = self.send_attachment_picker
+                self.add_item(self.attachment_button)
+
+    async def remove_attachment(self, interaction: discord.Interaction) -> None:
+        await self._message.edit(attachments=[])
+        await interaction.response.edit_message(
+            content="Attachment removed.", view=None
+        )
+
+    async def send_attachment_picker(self, interaction: discord.Interaction) -> None:
+        await interaction.response.edit_message(
+            content="Select attachments to delete.",
+            view=DeleteAttachments(self._message),
+        )
 
 
 class EditMessage(discord.ui.Modal, title="Edit Message"):
@@ -184,6 +218,33 @@ class EditMessage(discord.ui.Modal, title="Edit Message"):
             content=self.new_text.value, allowed_mentions=discord.AllowedMentions.none()
         )
         await interaction.response.send_message("Message edited.", ephemeral=True)
+
+
+class DeleteAttachments(discord.ui.View):
+    select: discord.ui.Select[Self]
+
+    def __init__(self, message: MovedMessage) -> None:
+        super().__init__()
+        self._message = message
+        self.select = discord.ui.Select(
+            placeholder="Select attachments", max_values=len(message.attachments)
+        )
+        for attachment in message.attachments:
+            self.select.add_option(
+                label=truncate(attachment.title or attachment.filename, 100),
+                value=str(attachment.id),
+            )
+        self.select.callback = self.remove_attachments
+        self.add_item(self.select)
+
+    async def remove_attachments(self, interaction: discord.Interaction) -> None:
+        to_remove = set(map(int, self.select.values))
+        await self._message.edit(
+            attachments=[a for a in self._message.attachments if a.id not in to_remove]
+        )
+        await interaction.response.edit_message(
+            content="Attachments removed.", view=None
+        )
 
 
 @bot.tree.context_menu(name="Move message")
