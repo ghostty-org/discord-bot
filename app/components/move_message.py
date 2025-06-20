@@ -1,4 +1,5 @@
 import datetime as dt
+from contextlib import suppress
 from typing import Self, cast
 
 import discord
@@ -308,9 +309,12 @@ class ChooseMessageAction(discord.ui.View):
             await thread.send(
                 split_subtext.content, allowed_mentions=discord.AllowedMentions.none()
             )
-            await thread.send(EDIT_IN_THREAD_HINT)
+            await thread.send(EDIT_IN_THREAD_HINT, view=CancelEditing(thread))
         else:
-            await thread.send(NO_CONTENT_TO_EDIT.format(interaction.user.mention))
+            await thread.send(
+                NO_CONTENT_TO_EDIT.format(interaction.user.mention),
+                view=CancelEditing(thread),
+            )
         edit_threads[thread.id] = (self._message, split_subtext.format())
 
     async def show_help(self, interaction: discord.Interaction) -> None:
@@ -369,6 +373,34 @@ class DeleteAttachments(discord.ui.View):
         await interaction.response.edit_message(
             content="Attachments removed.", view=None
         )
+
+
+class CancelEditing(discord.ui.View):
+    def __init__(self, thread: discord.Thread) -> None:
+        super().__init__()
+        self._thread = thread
+
+    @discord.ui.button(label="Cancel", emoji="❌")
+    async def cancel_editing(
+        self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
+    ) -> None:
+        # For some reason, depending on how long deleting the thread takes, the
+        # user still sees "Something went wrong." momentarily before the thread
+        # is deleted; it's probably dependent on internet speeds. Hence, defer
+        # the response to increase the error timeout from five seconds to five
+        # minutes so that the user never sees "Something went wrong." before
+        # the thread is gone and the user is moved out of the thread.
+        await interaction.response.defer()
+        # Suppress NotFound and KeyError to prevent an exception thrown if the
+        # user sends a message and hits cancel at the same time.
+        with suppress(discord.NotFound, KeyError):
+            await self._thread.delete(
+                reason="{message.author.name} canceled editing of a moved message"
+            )
+            del edit_threads[self._thread.id]
+        # We can't actually followup on the deferred response here because
+        # doing so would result in NotFound being thrown since the thread was
+        # just deleted above.
 
 
 @bot.tree.context_menu(name="Move message")
@@ -479,7 +511,10 @@ async def check_for_edit_response(message: discord.Message) -> None:
 
     # TODO(Kat): actually edit the message.
 
-    await message.channel.delete(
-        reason="{message.author.name} finished editing a moved message"
-    )
-    del edit_threads[message.channel.id]
+    # Suppress NotFound and KeyError to prevent an exception thrown if the user
+    # sends a message and hits the cancel at the same time.
+    with suppress(discord.NotFound, KeyError):
+        await message.channel.delete(
+            reason="{message.author.name} finished editing a moved message"
+        )
+        del edit_threads[message.channel.id]
