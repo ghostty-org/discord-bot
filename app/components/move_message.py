@@ -24,6 +24,29 @@ MOVED_MESSAGE_MODIFICATION_CUTOFF = dt.datetime(
     year=2025, month=6, day=18, hour=23, minute=10, tzinfo=dt.UTC
 )
 
+EDIT_METHOD_PROMPT = "What would you like to do?"
+MESSAGE_EDIT_HELP = (
+    "*Edit via modal* displays a text box that allows you to edit the "
+    "contents of your message easily and conveniently. However, Discord's "
+    "text box is only intended for plain text, not Discord messages. There is "
+    "no Markdown syntax highlighting in this text box, and user or channel "
+    "mentions are incredibly difficult to insert or edit. The text box also "
+    "covers the entire UI, which makes referencing other messages annoying.\n"
+    "\n"
+    "*Edit in thread* creates a new private thread, adds you to it, and sends "
+    "the message's contents, prompting you to copy it and send an edited "
+    "version. This approach is very flexible, as you are using Discord's own "
+    "message box to send the edited version of the message. Unfortunately, "
+    "since this creates a whole new thread and requires you to copy the "
+    "message, it is considerably more cumbersome to use, and requires "
+    "considerably more context switching. This is especially annoying on "
+    "mobile.\n"
+    "\n"
+    "**The recommendation** is hence to use *Edit via modal* for editing "
+    "small to medium length messages with minimal Markdown and when you are "
+    "not touching emojis or channel/user mentions, and *Edit in thread* in "
+    "all other cases."
+)
 NO_THREAD_PERMS = (
     "⚠️ I don't have the required permissions to create private "  # test: allow-vs16
     "threads; please contact a moderator! In the meantime, use the modal "
@@ -169,6 +192,7 @@ class DeleteOriginalMessage(discord.ui.View):
 class ChooseMessageAction(discord.ui.View):
     attachment_button: discord.ui.Button[Self]
     thread_button: discord.ui.Button[Self]
+    help_button: discord.ui.Button[Self]
 
     def __init__(self, message: MovedMessage) -> None:
         super().__init__()
@@ -231,6 +255,14 @@ class ChooseMessageAction(discord.ui.View):
         self.thread_button = discord.ui.Button(label="Edit in thread", emoji="🧵")
         self.thread_button.callback = self.edit_in_thread
         self.add_item(self.thread_button)
+        # Add the help button conditionally as the help text does not make
+        # sense without the thread button's presence.
+        self.help_button = discord.ui.Button(
+            label="Help",
+            emoji="ℹ️",  # test: allow-vs16 # noqa: RUF001
+        )
+        self.help_button.callback = self.show_help
+        self.add_item(self.help_button)
 
     async def edit_in_thread(self, interaction: discord.Interaction) -> None:
         # Guaranteed by _add_thread_button().
@@ -265,6 +297,12 @@ class ChooseMessageAction(discord.ui.View):
             self._message.content, allowed_mentions=discord.AllowedMentions.none()
         )
         await thread.send(EDIT_IN_THREAD_HINT)
+
+    async def show_help(self, interaction: discord.Interaction) -> None:
+        self.help_button.disabled = True
+        await interaction.response.edit_message(
+            content=f"{MESSAGE_EDIT_HELP}\n\n{EDIT_METHOD_PROMPT}", view=self
+        )
 
 
 class EditMessage(discord.ui.Modal, title="Edit Message"):
@@ -405,7 +443,5 @@ async def delete_moved_message(
         return
 
     await interaction.response.send_message(
-        "What would you like to do?",
-        view=ChooseMessageAction(moved_message),
-        ephemeral=True,
+        EDIT_METHOD_PROMPT, view=ChooseMessageAction(moved_message), ephemeral=True
     )
