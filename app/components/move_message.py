@@ -464,3 +464,22 @@ async def delete_moved_message(
     await interaction.response.send_message(
         EDIT_METHOD_PROMPT, view=ChooseMessageAction(moved_message), ephemeral=True
     )
+
+
+async def check_for_edit_response(message: discord.Message) -> None:
+    if not (
+        # While the channel_type check covers this isinstance() check, Pyright
+        # needs this isinstance() check to know that the type is definitely
+        # a Thread.
+        isinstance(message.channel, discord.Thread)
+        and message.channel.type is discord.ChannelType.private_thread
+        and message.channel.id in edit_threads
+    ):
+        return
+
+    # TODO(Kat): actually edit the message.
+
+    await message.channel.delete(
+        reason="{message.author.name} finished editing a moved message"
+    )
+    del edit_threads[message.channel.id]

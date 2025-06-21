@@ -26,6 +26,7 @@ from app.components.github_integration import (
 )
 from app.components.lock_old_posts import check_for_old_posts
 from app.components.message_filter import check_message_filters
+from app.components.move_message import check_for_edit_response
 from app.components.status import bot_status, report_status
 from app.components.xkcd_mentions import (
     handle_xkcd_mentions,
@@ -98,6 +99,7 @@ async def on_message(message: discord.Message) -> None:
         reply_with_comments(message),  # Check for entity comments and reply with embeds
         check_for_old_posts(message),  # Check for bumps of old help posts and lock them
         handle_xkcd_mentions(message),  # Reply to xkcd mentions with the URL
+        check_for_edit_response(message),  # Check for responses in active edit threads
     ]
 
     # Look for issue/PR/discussion mentions and name/link them
