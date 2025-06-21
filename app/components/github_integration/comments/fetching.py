@@ -6,7 +6,15 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 
 from githubkit.exception import RequestFailed
-from githubkit.versions.latest.models import PullRequestReviewComment, ReactionRollup
+from githubkit.versions.latest.models import (
+    Issue,
+    IssueEvent,
+    IssueEventDismissedReview,
+    IssueEventRename,
+    IssuePropPullRequest,
+    PullRequestReviewComment,
+    ReactionRollup,
+)
 from zig_codeblocks import extract_codeblocks
 
 from app.components.github_integration.comments.discussions import (
@@ -20,11 +28,11 @@ from app.components.github_integration.models import (
     Reactions,
 )
 from app.setup import gh
-from app.utils import TTRCache
+from app.utils import TTRCache, escape_special
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Callable
 
     from githubkit.typing import Missing
     from pydantic import BaseModel
@@ -43,15 +51,112 @@ STATE_TO_COLOR = {
     "CHANGES_REQUESTED": 0xE74C3C,  # red
 }
 EVENT_COLOR = 0x3498DB  # blue
-ENTITY_UPDATE_EVENTS = frozenset({"closed", "locked", "merged", "reopened", "unlocked"})
-SUPPORTED_EVENTS = {
-    "assigned": "Assigned `{event.assignee.login}`",
-    "labeled": "Added the `{event.label.name}` label",
-    "milestoned": "Added this to the `{event.milestone.title}` milestone",
-    "review_requested": "Requested review from `{reviewer}`",
-    "unassigned": "Unassigned `{event.assignee.login}`",
-    "unlabeled": "Removed the `{event.label.name}` label",
+ENTITY_UPDATE_EVENTS = frozenset({
+    "closed",
+    "locked",
+    "merged",
+    "reopened",
+    "unlocked",
+    "pinned",
+    "unpinned",
+    "transferred",
+})
+SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
+    "assigned": "Assigned `{event.assignee.login}`.",
+    "unassigned": "Unassigned `{event.assignee.login}`.",
+    "labeled": "Added the `{event.label.name}` label.",
+    "unlabeled": "Removed the `{event.label.name}` label.",
+    "issue_type_added": "Added an issue type.",
+    "issue_type_changed": "Changed the issue type.",
+    "issue_type_removed": "Removed the issue type.",
+    "milestoned": "Added this to the `{event.milestone.title}` milestone.",
+    "demilestoned": "Removed this from the `{event.milestone.title}` milestone.",
+    "convert_to_draft": "Marked this pull request as a draft.",
+    "ready_for_review": "Marked this pull request as ready for review.",
+    "review_requested": "Requested review from `{reviewer}`.",
+    "review_request_removed": "Removed the request for review from `{reviewer}`.",
+    "auto_merge_enabled": "Enabled auto-merge.",
+    "auto_squash_enabled": "Enabled auto-merge (squash).",
+    "auto_merge_disabled": "Disabled auto-merge.",
+    "head_ref_deleted": "Deleted the head branch.",
+    "head_ref_restored": "Restored the head branch.",
+    "head_ref_force_pushed": lambda event: (
+        f"Force-pushed the head branch to {
+            _format_commit_id(event, cast('str', event.commit_id))
+        }."
+    ),
+    "base_ref_changed": "Changed the base branch.",
+    "automatic_base_change_failed": "Automatic base change failed.",
+    "automatic_base_change_succeeded": "Base automatically changed.",
+    "converted_to_discussion": "Converted this issue to a discussion.",
+    "parent_issue_added": "Added a parent issue.",
+    "sub_issue_added": "Added a sub-issue.",
+    "marked_as_duplicate": "Marked an issue as a duplicate of this one.",
+    "unmarked_as_duplicate": "Unmarked an issue as a duplicate of this one.",
+    "referenced": lambda event: (
+        f"Referenced this issue in commit {
+            _format_commit_id(
+                event, cast('str', event.commit_id), preserve_repo_url=True
+            )
+        }."
+    ),
+    "renamed": lambda event: (
+        f"Changed the title ~~{
+            escape_special((rename := cast('IssueEventRename', event.rename)).from_)
+        }~~ {escape_special(rename.to)}."
+    ),
+    "added_to_merge_queue": "Added this pull request to the merge queue.",
+    "deployed": lambda event: (
+        f"Deployed this{
+            f' via {escape_special(event.performed_via_github_app.name)}'
+            if event.performed_via_github_app is not None
+            else ''
+        }."
+    ),
+    "connected": lambda event: (
+        "Linked an issue that may be closed by this pull request."
+        if isinstance(cast("Issue", event.issue).pull_request, IssuePropPullRequest)
+        else "Linked a pull request that may close this issue."
+    ),
+    "disconnected": lambda event: (
+        f"Removed a link to {
+            'a pull request'
+            if isinstance(cast('Issue', event.issue).pull_request, IssuePropPullRequest)
+            else 'an issue'
+        }."
+    ),
+    "added_to_project_v2": "Added this to a project.",
+    "project_v2_item_status_changed": "Changed the status of this in a project.",
+    "comment_deleted": "Deleted a comment.",
 }
+
+
+def _format_commit_id(
+    event: IssueEvent,
+    commit_id: str,
+    *,
+    preserve_repo_url: bool = False,
+    shorten_to: int = 7,
+) -> str:
+    # HACK: there does not seem to be any other way to get the HTML URL of the
+    # repository. And for some reason the HTML URL requires `commit` while the
+    # API URL requires `commits` (note the `s`)...
+    if event.commit_url is None:
+        # We tried.
+        preserve_repo_url = False
+    url = (
+        (
+            cast("str", event.commit_url)
+            if preserve_repo_url
+            else cast("Issue", event.issue).repository_url
+        )
+        .replace("//api.", "//")
+        .replace("/repos/", "/")
+        .replace("commits", "commit")
+    )
+    if not preserve_repo_url:
+        url += f"/commit/{commit_id}"
+    return f"[`{commit_id[:shorten_to]}`](<{url}>)"
 
 
 class CommentCache(TTRCache[tuple[EntityGist, str, int], Comment]):
@@ -181,9 +286,7 @@ def _make_crlf_codeblock(lang: str, body: str) -> str:
 async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment:
     owner, repo, entity_no = entity_gist
     event = (await gh.rest.issues.async_get_event(owner, repo, comment_id)).parsed_data
-    if event.event not in SUPPORTED_EVENTS.keys() | ENTITY_UPDATE_EVENTS:
-        body = f"👻 Unsupported event: `{event.event}`"
-    elif event.event == "review_requested":
+    if event.event in ("review_requested", "review_request_removed"):
         # Special-cased to handle requests for both users and teams
         if event.requested_reviewer:
             reviewer = event.requested_reviewer.login
@@ -192,14 +295,40 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment:
             # Throwing in the org name to make it clear that it's a team
             org_name = event.requested_team.html_url.split("/", 5)[4]
             reviewer = f"{org_name}/{event.requested_team.name}"
-        body = SUPPORTED_EVENTS[event.event].format(reviewer=reviewer)
+        formatter = SUPPORTED_EVENTS[event.event]
+        if not isinstance(formatter, str):
+            msg = f"formatter for {event.event} must be a string"
+            raise TypeError(msg)
+        body = formatter.format(reviewer=reviewer)
     elif event.event in ENTITY_UPDATE_EVENTS:
         entity = await entity_cache.get(entity_gist)
-        body = f"{event.event.capitalize()} the {entity.kind}"
+        body = f"{event.event.capitalize()} the {entity.kind.lower()}."
         if event.lock_reason:
-            body += f"\nReason: `{event.lock_reason or 'unspecified'}`"
+            body += f"\nReason: `{event.lock_reason}`."
+    elif event.event == "review_dismissed":
+        # Special-cased since async functions need to be called
+        dismissed_review = cast("IssueEventDismissedReview", event.dismissed_review)
+        review = (
+            await gh.rest.pulls.async_get_review(
+                owner, repo, entity_no, dismissed_review.review_id
+            )
+        ).parsed_data
+        commit_id = dismissed_review.dismissal_commit_id
+        author = f"`{review.user.login}`'s" if review.user is not None else "a"
+        commit = (
+            f" via {_format_commit_id(event, commit_id)}"
+            if isinstance(commit_id, str)
+            else ""
+        )
+        msg = f": {m}" if (m := dismissed_review.dismissal_message) is not None else ""
+        body = f"Dismissed {author} [stale review](<{review.html_url}>){commit}{msg}."
+    elif event.event in SUPPORTED_EVENTS:
+        formatter = SUPPORTED_EVENTS[event.event]
+        body = (
+            formatter(event) if callable(formatter) else formatter.format(event=event)
+        )
     else:
-        body = SUPPORTED_EVENTS[event.event].format(event=event)
+        body = f"👻 Unsupported event: `{event.event}`."
     # The API doesn't return an html_url, gotta construct it manually.
     # It's fine to say "issues" here, GitHub will resolve the correct type
     url = f"https://github.com/{owner}/{repo}/issues/{entity_no}#event-{comment_id}"
