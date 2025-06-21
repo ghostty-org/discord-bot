@@ -525,7 +525,16 @@ async def move_message_via_webhook(  # noqa: PLR0913
     )
     if file:
         msg_data.files.append(file)
-        content += " • Content attached" if content.strip() else "-# Content attached"
+        if not content.strip():
+            content = "-# Content attached"
+        elif "•" in content:
+            # Ensure the move mark stays at the end, so that appending to
+            # the move mark later in SplitSubText.update() doesn't make the
+            # result incorrect.
+            subtext, _, move_mark = content.rpartition(" • ")
+            content = f"{subtext} • Content attached • {move_mark}"
+        else:
+            content += " • Content attached"
 
     msg = await webhook.send(
         content=content,
