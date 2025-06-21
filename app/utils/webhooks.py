@@ -6,7 +6,7 @@ import re
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 import httpx
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 GuildTextChannel = discord.TextChannel | discord.Thread
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
-
+_REACTION_REGEX = re.compile(r"^([^\s×]+) ×(\d+)$", re.ASCII)  # noqa: RUF001
 _SNOWFLAKE_REGEX = re.compile(r"<(\D{0,2})(\d+)>", re.ASCII)
 
 # A list of image formats supported by Discord, in the form of their file
@@ -251,7 +251,7 @@ async def _format_forward(
         )
 
     if msg_data.skipped_attachments:
-        skipped = _SubText.format_skipped(msg_data.skipped_attachments)
+        skipped = _Subtext.format_skipped(msg_data.skipped_attachments)
         embed.add_field(name="", value=f"-# {skipped}", inline=False)
 
     embed.add_field(
@@ -300,7 +300,17 @@ def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
     return f"<t:{int(dt.timestamp())}{fmt}>"
 
 
-class _SubText:
+def _format_emoji(emoji: str | discord.PartialEmoji | discord.Emoji) -> str:
+    if (
+        isinstance(emoji, str)
+        or (isinstance(emoji, discord.PartialEmoji) and emoji.is_unicode_emoji())
+        or (isinstance(emoji, discord.Emoji) and emoji.is_usable())
+    ):
+        return str(emoji)
+    return f"[{emoji.name}](<{emoji.url}>)"
+
+
+class _Subtext:
     # NOTE: when changing the subtext's format in ways that are not
     # backward-compatible, don't forget to bump the cut-off time in
     # app/components/message_filter.py!
@@ -337,14 +347,10 @@ class _SubText:
         )
 
     def _format_reactions(self) -> None:
-        formatted_reactions = [
-            f"{emoji} ×{reaction.count}"  # noqa: RUF001
-            if isinstance(emoji := reaction.emoji, str)
-            or getattr(emoji, "is_usable", lambda: False)()
-            else f"[{emoji.name}](<{emoji.url}>) ×{reaction.count}"  # noqa: RUF001
+        self.reactions = "   ".join([
+            f"{_format_emoji(reaction.emoji)} ×{reaction.count}"  # noqa: RUF001
             for reaction in self.msg_data.reactions
-        ]
-        self.reactions = "   ".join(formatted_reactions)
+        ])
 
     def _format_timestamp(self) -> None:
         if self.msg_data.created_at > dt.datetime.now(tz=dt.UTC) - dt.timedelta(
@@ -370,9 +376,9 @@ class _SubText:
         )
         context = (
             "".join(original_message_info),
-            self.move_hint,
             self.skipped,
             self.poll_error,
+            self.move_hint,
         )
         return self._sub_join(self.reactions, " • ".join(filter(None, context)))
 
@@ -382,6 +388,56 @@ class _SubText:
     @staticmethod
     def _sub_join(*strs: str) -> str:
         return "\n".join(f"-# {s}" for s in strs if s)
+
+
+class SplitSubtext:
+    def __init__(self, message: discord.WebhookMessage) -> None:
+        # NOTE: the parameter is a discord.WebhookMessage to force the caller
+        # to ensure that the requested message is actually a moved message. And
+        # since we know that we definitely have a moved message here, the last
+        # line must be the subtext.
+        # There is a notable exception of format_simple(), but all current
+        # callers of this function only give moved messages with the full
+        # subtext present.
+        *lines, reactions_line, self.subtext = message.content.splitlines()
+        self.reactions = self._get_reactions(reactions_line)
+        self.content = "\n".join(lines if self.reactions else (*lines, reactions_line))
+
+    @staticmethod
+    def _get_reactions(reaction_line: str) -> dict[str, int]:
+        if not reaction_line.startswith("-# "):
+            return {}
+        d: dict[str, int] = {}
+        for s in reaction_line.removeprefix("-# ").split("   "):
+            try:
+                emoji, count = _REACTION_REGEX.findall(s)[0]
+            except IndexError:
+                # If any of the reactions don't match, we don't have an actual
+                # reaction line; return an empty dictionary to ignore that line
+                # as it may be a similar line in the content itself.
+                return {}
+            d[emoji] = int(count)
+        return d
+
+    def update(self, message: discord.Message, executor: discord.Member | None) -> None:
+        if executor:
+            assert isinstance(message.channel, GuildTextChannel)
+            self.subtext += (
+                f", then from {message.channel.mention} by {executor.mention}"
+            )
+        for reaction in message.reactions:
+            emoji = _format_emoji(reaction.emoji)
+            self.reactions.setdefault(emoji, 0)
+            self.reactions[emoji] += reaction.count
+
+    def format(self) -> str:
+        if not self.reactions:
+            return self.subtext
+        formatted_reactions = "   ".join([
+            f"{emoji} ×{count}"  # noqa: RUF001
+            for emoji, count in self.reactions.items()
+        ])
+        return f"-# {formatted_reactions}\n{self.subtext}"
 
 
 async def get_or_create_webhook(
@@ -452,9 +508,16 @@ async def move_message_via_webhook(  # noqa: PLR0913
     else:
         poll = message.poll
 
-    # The if expression is to skip the poll ended message if there was no poll.
-    s = _SubText(msg_data, executor, poll if message.poll is not None else None)
-    subtext = s.format() if include_move_marks else s.format_simple()
+    if include_move_marks and await is_moved_message(message):
+        # Append the new move mark to the existing subtext. We cast as
+        # is_moved_message() guarantees that we have a moved message.
+        split_subtext = SplitSubtext(cast("discord.WebhookMessage", message))
+        split_subtext.update(message, executor)
+        message.content, subtext = split_subtext.content, split_subtext.format()
+    else:
+        # The if expression skips the poll ended message if there was no poll.
+        s = _Subtext(msg_data, executor, poll if message.poll is not None else None)
+        subtext = s.format() if include_move_marks else s.format_simple()
     content, file = format_or_file(
         _format_interaction(message),
         template=f"{{}}\n{subtext}",
@@ -462,7 +525,16 @@ async def move_message_via_webhook(  # noqa: PLR0913
     )
     if file:
         msg_data.files.append(file)
-        content += " • Content attached" if content.strip() else "-# Content attached"
+        if not content.strip():
+            content = "-# Content attached"
+        elif "•" in content:
+            # Ensure the move mark stays at the end, so that appending to
+            # the move mark later in SplitSubText.update() doesn't make the
+            # result incorrect.
+            subtext, _, move_mark = content.rpartition(" • ")
+            content = f"{subtext} • Content attached • {move_mark}"
+        else:
+            content += " • Content attached"
 
     msg = await webhook.send(
         content=content,
@@ -587,3 +659,12 @@ def get_moved_message_author_id(message: discord.WebhookMessage) -> int | None:
 
     snowflake, _ = _find_snowflake(subtext, "@")
     return snowflake
+
+
+async def is_moved_message(message: discord.Message) -> bool:
+    webhook_message = await get_moved_message(message)
+    return (
+        isinstance(webhook_message, discord.WebhookMessage)
+        # Also check if the message has an author, to reduce false positives.
+        and get_moved_message_author_id(webhook_message) is not None
+    )

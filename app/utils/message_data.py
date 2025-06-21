@@ -11,14 +11,14 @@ import discord
 MAX_ATTACHMENT_SIZE = 67_108_864  # 64 MiB
 
 
-class MessageData(discord.Message):
-    files: list[discord.File]
-    skipped_attachments: int
+class ExtendedMessage(discord.Message):
+    """
+    This class is intended to be subclassed when wanting a constructor that
+    uses the state from an existing Message instead of constructing a new one
+    with Message.__init__().
+    """
 
     def __init__(self, message: discord.Message) -> None:
-        # This code cannot be in the scrape() constructor itself as the
-        # subclass' __init__() *should not* be called, and overriding the
-        # __init__() is the most elegant solution.
         for attr in dir(message):
             val = getattr(type(self), attr)
             if (
@@ -33,6 +33,11 @@ class MessageData(discord.Message):
                 # At the time of writing, the only things which cause an AttributeError
                 # to be thrown are `call` and everything that starts with `_cs_`.
                 setattr(self, attr, getattr(message, attr))
+
+
+class MessageData(ExtendedMessage):
+    files: list[discord.File]
+    skipped_attachments: int
 
     @classmethod
     async def scrape(cls, message: discord.Message) -> Self:
