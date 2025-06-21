@@ -23,7 +23,7 @@ REACTION_EMOJIS = {
     "minus_one": "👎",
     "laugh": "😄",  # NOTE: while laugh is actually 😆, GitHub's UI uses smile.
     "confused": "😕",
-    "heart": "❤️",
+    "heart": "❤️",  # test: allow-vs16
     "hooray": "🎉",
     "eyes": "👀",
     "rocket": "🚀",
