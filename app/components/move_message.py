@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
@@ -144,6 +145,19 @@ async def _remove_edit_thread(
     with suppress(discord.NotFound, KeyError):
         await thread.delete(reason=f"{author.name} {action} a moved message")
         del edit_threads[thread.id]
+
+
+async def _remove_edit_thread_after_timeout(
+    thread: discord.Thread, author: discord.User | discord.Member
+) -> None:
+    remaining = dt.timedelta(minutes=15)
+    while remaining:
+        await asyncio.sleep(remaining.total_seconds())
+        # We need to re-calculate how much of the timeout has been elapsed to
+        # account for the last thread update time.
+        elapsed = dt.datetime.now(tz=dt.UTC) - edit_threads[thread.id].last_update
+        remaining = dt.timedelta(minutes=15) - elapsed
+    await _remove_edit_thread(thread, author, action="abandoned editing of")
 
 
 class SelectChannel(discord.ui.View):
@@ -386,6 +400,7 @@ class ChooseMessageAction(discord.ui.View):
         edit_threads[thread.id] = ThreadState(
             self._message, self._split_subtext, dt.datetime.now(tz=dt.UTC)
         )
+        await _remove_edit_thread_after_timeout(thread, interaction.user)
 
     async def show_help(self, interaction: discord.Interaction) -> None:
         self.help_button.disabled = True
