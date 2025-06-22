@@ -514,7 +514,9 @@ async def check_for_edit_response(message: discord.Message) -> None:
     ):
         return
 
-    # TODO(Kat): actually edit the message.
+    moved_message, subtext = edit_threads[message.channel.id]
+    new_content = "\n".join(filter(None, (message.content, subtext)))
+    await moved_message.edit(content=new_content)
 
     # Suppress NotFound and KeyError to prevent an exception thrown if the user
     # sends a message and hits the cancel at the same time.
