@@ -76,6 +76,11 @@ NEW_CONTENT_TOO_LONG = (
     "**{limit}** to account for the subtext, while your message is {length} "
     "characters long, which is **{difference} too many**."
 )
+TOO_MANY_ATTACHMENTS = (
+    "⚠️ Your message contains too many attachments! Please remove "  # test: allow-vs16
+    "at least {num_over_limit}.\n"
+    "-# **Hint:** you can only add {remaining_slots} more."
+)
 
 
 # A dictionary mapping threads to the message to edit and the subtext.
@@ -522,6 +527,7 @@ async def check_for_edit_response(message: discord.Message) -> None:
         return
 
     moved_message, subtext = edit_threads[message.channel.id]
+
     new_content = "\n".join(filter(None, (message.content, subtext)))
     if len(new_content) > 2000:
         # Subtract one to account for the newline character.
@@ -535,6 +541,18 @@ async def check_for_edit_response(message: discord.Message) -> None:
             )
         )
         return
+
+    num_existing_attachments = len(moved_message.attachments)
+    num_attachments = num_existing_attachments + len(message.attachments)
+    if num_attachments > 10:
+        await message.reply(
+            TOO_MANY_ATTACHMENTS.format(
+                num_over_limit=num_attachments - 10,
+                remaining_slots=10 - num_existing_attachments,
+            )
+        )
+        return
+
     await moved_message.edit(
         content=new_content,
         attachments=[
