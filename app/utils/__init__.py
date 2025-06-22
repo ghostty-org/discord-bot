@@ -85,7 +85,7 @@ class DeleteMessage(discord.ui.View):
 
     @discord.ui.button(
         label="Delete",
-        emoji="🗑️",  # test: allow-vs16
+        emoji="❌",
         style=discord.ButtonStyle.gray,
     )
     async def delete(

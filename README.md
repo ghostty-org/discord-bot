@@ -228,7 +228,7 @@ that are no longer relevant.
 
 Automatic links to Ghostty's GitHub issues/PRs/discussions ("entities") when a
 message contains GitHub-like mentions (`#1234`). It reacts to message edits and
-deletions for 24 hours, while also providing a "🗑️ Delete" button for 30 seconds
+deletions for 24 hours, while also providing a "❌ Delete" button for 30 seconds
 in case of false positives. Mentioning entities in other ghostty-org repos is
 supported with prefixes:
 * `web` for [ghostty-org/website][website-repo], e.g. `web#78`
@@ -273,7 +273,7 @@ label") is also supported. Same edit/delete hook and TTR cache rules apply.
 
 Similar to the above feature, entity mentions with a prefix of `xkcd`, such as
 `xkcd#1172`, will be replied to with an embed containing the XKCD's contents.
-Message edits and deletion are also handled, and a “🗑️ Delete” button is
+Message edits and deletion are also handled, and a “❌ Delete” button is
 provided for one hour.
 
 <img src="https://github.com/user-attachments/assets/ff1cf1c8-2927-4156-87af-aa5671252ee7" alt="XKCD mentions example" width="75%">

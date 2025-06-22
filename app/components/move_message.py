@@ -183,11 +183,7 @@ class DeleteOriginalMessage(discord.ui.View):
         super().__init__()
         self.message = message
 
-    @discord.ui.button(
-        label="Delete instead",
-        emoji="🗑️",  # test: allow-vs16
-        style=discord.ButtonStyle.danger,
-    )
+    @discord.ui.button(label="Delete instead", emoji="❌")
     async def delete(
         self,
         interaction: discord.Interaction,
@@ -212,7 +208,7 @@ class ChooseMessageAction(discord.ui.View):
         self._add_attachment_button()
         self._add_thread_button()
 
-    @discord.ui.button(label="Delete", emoji="🗑️")  # test: allow-vs16
+    @discord.ui.button(label="Delete", emoji="❌")
     async def delete_message(
         self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
     ) -> None:
