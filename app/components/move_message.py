@@ -96,11 +96,16 @@ NO_ATTACHMENTS_LEFT = (
     "attachments, which would make the message empty. Would you like to "
     "delete your message instead?"
 )
+ATTACHMENTS_ONLY = (
+    "Your new message only contains attachments! Doing so will result in your "
+    "message's previous content being removed. Is that what you meant to do?"
+)
 UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 
 
-# A dictionary mapping threads to the message to edit and the subtext.
-edit_threads: dict[int, tuple[MovedMessage, str]] = {}
+# A dictionary mapping threads to the message to edit and the content with the
+# subtext split off.
+edit_threads: dict[int, tuple[MovedMessage, SplitSubtext]] = {}
 
 
 async def remove_edit_thread(
@@ -352,7 +357,7 @@ class ChooseMessageAction(discord.ui.View):
                 NO_CONTENT_TO_EDIT.format(interaction.user.mention),
                 view=CancelEditing(thread),
             )
-        edit_threads[thread.id] = (self._message, self._split_subtext.format())
+        edit_threads[thread.id] = (self._message, self._split_subtext)
 
     async def show_help(self, interaction: discord.Interaction) -> None:
         self.help_button.disabled = True
@@ -447,21 +452,74 @@ class CancelEditing(discord.ui.View):
 
 class SkipLargeAttachments(discord.ui.View):
     def __init__(
-        self, message: discord.Message, moved_message: MovedMessage, new_content: str
+        self,
+        message: discord.Message,
+        moved_message: MovedMessage,
+        original_content: str,
+        subtext: str,
+        new_content: str,
     ) -> None:
         super().__init__()
         self._message = message
         self._moved_message = moved_message
+        self._original_content = original_content
+        self._subtext = subtext
         self._new_content = new_content
 
     @discord.ui.button(label="Skip", emoji="⏩")
     async def skip_large_attachments(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
+        if is_attachment_only(self._message) and not is_attachment_only(
+            self._moved_message, preprocessed_content=self._original_content
+        ):
+            await interaction.response.edit_message(
+                content=ATTACHMENTS_ONLY,
+                view=AttachmentChoice(
+                    self._message, self._moved_message, self._subtext
+                ),
+            )
+            return
+
         button.disabled = True
         await interaction.response.edit_message(content=UPLOADING, view=self)
         await self._moved_message.edit(
             content=self._new_content,
+            attachments=[
+                *self._moved_message.attachments,
+                *(await MessageData.scrape(self._message)).files,
+            ],
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+        assert isinstance(self._message.channel, discord.Thread)
+        await remove_edit_thread(self._message.channel, self._message.author)
+
+
+class AttachmentChoice(discord.ui.View):
+    def __init__(
+        self, message: discord.Message, moved_message: MovedMessage, subtext: str
+    ) -> None:
+        super().__init__()
+        self._message = message
+        self._moved_message = moved_message
+        self._subtext = subtext
+
+    @discord.ui.button(label="No, keep content", emoji="📜")
+    async def keep(
+        self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
+    ) -> None:
+        await self._edit(interaction, discord.utils.MISSING)
+
+    @discord.ui.button(label="Yes, discard content", emoji="🖼️")  # test: allow-vs16
+    async def discard(
+        self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
+    ) -> None:
+        await self._edit(interaction, self._subtext)
+
+    async def _edit(self, interaction: discord.Interaction, content: str) -> None:
+        await interaction.response.edit_message(content=UPLOADING, view=None)
+        await self._moved_message.edit(
+            content=content,
             attachments=[
                 *self._moved_message.attachments,
                 *(await MessageData.scrape(self._message)).files,
@@ -578,7 +636,8 @@ async def check_for_edit_response(message: discord.Message) -> None:
     ):
         return
 
-    moved_message, subtext = edit_threads[message.channel.id]
+    moved_message, split_subtext = edit_threads[message.channel.id]
+    subtext = split_subtext.format()
 
     new_content = "\n".join(filter(None, (message.content, subtext)))
     if len(new_content) > 2000:
@@ -619,7 +678,17 @@ async def check_for_edit_response(message: discord.Message) -> None:
         )
         await message.reply(
             ATTACHMENTS_TOO_LARGE.format(offenders=offenders),
-            view=SkipLargeAttachments(message, moved_message, new_content),
+            view=SkipLargeAttachments(
+                message, moved_message, split_subtext.content, subtext, new_content
+            ),
+        )
+        return
+
+    if is_attachment_only(message) and not is_attachment_only(
+        moved_message, preprocessed_content=split_subtext.content
+    ):
+        await message.reply(
+            ATTACHMENTS_ONLY, view=AttachmentChoice(message, moved_message, subtext)
         )
         return
 
