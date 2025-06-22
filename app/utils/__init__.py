@@ -13,7 +13,7 @@ from .hooks import (
     create_edit_hook,
     remove_view_after_timeout,
 )
-from .message_data import ExtensibleMessage, MessageData
+from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData
 from .webhooks import (
     NON_SYSTEM_MESSAGE_TYPES,
     SUPPORTED_IMAGE_FORMATS,
@@ -32,6 +32,7 @@ from .webhooks import (
 from app.setup import config
 
 __all__ = (
+    "MAX_ATTACHMENT_SIZE",
     "NON_SYSTEM_MESSAGE_TYPES",
     "SUPPORTED_IMAGE_FORMATS",
     "Account",
