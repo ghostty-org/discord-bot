@@ -90,6 +90,11 @@ ATTACHMENTS_TOO_LARGE = (
     "Please try again without those attachments, or press *Skip* to continue "
     "without the offending attachments."
 )
+NO_ATTACHMENTS_LEFT = (
+    "Every attachment was selected, but your message only contains "
+    "attachments, which would make the message empty. Would you like to "
+    "delete your message instead?"
+)
 UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 
 
@@ -210,7 +215,7 @@ class HelpPostTitle(discord.ui.Modal, title="Turn into #help post"):
         )
 
 
-class DeleteOriginalMessage(discord.ui.View):
+class DeleteInstead(discord.ui.View):
     def __init__(self, message: discord.Message) -> None:
         super().__init__()
         self.message = message
@@ -223,9 +228,7 @@ class DeleteOriginalMessage(discord.ui.View):
     ) -> None:
         button.disabled = True
         await self.message.delete()
-        await interaction.response.edit_message(
-            content="Deleted the original message.", view=self
-        )
+        await interaction.response.edit_message(view=self)
 
 
 class ChooseMessageAction(discord.ui.View):
@@ -295,7 +298,9 @@ class ChooseMessageAction(discord.ui.View):
     async def send_attachment_picker(self, interaction: discord.Interaction) -> None:
         await interaction.response.edit_message(
             content="Select attachments to delete.",
-            view=DeleteAttachments(self._message),
+            view=DeleteAttachments(
+                self._message, preprocessed_content=self._split_subtext.content
+            ),
         )
 
     def _add_thread_button(self) -> None:
@@ -398,9 +403,12 @@ class EditMessage(discord.ui.Modal, title="Edit Message"):
 class DeleteAttachments(discord.ui.View):
     select: discord.ui.Select[Self]
 
-    def __init__(self, message: MovedMessage) -> None:
+    def __init__(
+        self, message: MovedMessage, *, preprocessed_content: str | None = None
+    ) -> None:
         super().__init__()
         self._message = message
+        self._content = preprocessed_content
         self.select = discord.ui.Select(
             placeholder="Select attachments", max_values=len(message.attachments)
         )
@@ -414,9 +422,15 @@ class DeleteAttachments(discord.ui.View):
 
     async def remove_attachments(self, interaction: discord.Interaction) -> None:
         to_remove = set(map(int, self.select.values))
-        await self._message.edit(
-            attachments=[a for a in self._message.attachments if a.id not in to_remove]
-        )
+        remaining = [a for a in self._message.attachments if a.id not in to_remove]
+        if not remaining and is_attachment_only(
+            self._message, preprocessed_content=self._content
+        ):
+            await interaction.response.edit_message(
+                content=NO_ATTACHMENTS_LEFT, view=DeleteInstead(self._message)
+            )
+            return
+        await self._message.edit(attachments=remaining)
         await interaction.response.edit_message(
             content="Attachments removed.", view=None
         )
@@ -495,7 +509,7 @@ async def move_message(
         await interaction.response.send_message(
             "System messages cannot be moved.",
             ephemeral=True,
-            view=DeleteOriginalMessage(message),
+            view=DeleteInstead(message),
         )
         return
 
@@ -528,7 +542,7 @@ async def turn_into_help_post(
         await interaction.response.send_message(
             f"System messages cannot be turned into <#{config.HELP_CHANNEL_ID}> posts.",
             ephemeral=True,
-            view=DeleteOriginalMessage(message),
+            view=DeleteInstead(message),
         )
         return
 
