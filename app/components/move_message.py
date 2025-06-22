@@ -7,6 +7,7 @@ import discord
 from app.setup import bot, config
 from app.utils import (
     MAX_ATTACHMENT_SIZE,
+    DeleteInstead,
     GuildTextChannel,
     MessageData,
     MovedMessage,
@@ -213,22 +214,6 @@ class HelpPostTitle(discord.ui.Modal, title="Turn into #help post"):
         await interaction.followup.send(
             content=f"Help post created: <#{msg.channel.id}>", ephemeral=True
         )
-
-
-class DeleteInstead(discord.ui.View):
-    def __init__(self, message: discord.Message) -> None:
-        super().__init__()
-        self.message = message
-
-    @discord.ui.button(label="Delete instead", emoji="❌")
-    async def delete(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button[Self],
-    ) -> None:
-        button.disabled = True
-        await self.message.delete()
-        await interaction.response.edit_message(view=self)
 
 
 class ChooseMessageAction(discord.ui.View):
