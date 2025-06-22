@@ -6,6 +6,7 @@ import discord
 
 from app.setup import bot, config
 from app.utils import (
+    MAX_ATTACHMENT_SIZE,
     GuildTextChannel,
     MessageData,
     MovedMessage,
@@ -80,6 +81,12 @@ TOO_MANY_ATTACHMENTS = (
     "⚠️ Your message contains too many attachments! Please remove "  # test: allow-vs16
     "at least {num_over_limit}.\n"
     "-# **Hint:** you can only add {remaining_slots} more."
+)
+ATTACHMENTS_TOO_LARGE = (
+    "⚠️ Some of your attachments are too large! The following "  # test: allow-vs16
+    "attachments exceed the limit of 64 MiB:\n"
+    "{offenders}\n"
+    "Please try again without those attachments."
 )
 
 
@@ -561,6 +568,21 @@ async def check_for_edit_response(message: discord.Message) -> None:
                 remaining_slots=10 - num_existing_attachments,
             )
         )
+        return
+    # While an alternative would be to make MessageData store the names of all
+    # skipped attachments, that would mean that all other attachments would
+    # have to be downloaded as well for no reason, so replicate the attachment
+    # size check here to avoid downloading anything if even a single attachment
+    # is too large.
+    if too_large := [a for a in message.attachments if a.size > MAX_ATTACHMENT_SIZE]:
+        offenders = "\n".join(
+            # HACK: replace all backticks with reverse primes to avoid
+            # incorrect rendering of file names that preemptively end the
+            # Markdown inline code.
+            f"* `{truncate((a.title or a.filename).replace('`', '\u2035'), 100)}`"
+            for a in too_large
+        )
+        await message.reply(ATTACHMENTS_TOO_LARGE.format(offenders=offenders))
         return
 
     if message.attachments:
