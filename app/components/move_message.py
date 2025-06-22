@@ -128,11 +128,7 @@ class Ghostping(discord.ui.View):
         self._author = author
         self._channel = channel
 
-    @discord.ui.button(
-        label="Ghostping",
-        emoji="👻",
-        style=discord.ButtonStyle.gray,
-    )
+    @discord.ui.button(label="Ghostping", emoji="👻")
     async def ghostping(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:

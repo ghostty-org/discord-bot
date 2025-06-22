@@ -83,11 +83,7 @@ class DeleteMessage(discord.ui.View):
         self.message = message
         self.item_count = item_count
 
-    @discord.ui.button(
-        label="Delete",
-        emoji="❌",
-        style=discord.ButtonStyle.gray,
-    )
+    @discord.ui.button(label="Delete", emoji="❌")
     async def delete(
         self, interaction: discord.Interaction, _: discord.ui.Button[Self]
     ) -> None:
