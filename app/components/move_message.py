@@ -15,6 +15,7 @@ from app.utils import (
     MovedMessage,
     MovedMessageLookupFailed,
     SplitSubtext,
+    dynamic_timestamp,
     get_or_create_webhook,
     is_attachment_only,
     is_dm,
@@ -106,6 +107,10 @@ ATTACHMENTS_ONLY = (
     "Your new message only contains attachments! Doing so will result in your "
     "message's previous content being removed. Is that what you meant to do?"
 )
+EDITING_TIMEOUT_ALMOST_REACHED = (
+    "{}, are you still editing this message? This thread will be deleted "
+    "{in_five_minutes} if it remains inactive."
+)
 UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 
 
@@ -150,14 +155,53 @@ async def _remove_edit_thread(
 async def _remove_edit_thread_after_timeout(
     thread: discord.Thread, author: discord.User | discord.Member
 ) -> None:
-    remaining = dt.timedelta(minutes=15)
-    while remaining:
-        await asyncio.sleep(remaining.total_seconds())
-        # We need to re-calculate how much of the timeout has been elapsed to
-        # account for the last thread update time.
+    # Start off with a last update check so that recursive calls to this
+    # function don't need to pass the remaining time around.
+    elapsed = dt.datetime.now(tz=dt.UTC) - edit_threads[thread.id].last_update
+    time_to_warning = dt.timedelta(minutes=10) - elapsed
+    # Keep sleeping until we have a zero or negative time to the warning. This
+    # has to be a while loop because other coroutines may have touched the last
+    # update time of this edit thread while we were sleeping.
+    while time_to_warning > dt.timedelta():
+        await asyncio.sleep(time_to_warning.total_seconds())
+        if thread.id not in edit_threads:
+            # The user finished or canceled editing of the thread while we were
+            # asleep.
+            return
+        # Re-calculate how much of the timeout has been elapsed to account for
+        # the last thread update time once again.
         elapsed = dt.datetime.now(tz=dt.UTC) - edit_threads[thread.id].last_update
-        remaining = dt.timedelta(minutes=15) - elapsed
-    await _remove_edit_thread(thread, author, action="abandoned editing of")
+        time_to_warning = dt.timedelta(minutes=10) - elapsed
+    # At this point, we have definitely waited ten minutes from the last thread
+    # update, so send a warning to the user.
+    remaining = dt.timedelta(minutes=5)
+    await thread.send(
+        EDITING_TIMEOUT_ALMOST_REACHED.format(
+            author.mention,
+            in_five_minutes=dynamic_timestamp(
+                dt.datetime.now(tz=dt.UTC) + remaining, "R"
+            ),
+        ),
+        view=ContinueEditing(thread),
+    )
+    await asyncio.sleep(remaining.total_seconds())
+    if thread.id not in edit_threads:
+        # The user finished or canceled editing of the thread while we were
+        # asleep.
+        return
+    # We once again need to re-calculate how much of the timeout has been
+    # elapsed to account for the last thread update time. This is especially
+    # important this time around since it's how the "Continue Editing" button
+    # signals to us that the user opted to continue.
+    elapsed = dt.datetime.now(tz=dt.UTC) - edit_threads[thread.id].last_update
+    if elapsed >= dt.timedelta(minutes=15):
+        # Fifteen minutes (time_to_warning's delta + remaining) have passed, so
+        # we shall delete the thread now.
+        await _remove_edit_thread(thread, author, action="abandoned editing of")
+        return
+    # Restart the wait time. The start of this function will deal with the
+    # remaining time left to sleep.
+    await _remove_edit_thread_after_timeout(thread, author)
 
 
 class SelectChannel(discord.ui.View):
@@ -490,6 +534,31 @@ class CancelEditing(discord.ui.View):
         # We can't actually followup on the deferred response here because
         # doing so would result in NotFound being thrown since the thread was
         # just deleted above.
+
+
+class ContinueEditing(discord.ui.View):
+    def __init__(self, thread: discord.Thread) -> None:
+        super().__init__()
+        self._thread = thread
+
+    @discord.ui.button(label="Continue Editing", emoji="📜")
+    async def continue_editing(
+        self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
+    ) -> None:
+        edit_threads[self._thread.id].last_update = dt.datetime.now(tz=dt.UTC)
+        assert interaction.message is not None
+        await interaction.message.delete()
+
+    @discord.ui.button(label="Cancel Editing", emoji="❌")
+    async def cancel_editing(
+        self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
+    ) -> None:
+        # See the comments in CancelEditing.cancel_editing() for the reasoning
+        # behind deferring here.
+        await interaction.response.defer()
+        await _remove_edit_thread(
+            self._thread, interaction.user, action="canceled editing of"
+        )
 
 
 class SkipLargeAttachments(discord.ui.View):
