@@ -86,8 +86,10 @@ ATTACHMENTS_TOO_LARGE = (
     "⚠️ Some of your attachments are too large! The following "  # test: allow-vs16
     "attachments exceed the limit of 64 MiB:\n"
     "{offenders}\n"
-    "Please try again without those attachments."
+    "Please try again without those attachments, or press *Skip* to continue "
+    "without the offending attachments."
 )
+UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 
 
 # A dictionary mapping threads to the message to edit and the subtext.
@@ -437,6 +439,33 @@ class CancelEditing(discord.ui.View):
         # just deleted above.
 
 
+class SkipLargeAttachments(discord.ui.View):
+    def __init__(
+        self, message: discord.Message, moved_message: MovedMessage, new_content: str
+    ) -> None:
+        super().__init__()
+        self._message = message
+        self._moved_message = moved_message
+        self._new_content = new_content
+
+    @discord.ui.button(label="Skip", emoji="⏩")
+    async def skip_large_attachments(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+    ) -> None:
+        button.disabled = True
+        await interaction.response.edit_message(content=UPLOADING, view=self)
+        await self._moved_message.edit(
+            content=self._new_content,
+            attachments=[
+                *self._moved_message.attachments,
+                *(await MessageData.scrape(self._message)).files,
+            ],
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+        assert isinstance(self._message.channel, discord.Thread)
+        await remove_edit_thread(self._message.channel, self._message.author)
+
+
 @bot.tree.context_menu(name="Move message")
 @discord.app_commands.default_permissions(manage_messages=True)
 @discord.app_commands.guild_only()
@@ -582,14 +611,14 @@ async def check_for_edit_response(message: discord.Message) -> None:
             f"* `{truncate((a.title or a.filename).replace('`', '\u2035'), 100)}`"
             for a in too_large
         )
-        await message.reply(ATTACHMENTS_TOO_LARGE.format(offenders=offenders))
+        await message.reply(
+            ATTACHMENTS_TOO_LARGE.format(offenders=offenders),
+            view=SkipLargeAttachments(message, moved_message, new_content),
+        )
         return
 
     if message.attachments:
-        await message.reply(
-            "-# ⌛ Uploading attachments (this may take some time)…",
-            mention_author=False,
-        )
+        await message.reply(UPLOADING, mention_author=False)
     await moved_message.edit(
         content=new_content,
         attachments=[
