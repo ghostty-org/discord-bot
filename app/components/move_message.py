@@ -69,6 +69,12 @@ EDIT_IN_THREAD_HINT = (
     '"Copy Text" in the context menu. Any attachments you upload are '
     "also added to your message."
 )
+NEW_CONTENT_TOO_LONG = (
+    "⚠️ Your message is too long! Please try again.\n"  # test: allow-vs16
+    "-# **Hint:** the maximum number of characters you can enter is "
+    "**{limit}** to account for the subtext, while your message is {length} "
+    "characters long, which is **{difference} too many**."
+)
 
 
 # A dictionary mapping threads to the message to edit and the subtext.
@@ -516,6 +522,18 @@ async def check_for_edit_response(message: discord.Message) -> None:
 
     moved_message, subtext = edit_threads[message.channel.id]
     new_content = "\n".join(filter(None, (message.content, subtext)))
+    if len(new_content) > 2000:
+        # Subtract one to account for the newline character.
+        max_length = 2000 - len(subtext) - 1
+        content_length = len(message.content)
+        await message.reply(
+            NEW_CONTENT_TOO_LONG.format(
+                limit=max_length,
+                length=content_length,
+                difference=content_length - max_length,
+            )
+        )
+        return
     await moved_message.edit(content=new_content)
 
     # Suppress NotFound and KeyError to prevent an exception thrown if the user
