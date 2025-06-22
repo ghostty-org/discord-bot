@@ -163,3 +163,17 @@ def escape_special(content: str) -> str:
     return "\n".join(
         _ORDERED_LIST_REGEX.sub(r"\1\. \2", line) for line in escaped.splitlines()
     )
+
+
+def is_attachment_only(
+    message: discord.Message, *, preprocessed_content: str | None = None
+) -> bool:
+    if preprocessed_content is None:
+        preprocessed_content = message.content
+    return not any((
+        message.components,
+        preprocessed_content,
+        message.embeds,
+        message.poll,
+        message.stickers,
+    ))

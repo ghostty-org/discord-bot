@@ -13,6 +13,7 @@ from app.utils import (
     MovedMessageLookupFailed,
     SplitSubtext,
     get_or_create_webhook,
+    is_attachment_only,
     is_dm,
     is_helper,
     is_mod,
@@ -264,13 +265,9 @@ class ChooseMessageAction(discord.ui.View):
             case 0:
                 # Don't allow removing attachments when there aren't any.
                 pass
-            case 1 if not any((
-                self._message.components,
-                self._split_subtext.content,
-                self._message.embeds,
-                self._message.poll,
-                self._message.stickers,
-            )):
+            case 1 if is_attachment_only(
+                self._message, preprocessed_content=self._split_subtext.content
+            ):
                 # Don't allow removing the attachment of a message with only
                 # one attachment, as that would make the message empty. This is
                 # in line with Discord's UI (it does not show the remove button
