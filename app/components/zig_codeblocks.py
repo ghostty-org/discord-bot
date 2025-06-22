@@ -74,7 +74,7 @@ class ZigCodeblockActions(discord.ui.View):
         return True
 
     @discord.ui.button(
-        label="Dismiss",
+        label="Delete",
         emoji="❌",
         style=discord.ButtonStyle.gray,
     )
