@@ -553,6 +553,11 @@ async def check_for_edit_response(message: discord.Message) -> None:
         )
         return
 
+    if message.attachments:
+        await message.reply(
+            "-# ⌛ Uploading attachments (this may take some time)…",
+            mention_author=False,
+        )
     await moved_message.edit(
         content=new_content,
         attachments=[
