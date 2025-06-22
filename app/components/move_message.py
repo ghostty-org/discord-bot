@@ -236,8 +236,13 @@ class ChooseMessageAction(discord.ui.View):
         super().__init__()
         self._message = message
         self._split_subtext = SplitSubtext(message)
-        self._add_attachment_button()
+        self._attachment_button_added = False
+        # Adding the thread button might also add the attachment button so that
+        # the attachment button can be placed in between the thread and help
+        # buttons.
         self._add_thread_button()
+        if not self._attachment_button_added:
+            self._add_attachment_button()
 
     @discord.ui.button(label="Delete", emoji="❌")
     async def delete_message(
@@ -254,6 +259,7 @@ class ChooseMessageAction(discord.ui.View):
         await interaction.delete_original_response()
 
     def _add_attachment_button(self) -> None:
+        self._attachment_button_added = True
         match len(self._message.attachments):
             case 0:
                 # Don't allow removing attachments when there aren't any.
@@ -306,6 +312,10 @@ class ChooseMessageAction(discord.ui.View):
         self.thread_button = discord.ui.Button(label="Edit in thread", emoji="🧵")
         self.thread_button.callback = self.edit_in_thread
         self.add_item(self.thread_button)
+        # Add the attachment button here so that it goes in between the thread
+        # and help buttons. __init__() guards against this to avoid adding
+        # a second attachment button too.
+        self._add_attachment_button()
         # Add the help button conditionally as the help text does not make
         # sense without the thread button's presence.
         self.help_button = discord.ui.Button(
