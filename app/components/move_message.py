@@ -7,6 +7,7 @@ import discord
 from app.setup import bot, config
 from app.utils import (
     GuildTextChannel,
+    MessageData,
     MovedMessage,
     MovedMessageLookupFailed,
     SplitSubtext,
@@ -534,7 +535,14 @@ async def check_for_edit_response(message: discord.Message) -> None:
             )
         )
         return
-    await moved_message.edit(content=new_content)
+    await moved_message.edit(
+        content=new_content,
+        attachments=[
+            *moved_message.attachments,
+            *(await MessageData.scrape(message)).files,
+        ],
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
 
     # Suppress NotFound and KeyError to prevent an exception thrown if the user
     # sends a message and hits the cancel at the same time.
