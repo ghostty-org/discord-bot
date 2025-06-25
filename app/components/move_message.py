@@ -108,7 +108,20 @@ UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 edit_threads: dict[int, tuple[MovedMessage, SplitSubtext]] = {}
 
 
-async def remove_edit_thread(
+async def _apply_edit_from_thread(
+    moved_message: MovedMessage, message: discord.Message, new_content: str
+) -> None:
+    await moved_message.edit(
+        content=new_content,
+        attachments=[
+            *moved_message.attachments,
+            *(await MessageData.scrape(message)).files,
+        ],
+        allowed_mentions=discord.AllowedMentions.none(),
+    )
+
+
+async def _remove_edit_thread(
     thread: discord.Thread,
     author: discord.User | discord.Member,
     *,
@@ -442,7 +455,7 @@ class CancelEditing(discord.ui.View):
         # minutes so that the user never sees "Something went wrong." before
         # the thread is gone and the user is moved out of the thread.
         await interaction.response.defer()
-        await remove_edit_thread(
+        await _remove_edit_thread(
             self._thread, interaction.user, action="canceled editing of"
         )
         # We can't actually followup on the deferred response here because
@@ -483,16 +496,11 @@ class SkipLargeAttachments(discord.ui.View):
 
         button.disabled = True
         await interaction.response.edit_message(content=UPLOADING, view=self)
-        await self._moved_message.edit(
-            content=self._new_content,
-            attachments=[
-                *self._moved_message.attachments,
-                *(await MessageData.scrape(self._message)).files,
-            ],
-            allowed_mentions=discord.AllowedMentions.none(),
+        await _apply_edit_from_thread(
+            self._moved_message, self._message, self._new_content
         )
         assert isinstance(self._message.channel, discord.Thread)
-        await remove_edit_thread(self._message.channel, self._message.author)
+        await _remove_edit_thread(self._message.channel, self._message.author)
 
 
 class AttachmentChoice(discord.ui.View):
@@ -518,16 +526,9 @@ class AttachmentChoice(discord.ui.View):
 
     async def _edit(self, interaction: discord.Interaction, content: str) -> None:
         await interaction.response.edit_message(content=UPLOADING, view=None)
-        await self._moved_message.edit(
-            content=content,
-            attachments=[
-                *self._moved_message.attachments,
-                *(await MessageData.scrape(self._message)).files,
-            ],
-            allowed_mentions=discord.AllowedMentions.none(),
-        )
+        await _apply_edit_from_thread(self._moved_message, self._message, content)
         assert isinstance(self._message.channel, discord.Thread)
-        await remove_edit_thread(self._message.channel, self._message.author)
+        await _remove_edit_thread(self._message.channel, self._message.author)
 
 
 @bot.tree.context_menu(name="Move message")
@@ -694,12 +695,5 @@ async def check_for_edit_response(message: discord.Message) -> None:
 
     if message.attachments:
         await message.reply(UPLOADING, mention_author=False)
-    await moved_message.edit(
-        content=new_content,
-        attachments=[
-            *moved_message.attachments,
-            *(await MessageData.scrape(message)).files,
-        ],
-        allowed_mentions=discord.AllowedMentions.none(),
-    )
-    await remove_edit_thread(message.channel, message.author)
+    await _apply_edit_from_thread(moved_message, message, new_content)
+    await _remove_edit_thread(message.channel, message.author)
