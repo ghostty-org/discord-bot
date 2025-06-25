@@ -91,6 +91,10 @@ ATTACHMENTS_TOO_LARGE = (
     "Please try again without those attachments, or press *Skip* to continue "
     "without the offending attachments."
 )
+ALL_ATTACHMENTS_TOO_LARGE = (
+    "⚠️ All of your attachments are too large! The limit for the "  # test: allow-vs16
+    "size of attachments is 64 MiB. Please try again with smaller attachments."
+)
 NO_ATTACHMENTS_LEFT = (
     "Every attachment was selected, but your message only contains "
     "attachments, which would make the message empty. Would you like to "
@@ -670,6 +674,9 @@ async def check_for_edit_response(message: discord.Message) -> None:
     # size check here to avoid downloading anything if even a single attachment
     # is too large.
     if too_large := [a for a in message.attachments if a.size > MAX_ATTACHMENT_SIZE]:
+        if len(too_large) == len(message.attachments):
+            await message.reply(ALL_ATTACHMENTS_TOO_LARGE)
+            return
         offenders = "\n".join(
             # HACK: replace all backticks with reverse primes to avoid
             # incorrect rendering of file names that preemptively end the
