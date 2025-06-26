@@ -56,6 +56,11 @@ MESSAGE_EDIT_HELP = (
     "not touching emojis or channel/user mentions, and *Edit in thread* in "
     "all other cases."
 )
+ALREADY_EDITING = (
+    "You are already editing a message in a thread! You can only edit one "
+    "message in a thread at a time, to prevent abuse. Please finish editing "
+    "the message at <#{thread_id}> first, or use the modal."
+)
 NO_THREAD_PERMS = (
     "⚠️ I don't have the required permissions to create private "  # test: allow-vs16
     "threads; please contact a moderator! In the meantime, use the modal "
@@ -121,8 +126,13 @@ class ThreadState:
     last_update: dt.datetime
 
 
-# A dictionary mapping thread ids to their state.
+# A dictionary mapping edit thread IDs to their state. An ID is used instead of
+# the thread itself because there is a thread available already at all places
+# this is used, and because it isn't obvious how threads are hashed.
 edit_threads: dict[int, ThreadState] = {}
+# A dictionary mapping edit thread creator IDs to the ID of the thread they are
+# editing in. IDs are used for the same reason as above.
+edit_thread_creators: dict[int, int] = {}
 
 
 async def _apply_edit_from_thread(
@@ -150,6 +160,7 @@ async def _remove_edit_thread(
     with suppress(discord.NotFound, KeyError):
         await thread.delete(reason=f"{author.name} {action} a moved message")
         del edit_threads[thread.id]
+        del edit_thread_creators[author.id]
 
 
 async def _remove_edit_thread_after_timeout(
@@ -404,6 +415,17 @@ class ChooseMessageAction(discord.ui.View):
     async def edit_in_thread(self, interaction: discord.Interaction) -> None:
         # Guaranteed by _add_thread_button().
         assert isinstance(self._channel, discord.TextChannel)
+        if (
+            existing_thread := edit_thread_creators.get(interaction.user.id)
+        ) is not None:
+            # While the better solution would be to disable this button up
+            # front and show this message through other means (such as
+            # a tooltip), Discord doesn't let you do that :(.
+            self.thread_button.disabled = True
+            await interaction.response.edit_message(
+                content=ALREADY_EDITING.format(thread_id=existing_thread), view=self
+            )
+            return
         try:
             thread = await self._channel.create_thread(
                 name="Edit moved message",
@@ -444,6 +466,7 @@ class ChooseMessageAction(discord.ui.View):
         edit_threads[thread.id] = ThreadState(
             self._message, self._split_subtext, dt.datetime.now(tz=dt.UTC)
         )
+        edit_thread_creators[interaction.user.id] = thread.id
         await _remove_edit_thread_after_timeout(thread, interaction.user)
 
     async def show_help(self, interaction: discord.Interaction) -> None:
