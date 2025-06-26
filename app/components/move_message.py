@@ -266,7 +266,9 @@ class ChooseMessageAction(discord.ui.View):
     async def send_modal(
         self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
     ) -> None:
-        await interaction.response.send_modal(EditMessage(self._message))
+        await interaction.response.send_modal(
+            EditMessage(self._message, self._split_subtext)
+        )
         await interaction.delete_original_response()
 
     def _add_attachment_button(self) -> None:
@@ -390,18 +392,17 @@ class EditMessage(discord.ui.Modal, title="Edit Message"):
         default=discord.utils.MISSING,
     )
 
-    def __init__(self, message: MovedMessage) -> None:
-        split_subtext = SplitSubtext(message)
-        self._subtext = split_subtext.format()
+    def __init__(self, message: MovedMessage, split_subtext: SplitSubtext) -> None:
+        self._split_subtext = split_subtext
         self.new_text.default = split_subtext.content
         # Subtract one to account for the newline character.
-        self.new_text.max_length = 2000 - len(self._subtext) - 1
+        self.new_text.max_length = 2000 - len(split_subtext.subtext) - 1
         super().__init__()
         self._message = message
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await self._message.edit(
-            content=f"{self.new_text.value}\n{self._subtext}",
+            content=f"{self.new_text.value}\n{self._split_subtext.subtext}",
             allowed_mentions=discord.AllowedMentions.none(),
         )
         await interaction.response.send_message("Message edited.", ephemeral=True)
@@ -472,15 +473,13 @@ class SkipLargeAttachments(discord.ui.View):
         self,
         message: discord.Message,
         moved_message: MovedMessage,
-        original_content: str,
-        subtext: str,
+        split_subtext: SplitSubtext,
         new_content: str,
     ) -> None:
         super().__init__()
         self._message = message
         self._moved_message = moved_message
-        self._original_content = original_content
-        self._subtext = subtext
+        self._split_subtext = split_subtext
         self._new_content = new_content
 
     @discord.ui.button(label="Skip", emoji="⏩")
@@ -488,12 +487,12 @@ class SkipLargeAttachments(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         if is_attachment_only(self._message) and not is_attachment_only(
-            self._moved_message, preprocessed_content=self._original_content
+            self._moved_message, preprocessed_content=self._split_subtext.content
         ):
             await interaction.response.edit_message(
                 content=ATTACHMENTS_ONLY,
                 view=AttachmentChoice(
-                    self._message, self._moved_message, self._subtext
+                    self._message, self._moved_message, self._split_subtext
                 ),
             )
             return
@@ -509,12 +508,15 @@ class SkipLargeAttachments(discord.ui.View):
 
 class AttachmentChoice(discord.ui.View):
     def __init__(
-        self, message: discord.Message, moved_message: MovedMessage, subtext: str
+        self,
+        message: discord.Message,
+        moved_message: MovedMessage,
+        split_subtext: SplitSubtext,
     ) -> None:
         super().__init__()
         self._message = message
         self._moved_message = moved_message
-        self._subtext = subtext
+        self._split_subtext = split_subtext
 
     @discord.ui.button(label="No, keep content", emoji="📜")
     async def keep(
@@ -526,7 +528,7 @@ class AttachmentChoice(discord.ui.View):
     async def discard(
         self, interaction: discord.Interaction, _button: discord.ui.Button[Self]
     ) -> None:
-        await self._edit(interaction, self._subtext)
+        await self._edit(interaction, self._split_subtext.subtext)
 
     async def _edit(self, interaction: discord.Interaction, content: str) -> None:
         await interaction.response.edit_message(content=UPLOADING, view=None)
@@ -642,12 +644,11 @@ async def check_for_edit_response(message: discord.Message) -> None:
         return
 
     moved_message, split_subtext = edit_threads[message.channel.id]
-    subtext = split_subtext.format()
 
-    new_content = "\n".join(filter(None, (message.content, subtext)))
+    new_content = "\n".join(filter(None, (message.content, split_subtext.subtext)))
     if len(new_content) > 2000:
         # Subtract one to account for the newline character.
-        max_length = 2000 - len(subtext) - 1
+        max_length = 2000 - len(split_subtext.subtext) - 1
         content_length = len(message.content)
         await message.reply(
             NEW_CONTENT_TOO_LONG.format(
@@ -687,7 +688,7 @@ async def check_for_edit_response(message: discord.Message) -> None:
         await message.reply(
             ATTACHMENTS_TOO_LARGE.format(offenders=offenders),
             view=SkipLargeAttachments(
-                message, moved_message, split_subtext.content, subtext, new_content
+                message, moved_message, split_subtext, new_content
             ),
         )
         return
@@ -696,7 +697,8 @@ async def check_for_edit_response(message: discord.Message) -> None:
         moved_message, preprocessed_content=split_subtext.content
     ):
         await message.reply(
-            ATTACHMENTS_ONLY, view=AttachmentChoice(message, moved_message, subtext)
+            ATTACHMENTS_ONLY,
+            view=AttachmentChoice(message, moved_message, split_subtext),
         )
         return
 
