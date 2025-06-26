@@ -273,7 +273,7 @@ label") is also supported. Same edit/delete hook and TTR cache rules apply.
 
 Similar to the above feature, entity mentions with a prefix of `xkcd`, such as
 `xkcd#1172`, will be replied to with an embed containing the XKCD's contents.
-Message edits and deletion are also handled, and a “❌ Delete” button is
+Message edits and deletion are also handled, and a "❌ Delete" button is
 provided for one hour.
 
 <img src="https://github.com/user-attachments/assets/ff1cf1c8-2927-4156-87af-aa5671252ee7" alt="XKCD mentions example" width="75%">
@@ -324,8 +324,26 @@ related feature:
 
 <img src="https://github.com/user-attachments/assets/9943a31c-3b0e-4606-99a0-5182ce114b87" alt="Turn into #help post example" width="70%">
 
-The author of a message and people with the “Manage Messages” permission can
-also delete moved messages using an entry in the context menu.
+The author of a message can also modify moved messages using an entry in the
+context menu, which gives them the following:
+* a **Delete** button: removes the moved message, without any further
+  confirmation.
+* an **Edit via modal** button: displays a text box to them that is pre-filled
+  with the existing message content, allowing them modify it almost like with
+  the normal Discord edit option.
+* an **Edit in thread** button: creates a new private thread in the current
+  channel, adds them to it, then provides them with instructions on how to
+  continue. In channels that don't support private threads, this button isn't
+  shown.
+* a **Help** button: displays information about both editing options to them.
+
+If the message has one attachment, a "Remove attachment" button is also shown,
+which removes the attachment without any further confirmation; if the message
+has multiple attachments, a "Remove attachments" button is shown which provides
+the user with a selection menu that allows them to remove select which
+attachments are to be removed.
+
+<img src="TODO" alt="Moved message editing example" width="xx%">
 
 [bot-repo]: https://github.com/ghostty-org/discord-bot
 [discord-docs]: https://discord.com/developers/applications
