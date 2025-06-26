@@ -534,7 +534,7 @@ class DeleteAttachments(discord.ui.View):
             return
         await self._message.edit(attachments=remaining)
         await interaction.response.edit_message(
-            content="Attachments removed.", view=None
+            content=f"Attachment{'s' * (len(to_remove) != 1)} removed.", view=None
         )
 
 
