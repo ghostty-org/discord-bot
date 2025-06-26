@@ -138,13 +138,22 @@ edit_thread_creators: dict[int, int] = {}
 async def _apply_edit_from_thread(
     moved_message: MovedMessage, message: discord.Message, new_content: str
 ) -> None:
+    channel = moved_message.channel
     # Suppress NotFound in case the user attempts to commit an edit to
     # a message that was deleted in the meantime.
     with suppress(discord.NotFound):
         await moved_message.edit(
             content=new_content,
             attachments=[
-                *moved_message.attachments,
+                # It is possible that our message to edit is stale if the user
+                # removed an attachment from the message after they started
+                # editing it. Thus, re-fetch the message before grabbing its
+                # attachments to avoid an HTTPException from missing
+                # attachments. It is not stored to a variable beforehand
+                # because fetch_message() returns a Message which can't be used
+                # to edit a webhook message, so we use the old MovedMessage to
+                # perform the edit itself.
+                *(await channel.fetch_message(moved_message.id)).attachments,
                 *(await MessageData.scrape(message)).files,
             ],
             allowed_mentions=discord.AllowedMentions.none(),
