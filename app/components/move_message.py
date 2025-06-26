@@ -138,14 +138,17 @@ edit_thread_creators: dict[int, int] = {}
 async def _apply_edit_from_thread(
     moved_message: MovedMessage, message: discord.Message, new_content: str
 ) -> None:
-    await moved_message.edit(
-        content=new_content,
-        attachments=[
-            *moved_message.attachments,
-            *(await MessageData.scrape(message)).files,
-        ],
-        allowed_mentions=discord.AllowedMentions.none(),
-    )
+    # Suppress NotFound in case the user attempts to commit an edit to
+    # a message that was deleted in the meantime.
+    with suppress(discord.NotFound):
+        await moved_message.edit(
+            content=new_content,
+            attachments=[
+                *moved_message.attachments,
+                *(await MessageData.scrape(message)).files,
+            ],
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
 
 
 async def _remove_edit_thread(
