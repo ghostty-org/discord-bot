@@ -395,7 +395,7 @@ class SplitSubtext:
         # Since we know that we definitely have a moved message here (due to
         # the restriction on `message`'s type), the last line must be the
         # subtext.
-        *lines, self.subtext = message.content.splitlines()
+        *lines, self._subtext = message.content.splitlines()
         if not lines:
             self.content, self.reactions = "", {}
             return
@@ -423,7 +423,7 @@ class SplitSubtext:
     def update(self, message: discord.Message, executor: discord.Member | None) -> None:
         if executor:
             assert isinstance(message.channel, GuildTextChannel)
-            self.subtext += (
+            self._subtext += (
                 f", then from {message.channel.mention} by {executor.mention}"
             )
         for reaction in message.reactions:
@@ -431,14 +431,15 @@ class SplitSubtext:
             self.reactions.setdefault(emoji, 0)
             self.reactions[emoji] += reaction.count
 
-    def format(self) -> str:
+    @property
+    def subtext(self) -> str:
         if not self.reactions:
-            return self.subtext
+            return self._subtext
         formatted_reactions = "   ".join(
             f"{emoji} ×{count}"  # noqa: RUF001
             for emoji, count in self.reactions.items()
         )
-        return f"-# {formatted_reactions}\n{self.subtext}"
+        return f"-# {formatted_reactions}\n{self._subtext}"
 
 
 async def get_or_create_webhook(
@@ -661,7 +662,7 @@ async def move_message_via_webhook(  # noqa: PLR0913
         # Append the new move mark to the existing subtext.
         split_subtext = SplitSubtext(moved_message)
         split_subtext.update(message, executor)
-        message.content, subtext = split_subtext.content, split_subtext.format()
+        message.content, subtext = split_subtext.content, split_subtext.subtext
     else:
         # The if expression skips the poll ended message if there was no poll.
         s = _Subtext(msg_data, executor, poll if message.poll is not None else None)

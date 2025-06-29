@@ -13,7 +13,7 @@ from .hooks import (
     create_edit_hook,
     remove_view_after_timeout,
 )
-from .message_data import ExtensibleMessage, MessageData
+from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData
 from .webhooks import (
     NON_SYSTEM_MESSAGE_TYPES,
     SUPPORTED_IMAGE_FORMATS,
@@ -32,6 +32,7 @@ from .webhooks import (
 from app.setup import config
 
 __all__ = (
+    "MAX_ATTACHMENT_SIZE",
     "NON_SYSTEM_MESSAGE_TYPES",
     "SUPPORTED_IMAGE_FORMATS",
     "Account",
@@ -83,11 +84,7 @@ class DeleteMessage(discord.ui.View):
         self.message = message
         self.item_count = item_count
 
-    @discord.ui.button(
-        label="Delete",
-        emoji="🗑️",  # test: allow-vs16
-        style=discord.ButtonStyle.gray,
-    )
+    @discord.ui.button(label="Delete", emoji="❌")
     async def delete(
         self, interaction: discord.Interaction, _: discord.ui.Button[Self]
     ) -> None:
@@ -104,6 +101,22 @@ class DeleteMessage(discord.ui.View):
             + " can remove this message.",
             ephemeral=True,
         )
+
+
+class DeleteInstead(discord.ui.View):
+    def __init__(self, message: discord.Message) -> None:
+        super().__init__()
+        self.message = message
+
+    @discord.ui.button(label="Delete instead", emoji="❌")
+    async def delete(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button[Self],
+    ) -> None:
+        button.disabled = True
+        await self.message.delete()
+        await interaction.response.edit_message(view=self)
 
 
 def is_dm(account: Account) -> TypeIs[discord.User]:
@@ -166,3 +179,17 @@ def escape_special(content: str) -> str:
     return "\n".join(
         _ORDERED_LIST_REGEX.sub(r"\1\. \2", line) for line in escaped.splitlines()
     )
+
+
+def is_attachment_only(
+    message: discord.Message, *, preprocessed_content: str | None = None
+) -> bool:
+    if preprocessed_content is None:
+        preprocessed_content = message.content
+    return not any((
+        message.components,
+        preprocessed_content,
+        message.embeds,
+        message.poll,
+        message.stickers,
+    ))

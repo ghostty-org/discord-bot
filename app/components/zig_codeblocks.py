@@ -73,11 +73,7 @@ class ZigCodeblockActions(discord.ui.View):
         await interaction.response.send_message(message, ephemeral=True)
         return True
 
-    @discord.ui.button(
-        label="Dismiss",
-        emoji="❌",
-        style=discord.ButtonStyle.gray,
-    )
+    @discord.ui.button(label="Delete", emoji="❌")
     async def dismiss(
         self,
         interaction: discord.Interaction,
@@ -88,11 +84,7 @@ class ZigCodeblockActions(discord.ui.View):
         for reply in codeblock_linker.get(self._message):
             await reply.delete()
 
-    @discord.ui.button(
-        label="Freeze",
-        emoji="❄️",  # test: allow-vs16
-        style=discord.ButtonStyle.gray,
-    )
+    @discord.ui.button(label="Freeze", emoji="❄️")  # test: allow-vs16
     async def freeze(
         self,
         interaction: discord.Interaction,
@@ -110,11 +102,7 @@ class ZigCodeblockActions(discord.ui.View):
             ephemeral=True,
         )
 
-    @discord.ui.button(
-        label="Replace my message",
-        emoji="🔄",
-        style=discord.ButtonStyle.gray,
-    )
+    @discord.ui.button(label="Replace my message", emoji="🔄")
     async def replace(
         self,
         interaction: discord.Interaction,

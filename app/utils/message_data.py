@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import suppress
-from io import BytesIO
 from typing import Self
 
 import discord
@@ -39,9 +39,6 @@ class ExtensibleMessage(discord.Message):
 
 
 class MessageData(ExtensibleMessage):
-    files: list[discord.File]
-    skipped_attachments: int
-
     @classmethod
     async def scrape(cls, message: discord.Message) -> Self:
         # This code cannot go in __init__ as it is async.
@@ -50,13 +47,7 @@ class MessageData(ExtensibleMessage):
         return msg_data
 
     async def _get_files(self, attachments: list[discord.Attachment]) -> None:
-        files: list[discord.File] = []
-        skipped_attachments = 0
-        for file in attachments:
-            if file.size > MAX_ATTACHMENT_SIZE:
-                skipped_attachments += 1
-                continue
-            fp = BytesIO(await file.read())
-            files.append(discord.File(fp, filename=file.filename))
-        self.files = files
-        self.skipped_attachments = skipped_attachments
+        self.files = await asyncio.gather(
+            *(a.to_file() for a in attachments if a.size <= MAX_ATTACHMENT_SIZE)
+        )
+        self.skipped_attachments = len(attachments) - len(self.files)
