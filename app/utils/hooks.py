@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 
@@ -18,20 +17,23 @@ async def remove_view_after_timeout(
 
 class MessageLinker:
     def __init__(self) -> None:
-        self._refs = defaultdict[discord.Message, list[discord.Message]](list)
+        self._refs: dict[discord.Message, discord.Message] = {}
 
-    def get(self, original: discord.Message) -> list[discord.Message]:
-        return self._refs[original]
+    def get(self, original: discord.Message) -> discord.Message | None:
+        return self._refs.get(original)
 
-    def link(self, original: discord.Message, *replies: discord.Message) -> None:
-        self._refs[original].extend(replies)
+    def link(self, original: discord.Message, reply: discord.Message) -> None:
+        if original in self._refs:
+            msg = f"message {original.id} already has a reply linked"
+            raise ValueError(msg)
+        self._refs[original] = reply
 
     def unlink(self, original: discord.Message) -> None:
         del self._refs[original]
 
     def get_original_message(self, reply: discord.Message) -> discord.Message | None:
         return next(
-            (msg for msg, replies in self._refs.items() if reply in replies), None
+            (msg for msg, reply_ in self._refs.items() if reply == reply_), None
         )
 
     def unlink_from_reply(self, reply: discord.Message) -> None:
@@ -78,7 +80,7 @@ def create_edit_hook(
             # Message changed but objects are the same
             return
 
-        if not (replies := linker.get(before)):
+        if not (reply := linker.get(before)):
             # Some processors use negative values to symbolize special error values, so
             # this can't be `== 0`. An example of this is the snippet_message() function
             # in the file app/components/github_integration/code_links.py.
@@ -88,16 +90,15 @@ def create_edit_hook(
             # The message was removed from the linker at some point
             return
 
-        reply = replies[0]
+        if linker.unlink_if_expired(reply):
+            return
+
         content, count = new_objects
         # `<= 0` for the same reason as the check above
         if count <= 0:
             # All objects were edited out
             linker.unlink(before)
             await reply.delete()
-            return
-
-        if linker.unlink_if_expired(reply):
             return
 
         content, files, embeds = extract_content(content)
@@ -120,11 +121,10 @@ def create_delete_hook(
     async def delete_hook(message: discord.Message) -> None:
         if message.author.bot:
             linker.unlink_from_reply(message)
-        elif replies := linker.get(message):
+        elif reply := linker.get(message):
             # We don't need to do any unlinking here because reply.delete() triggers
             # on_message_delete which runs the current hook again, and since replies are
             # bot messages, linker.unlink_from_reply(...) handles unlinking for us.
-            for reply in replies:
-                await reply.delete()
+            await reply.delete()
 
     return delete_hook
