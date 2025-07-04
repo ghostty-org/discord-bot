@@ -90,7 +90,8 @@ def create_edit_hook(
 
         reply = replies[0]
         content, count = new_objects
-        if not count:
+        # `<= 0` for the same reason as the check above
+        if count <= 0:
             # All objects were edited out
             linker.unlink(before)
             await reply.delete()
@@ -100,11 +101,6 @@ def create_edit_hook(
             return
 
         content, files, embeds = extract_content(content)
-        if not (content or files or embeds):
-            # The message is empty, don't send a message with only a view
-            linker.unlink(before)
-            await reply.delete()
-            return
         await reply.edit(
             content=content,
             embeds=embeds,
