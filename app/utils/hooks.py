@@ -18,6 +18,16 @@ async def remove_view_after_timeout(
 class MessageLinker:
     def __init__(self) -> None:
         self._refs: dict[discord.Message, discord.Message] = {}
+        self._frozen = set[discord.Message]()
+
+    def freeze(self, message: discord.Message) -> None:
+        self._frozen.add(message)
+
+    def unfreeze(self, message: discord.Message) -> None:
+        self._frozen.discard(message)
+
+    def is_frozen(self, message: discord.Message) -> bool:
+        return message in self._frozen
 
     def get(self, original: discord.Message) -> discord.Message | None:
         return self._refs.get(original)
@@ -84,18 +94,22 @@ def create_edit_hook(
             # Some processors use negative values to symbolize special error values, so
             # this can't be `== 0`. An example of this is the snippet_message() function
             # in the file app/components/github_integration/code_links.py.
-            if old_objects[1] <= 0:
+            if old_objects[1] <= 0 and not linker.is_frozen(before):
                 # There were no objects before, so treat this as a new message
                 await interactor(after)
             # The message was removed from the linker at some point
             return
 
         if linker.unlink_if_expired(reply):
+            linker.unfreeze(before)
+            return
+
+        if linker.is_frozen(before):
             return
 
         content, count = new_objects
         # `<= 0` for the same reason as the check above
-        if count <= 0:
+        if count <= 0 and not linker.is_frozen(before):
             # All objects were edited out
             linker.unlink(before)
             await reply.delete()
@@ -119,12 +133,14 @@ def create_delete_hook(
     *, linker: MessageLinker
 ) -> Callable[[discord.Message], Awaitable[None]]:
     async def delete_hook(message: discord.Message) -> None:
-        if message.author.bot:
-            linker.unlink_from_reply(message)
-        elif reply := linker.get(message):
+        if message.author.bot and (original := linker.get_original_message(message)):
+            linker.unlink(original)
+            linker.unfreeze(original)
+        elif (reply := linker.get(message)) and not linker.is_frozen(message):
             # We don't need to do any unlinking here because reply.delete() triggers
             # on_message_delete which runs the current hook again, and since replies are
             # bot messages, linker.unlink_from_reply(...) handles unlinking for us.
             await reply.delete()
+        linker.unfreeze(message)
 
     return delete_hook

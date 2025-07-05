@@ -104,6 +104,31 @@ class DeleteMessage(discord.ui.View):
             ephemeral=True,
         )
 
+    @discord.ui.button(label="Freeze", emoji="❄️")  # test: allow-vs16
+    async def freeze(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button[Self],
+    ) -> None:
+        assert not is_dm(interaction.user)
+        if interaction.user.id == self.message.author.id or is_mod(interaction.user):
+            self.linker.freeze(self.message)
+            button.disabled = True
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send(
+                "Message frozen. I will no longer react to"
+                " what happens to your original message.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            "Only the person who "
+            + (self.action_singular if self.item_count == 1 else self.action_plural)
+            + " can freeze this message.",
+            ephemeral=True,
+        )
+
 
 class DeleteInstead(discord.ui.View):
     def __init__(self, message: discord.Message) -> None:
