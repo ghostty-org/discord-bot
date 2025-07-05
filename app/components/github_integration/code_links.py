@@ -13,7 +13,7 @@ from zig_codeblocks import highlight_zig_code
 from app.components.zig_codeblocks import THEME
 from app.setup import gh
 from app.utils import (
-    DeleteMessage,
+    ItemActions,
     MessageLinker,
     TTRCache,
     create_delete_hook,
@@ -65,7 +65,7 @@ content_cache = ContentCache(minutes=30)
 code_linker = MessageLinker()
 
 
-class DeleteCodeLink(DeleteMessage):
+class CodeLinkActions(ItemActions):
     linker = code_linker
     action_singular = "linked this code snippet"
     action_plural = "linked these code snippets"
@@ -163,7 +163,7 @@ async def reply_with_code(message: discord.Message) -> None:
         suppress_embeds=True,
         mention_author=False,
         allowed_mentions=discord.AllowedMentions.none(),
-        view=DeleteCodeLink(message, snippet_count),
+        view=CodeLinkActions(message, snippet_count),
     )
     code_linker.link(message, sent_message)
     await remove_view_after_timeout(sent_message)
@@ -175,5 +175,5 @@ code_link_edit_hook = create_edit_hook(
     linker=code_linker,
     message_processor=snippet_message,
     interactor=reply_with_code,
-    view_type=DeleteCodeLink,
+    view_type=CodeLinkActions,
 )

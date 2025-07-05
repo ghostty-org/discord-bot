@@ -2,7 +2,7 @@ import discord
 
 from .fmt import entity_message
 from app.utils import (
-    DeleteMessage,
+    ItemActions,
     MessageLinker,
     create_delete_hook,
     create_edit_hook,
@@ -19,7 +19,7 @@ IGNORED_MESSAGE_TYPES = frozenset((
 mention_linker = MessageLinker()
 
 
-class DeleteMention(DeleteMessage):
+class MentionActions(ItemActions):
     linker = mention_linker
     action_singular = "mentioned this entity"
     action_plural = "mentioned these entities"
@@ -45,7 +45,7 @@ async def reply_with_entities(message: discord.Message) -> None:
         suppress_embeds=True,
         mention_author=False,
         allowed_mentions=discord.AllowedMentions.none(),
-        view=DeleteMention(message, entity_count),
+        view=MentionActions(message, entity_count),
     )
     mention_linker.link(message, sent_message)
     await remove_view_after_timeout(sent_message)
@@ -57,5 +57,5 @@ entity_mention_edit_hook = create_edit_hook(
     linker=mention_linker,
     message_processor=entity_message,
     interactor=reply_with_entities,
-    view_type=DeleteMention,
+    view_type=MentionActions,
 )

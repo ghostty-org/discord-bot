@@ -37,9 +37,9 @@ __all__ = (
     "SUPPORTED_IMAGE_FORMATS",
     "Account",
     "DeleteInstead",
-    "DeleteMessage",
     "ExtensibleMessage",
     "GuildTextChannel",
+    "ItemActions",
     "MessageData",
     "MessageLinker",
     "MovedMessage",
@@ -76,7 +76,7 @@ _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 type Account = discord.User | discord.Member
 
 
-class DeleteMessage(discord.ui.View):
+class ItemActions(discord.ui.View):
     linker: MessageLinker
     action_singular: str
     action_plural: str

@@ -9,7 +9,7 @@ from zig_codeblocks import (
     highlight_zig_code,
 )
 
-from app.utils import DeleteMessage, MessageLinker, remove_view_after_timeout
+from app.utils import ItemActions, MessageLinker, remove_view_after_timeout
 from app.utils.hooks import create_delete_hook, create_edit_hook
 
 MAX_CONTENT = 51_200  # 50 KiB
@@ -41,7 +41,7 @@ def apply_discord_wa(source: str) -> str:
     return source.replace("///", "\x1b[0m///").replace("// ", "\x1b[0m// ")
 
 
-class DeleteButton(DeleteMessage):
+class CodeblockActions(ItemActions):
     linker = codeblock_linker
     action_singular = "sent this code block"
     action_plural = "sent these code blocks"
@@ -98,7 +98,7 @@ async def check_for_zig_code(message: discord.Message) -> None:
         return
     reply = await message.reply(
         content,
-        view=DeleteButton(message, item_count),
+        view=CodeblockActions(message, item_count),
         files=files,
         mention_author=False,
     )
@@ -112,6 +112,6 @@ zig_codeblock_edit_hook = create_edit_hook(
     linker=codeblock_linker,
     message_processor=codeblock_processor,
     interactor=check_for_zig_code,
-    view_type=DeleteButton,
+    view_type=CodeblockActions,
     view_timeout=60,
 )

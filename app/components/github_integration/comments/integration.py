@@ -7,7 +7,7 @@ import discord
 from .fetching import get_comments
 from app.components.github_integration.mentions.fmt import get_entity_emoji
 from app.utils import (
-    DeleteMessage,
+    ItemActions,
     MessageLinker,
     create_delete_hook,
     create_edit_hook,
@@ -34,7 +34,7 @@ _FIGURE_SPACE = "\u2007"
 comment_linker = MessageLinker()
 
 
-class DeleteMention(DeleteMessage):
+class CommentActions(ItemActions):
     linker = comment_linker
     action_singular = "linked this comment"
     action_plural = "linked these comments"
@@ -91,7 +91,7 @@ async def reply_with_comments(message: discord.Message) -> None:
         content=note,
         embeds=embeds,
         mention_author=False,
-        view=DeleteMention(message, len(embeds)),
+        view=CommentActions(message, len(embeds)),
     )
     await message.edit(suppress=True)
     comment_linker.link(message, sent_message)
@@ -109,5 +109,5 @@ entity_comment_edit_hook = create_edit_hook(
     linker=comment_linker,
     message_processor=comment_processor,
     interactor=reply_with_comments,
-    view_type=DeleteMention,
+    view_type=CommentActions,
 )

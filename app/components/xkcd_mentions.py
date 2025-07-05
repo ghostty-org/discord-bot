@@ -7,7 +7,7 @@ import httpx
 from pydantic import BaseModel
 
 from app.utils import (
-    DeleteMessage,
+    ItemActions,
     MessageLinker,
     TTRCache,
     create_delete_hook,
@@ -57,7 +57,7 @@ xkcd_mention_cache = XKCDMentionCache(hours=12)
 xkcd_mention_linker = MessageLinker()
 
 
-class DeleteButton(DeleteMessage):
+class XKCDActions(ItemActions):
     linker = xkcd_mention_linker
     action_singular = "linked this xkcd comic"
     action_plural = "linked these xkcd comics"
@@ -89,7 +89,7 @@ async def handle_xkcd_mentions(message: discord.Message) -> None:
         return
     try:
         sent_message = await message.reply(
-            embeds=embeds, mention_author=False, view=DeleteButton(message, count)
+            embeds=embeds, mention_author=False, view=XKCDActions(message, count)
         )
     except discord.HTTPException:
         return
@@ -103,5 +103,5 @@ xkcd_mention_edit_hook = create_edit_hook(
     linker=xkcd_mention_linker,
     message_processor=xkcd_mention_message,
     interactor=handle_xkcd_mentions,
-    view_type=DeleteButton,
+    view_type=XKCDActions,
 )
