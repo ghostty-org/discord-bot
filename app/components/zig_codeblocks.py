@@ -6,7 +6,7 @@ from io import BytesIO
 from random import choices
 from typing import TYPE_CHECKING, Self
 
-import discord
+import discord as dc
 from zig_codeblocks import (
     DEFAULT_THEME,
     CodeBlock,
@@ -40,7 +40,7 @@ THEME = DEFAULT_THEME.copy()
 del THEME["Comment"]
 
 codeblock_linker = MessageLinker()
-frozen_messages = set[discord.Message]()
+frozen_messages = set[dc.Message]()
 
 
 def apply_discord_wa(source: str) -> str:
@@ -63,7 +63,7 @@ class CodeblockActions(ItemActions):
     action_singular = "sent this code block"
     action_plural = "sent these code blocks"
 
-    def __init__(self, message: discord.Message, item_count: int) -> None:
+    def __init__(self, message: dc.Message, item_count: int) -> None:
         super().__init__(message, item_count)
         replaced_content = apply_discord_wa(process_markdown(message.content, THEME))
         if message.attachments or len(replaced_content) > 2000:
@@ -71,10 +71,8 @@ class CodeblockActions(ItemActions):
         else:
             self._replaced_message_content = replaced_content
 
-    @discord.ui.button(label="Replace my message", emoji="🔄")
-    async def replace(
-        self, interaction: discord.Interaction, _: discord.ui.Button[Self]
-    ) -> None:
+    @dc.ui.button(label="Replace my message", emoji="🔄")
+    async def replace(self, interaction: dc.Interaction, _: dc.ui.Button[Self]) -> None:
         if await self._reject_early(interaction, "replace"):
             return
 
@@ -82,10 +80,10 @@ class CodeblockActions(ItemActions):
         channel = interaction.message.channel
         webhook_channel, thread = (
             (channel.parent, channel)
-            if isinstance(channel, discord.Thread)
-            else (channel, discord.utils.MISSING)
+            if isinstance(channel, dc.Thread)
+            else (channel, dc.utils.MISSING)
         )
-        assert isinstance(webhook_channel, discord.TextChannel | discord.ForumChannel)
+        assert isinstance(webhook_channel, dc.TextChannel | dc.ForumChannel)
 
         webhook = await get_or_create_webhook(webhook_channel)
         self.message.content = self._replaced_message_content
@@ -94,8 +92,8 @@ class CodeblockActions(ItemActions):
         )
 
 
-async def _collect_attachments(message: discord.Message) -> list[discord.File]:
-    attachments: list[discord.File] = []
+async def _collect_attachments(message: dc.Message) -> list[dc.File]:
+    attachments: list[dc.File] = []
     for att in message.attachments:
         if not att.filename.endswith(".zig") or att.size > MAX_ZIG_FILE_SIZE:
             continue
@@ -104,7 +102,7 @@ async def _collect_attachments(message: discord.Message) -> list[discord.File]:
             message.content = f"{CodeBlock('zig', content.decode())}\n{message.content}"
             continue
         attachments.append(
-            discord.File(
+            dc.File(
                 BytesIO(highlight_zig_code(content, THEME).encode()),
                 att.filename + ".ansi",
             )
@@ -112,20 +110,20 @@ async def _collect_attachments(message: discord.Message) -> list[discord.File]:
     return attachments
 
 
-def _tallest_codeblock_to_file(codeblocks: list[CodeBlock]) -> discord.File:
+def _tallest_codeblock_to_file(codeblocks: list[CodeBlock]) -> dc.File:
     tallest_codeblock = max(
         codeblocks,
         key=lambda cb: (len(cb.body.splitlines()), len(cb.body)),
     )
     codeblocks.remove(tallest_codeblock)
-    return discord.File(
+    return dc.File(
         BytesIO(tallest_codeblock.body.encode()),
         filename=f"{''.join(choices(string.ascii_letters, k=6))}.ansi",
     )
 
 
 def _add_user_notes(
-    content: str, omitted_codeblocks: int, attachments: Collection[discord.File]
+    content: str, omitted_codeblocks: int, attachments: Collection[dc.File]
 ) -> str:
     if attachments:
         content += FILE_HIGHLIGHT_NOTE
@@ -144,7 +142,7 @@ def _add_user_notes(
     return content
 
 
-async def codeblock_processor(message: discord.Message) -> ProcessedMessage:
+async def codeblock_processor(message: dc.Message) -> ProcessedMessage:
     attachments = await _collect_attachments(message)
     zig_codeblocks = [c for c in extract_codeblocks(message.content) if c.lang == "zig"]
 
@@ -185,7 +183,7 @@ async def codeblock_processor(message: discord.Message) -> ProcessedMessage:
     )
 
 
-async def check_for_zig_code(message: discord.Message) -> None:
+async def check_for_zig_code(message: dc.Message) -> None:
     if message.author.bot:
         return
     output = await codeblock_processor(message)

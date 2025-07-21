@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import cast
 from unittest.mock import Mock
 
-import discord
+import discord as dc
 import pytest
 
 from app.utils import (
@@ -21,9 +21,7 @@ from app.utils import (
 )
 
 
-@pytest.mark.parametrize(
-    ("type_", "result"), [(discord.Member, False), (discord.User, True)]
-)
+@pytest.mark.parametrize(("type_", "result"), [(dc.Member, False), (dc.User, True)])
 def test_is_dm(type_: type[Account], result: bool) -> None:
     assert is_dm(Mock(type_)) == result
 
@@ -33,7 +31,7 @@ def test_is_mod(monkeypatch: pytest.MonkeyPatch, bot_env: SimpleNamespace) -> No
     fake_member = SimpleNamespace(
         get_role=lambda role: role if role == bot_env.MOD_ROLE_ID else None
     )
-    assert is_mod(cast("discord.Member", fake_member))
+    assert is_mod(cast("dc.Member", fake_member))
 
 
 @pytest.mark.parametrize(
@@ -57,7 +55,7 @@ def test_is_not_mod(
     monkeypatch.setattr("app.utils.config", bot_env)
     fake_member = SimpleNamespace(get_role=lambda role: role if role == id_ else None)
     assert id_ != bot_env.MOD_ROLE_ID
-    assert not is_mod(cast("discord.Member", fake_member))
+    assert not is_mod(cast("dc.Member", fake_member))
 
 
 def test_is_helper(monkeypatch: pytest.MonkeyPatch, bot_env: SimpleNamespace) -> None:
@@ -65,7 +63,7 @@ def test_is_helper(monkeypatch: pytest.MonkeyPatch, bot_env: SimpleNamespace) ->
     fake_member = SimpleNamespace(
         get_role=lambda role: role if role == bot_env.HELPER_ROLE_ID else None
     )
-    assert is_helper(cast("discord.Member", fake_member))
+    assert is_helper(cast("dc.Member", fake_member))
 
 
 @pytest.mark.parametrize(
@@ -88,7 +86,7 @@ def test_is_not_helper(
     monkeypatch.setattr("app.utils.config", bot_env)
     fake_member = SimpleNamespace(get_role=lambda role: role if role == id_ else None)
     assert id_ != bot_env.HELPER_ROLE_ID
-    assert not is_helper(cast("discord.Member", fake_member))
+    assert not is_helper(cast("dc.Member", fake_member))
 
 
 @pytest.mark.parametrize(
@@ -108,11 +106,11 @@ def test_is_not_helper(
 )
 def test_post_has_tag(tag: str, result: bool) -> None:
     tags = [
-        discord.ForumTag(name=name)
+        dc.ForumTag(name=name)
         for name in ("foo", "bar", "Lorem", "ipSUM", "NOT_ISSUE", "macos", "linux")
     ]
     assert (
-        post_has_tag(cast("discord.Thread", SimpleNamespace(applied_tags=tags)), tag)
+        post_has_tag(cast("dc.Thread", SimpleNamespace(applied_tags=tags)), tag)
         == result
     )
 
@@ -129,8 +127,8 @@ def test_post_has_tag(tag: str, result: bool) -> None:
     ],
 )
 def test_post_is_solved(names: list[str]) -> None:
-    tags = [discord.ForumTag(name=name) for name in names]
-    assert post_is_solved(cast("discord.Thread", SimpleNamespace(applied_tags=tags)))
+    tags = [dc.ForumTag(name=name) for name in names]
+    assert post_is_solved(cast("dc.Thread", SimpleNamespace(applied_tags=tags)))
 
 
 @pytest.mark.parametrize(
@@ -144,10 +142,8 @@ def test_post_is_solved(names: list[str]) -> None:
     ],
 )
 def test_post_is_not_solved(names: list[str]) -> None:
-    tags = [discord.ForumTag(name=name) for name in names]
-    assert not post_is_solved(
-        cast("discord.Thread", SimpleNamespace(applied_tags=tags))
-    )
+    tags = [dc.ForumTag(name=name) for name in names]
+    assert not post_is_solved(cast("dc.Thread", SimpleNamespace(applied_tags=tags)))
 
 
 @pytest.mark.parametrize(
@@ -210,8 +206,7 @@ def test_is_attachment_only(
     )
     assert (
         is_attachment_only(
-            cast("discord.Message", fake_message),
-            preprocessed_content=preprocessed_content,
+            cast("dc.Message", fake_message), preprocessed_content=preprocessed_content
         )
         == result
     )

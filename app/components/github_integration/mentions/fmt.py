@@ -13,7 +13,7 @@ from app.setup import bot, config
 from app.utils import dynamic_timestamp, escape_special
 
 if TYPE_CHECKING:
-    import discord
+    import discord as dc
 
 ENTITY_TEMPLATE = "**{entity.kind} [#{entity.number}](<{entity.html_url}>):** {title}"
 EMOJI_NAMES = frozenset({
@@ -28,7 +28,7 @@ EMOJI_NAMES = frozenset({
     "pull_open",
 })
 
-entity_emojis: dict[str, discord.Emoji] = {}
+entity_emojis: dict[str, dc.Emoji] = {}
 
 
 async def load_emojis() -> None:
@@ -37,16 +37,14 @@ async def load_emojis() -> None:
         if emoji.name in EMOJI_NAMES:
             entity_emojis[emoji.name] = emoji
     if len(entity_emojis) < len(EMOJI_NAMES):
-        log_channel = cast(
-            "discord.TextChannel", bot.get_channel(config.LOG_CHANNEL_ID)
-        )
+        log_channel = cast("dc.TextChannel", bot.get_channel(config.LOG_CHANNEL_ID))
         await log_channel.send(
             "Failed to load the following emojis: "
             + ", ".join(EMOJI_NAMES - entity_emojis.keys())
         )
 
 
-def get_entity_emoji(entity: Entity) -> discord.Emoji | None:
+def get_entity_emoji(entity: Entity) -> dc.Emoji | None:
     if isinstance(entity, Issue):
         state = "closed_" if entity.closed else "open"
         if entity.closed:
@@ -118,7 +116,7 @@ def _format_mention(entity: Entity) -> str:
     return f"{emoji} {headline}\n{subtext}{entity_detail}"
 
 
-async def entity_message(message: discord.Message) -> ProcessedMessage:
+async def entity_message(message: dc.Message) -> ProcessedMessage:
     matches = list(dict.fromkeys([r async for r in resolve_repo_signatures(message)]))
 
     entities = [

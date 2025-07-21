@@ -1,4 +1,4 @@
-import discord
+import discord as dc
 
 from .fmt import entity_message
 from app.common.hooks import (
@@ -14,8 +14,8 @@ from app.utils import (
 )
 
 IGNORED_MESSAGE_TYPES = frozenset((
-    discord.MessageType.thread_created,
-    discord.MessageType.channel_name_change,
+    dc.MessageType.thread_created,
+    dc.MessageType.channel_name_change,
 ))
 
 mention_linker = MessageLinker()
@@ -27,7 +27,7 @@ class MentionActions(ItemActions):
     action_plural = "mentioned these entities"
 
 
-async def reply_with_entities(message: discord.Message) -> None:
+async def reply_with_entities(message: dc.Message) -> None:
     if message.author.bot or message.type in IGNORED_MESSAGE_TYPES:
         return
 
@@ -46,7 +46,7 @@ async def reply_with_entities(message: discord.Message) -> None:
         output.content,
         suppress_embeds=True,
         mention_author=False,
-        allowed_mentions=discord.AllowedMentions.none(),
+        allowed_mentions=dc.AllowedMentions.none(),
         view=MentionActions(message, output.item_count),
     )
     mention_linker.link(message, sent_message)

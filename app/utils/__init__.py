@@ -4,7 +4,7 @@ import re
 from textwrap import shorten
 from typing import TYPE_CHECKING, Any
 
-import discord
+import discord as dc
 
 from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData, get_files
 from app.setup import config
@@ -38,9 +38,9 @@ if TYPE_CHECKING:
 _INVITE_LINK_REGEX = re.compile(r"\b(?:https?://)?(discord\.gg/[^\s]+)\b")
 _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 
-type Account = discord.User | discord.Member
+type Account = dc.User | dc.Member
 # Not a PEP 695 type alias because of runtime isinstance() checks
-GuildTextChannel = discord.TextChannel | discord.Thread
+GuildTextChannel = dc.TextChannel | dc.Thread
 
 
 def truncate(s: str, length: int, *, suffix: str = "…") -> str:
@@ -54,15 +54,15 @@ def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
     return f"<t:{int(dt.timestamp())}{fmt}>"
 
 
-def is_dm(account: Account) -> TypeIs[discord.User]:
-    return not isinstance(account, discord.Member)
+def is_dm(account: Account) -> TypeIs[dc.User]:
+    return not isinstance(account, dc.Member)
 
 
-def is_mod(member: discord.Member) -> bool:
+def is_mod(member: dc.Member) -> bool:
     return member.get_role(config.MOD_ROLE_ID) is not None
 
 
-def is_helper(member: discord.Member) -> bool:
+def is_helper(member: dc.Member) -> bool:
     return member.get_role(config.HELPER_ROLE_ID) is not None
 
 
@@ -71,15 +71,15 @@ async def try_dm(account: Account, content: str, **extras: Any) -> None:
         return
     try:
         await account.send(content, **extras)
-    except discord.Forbidden:
+    except dc.Forbidden:
         print(f"Failed to DM {account} with: {shorten(content, width=50)}")
 
 
-def post_has_tag(post: discord.Thread, substring: str) -> bool:
+def post_has_tag(post: dc.Thread, substring: str) -> bool:
     return any(substring in tag.name.casefold() for tag in post.applied_tags)
 
 
-def post_is_solved(post: discord.Thread) -> bool:
+def post_is_solved(post: dc.Thread) -> bool:
     return any(
         post_has_tag(post, tag)
         for tag in ("solved", "moved to github", "duplicate", "stale")
@@ -103,8 +103,8 @@ def escape_special(content: str) -> str:
         suppress_embeds=True,
         allowed_mentions=discord.AllowedMentions.none(),
     """
-    escaped = discord.utils.escape_mentions(content)
-    escaped = discord.utils.escape_markdown(escaped)
+    escaped = dc.utils.escape_mentions(content)
+    escaped = dc.utils.escape_markdown(escaped)
     # escape_mentions() doesn't deal with anything other than username mentions.
     escaped = escaped.replace("<", r"\<").replace(">", r"\>")
     # Invite links are not embeds and are hence not suppressed by that flag.
@@ -116,7 +116,7 @@ def escape_special(content: str) -> str:
 
 
 def is_attachment_only(
-    message: discord.Message, *, preprocessed_content: str | None = None
+    message: dc.Message, *, preprocessed_content: str | None = None
 ) -> bool:
     if preprocessed_content is None:
         preprocessed_content = message.content

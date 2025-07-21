@@ -2,7 +2,7 @@ import asyncio
 import datetime as dt
 import re
 
-import discord
+import discord as dc
 import httpx
 from pydantic import BaseModel
 
@@ -29,7 +29,7 @@ class XKCD(BaseModel):
     alt: str
 
 
-class XKCDMentionCache(TTRCache[int, discord.Embed]):
+class XKCDMentionCache(TTRCache[int, dc.Embed]):
     async def fetch(self, key: int) -> None:
         url = XKCD_URL.format(key)
         async with httpx.AsyncClient() as client:
@@ -40,7 +40,7 @@ class XKCDMentionCache(TTRCache[int, discord.Embed]):
                 if resp.status_code == 404
                 else f"Unable to fetch xkcd #{key}."
             )
-            self[key] = discord.Embed(color=discord.Color.red()).set_footer(text=error)
+            self[key] = dc.Embed(color=dc.Color.red()).set_footer(text=error)
             return
 
         xkcd = XKCD(**resp.json())
@@ -48,7 +48,7 @@ class XKCDMentionCache(TTRCache[int, discord.Embed]):
             day=xkcd.day, month=xkcd.month, year=xkcd.year, tzinfo=dt.UTC
         )
         self[key] = (
-            discord.Embed(title=xkcd.title, url=url)
+            dc.Embed(title=xkcd.title, url=url)
             .set_image(url=xkcd.img)
             .set_footer(text=f"{xkcd.alt} • {date:%B %-d, %Y}")
         )
@@ -64,12 +64,12 @@ class XKCDActions(ItemActions):
     action_plural = "linked these xkcd comics"
 
 
-async def xkcd_mention_message(message: discord.Message) -> ProcessedMessage:
+async def xkcd_mention_message(message: dc.Message) -> ProcessedMessage:
     embeds = []
     matches = list(dict.fromkeys(m[1] for m in XKCD_REGEX.finditer(message.content)))
     omitted = None
     if len(matches) > 10:
-        omitted = discord.Embed(color=discord.Color.orange()).set_footer(
+        omitted = dc.Embed(color=dc.Color.orange()).set_footer(
             text=f"{len(matches) - 9} xkcd comics were omitted."
         )
         # Nine instead of ten to account for the `omitted` embed.
@@ -80,7 +80,7 @@ async def xkcd_mention_message(message: discord.Message) -> ProcessedMessage:
     return ProcessedMessage(embeds=embeds, item_count=len(embeds))
 
 
-async def handle_xkcd_mentions(message: discord.Message) -> None:
+async def handle_xkcd_mentions(message: dc.Message) -> None:
     if message.author.bot:
         return
     output = await xkcd_mention_message(message)
@@ -92,7 +92,7 @@ async def handle_xkcd_mentions(message: discord.Message) -> None:
             mention_author=False,
             view=XKCDActions(message, output.item_count),
         )
-    except discord.HTTPException:
+    except dc.HTTPException:
         return
     xkcd_mention_linker.link(message, sent_message)
     await remove_view_after_timeout(sent_message)

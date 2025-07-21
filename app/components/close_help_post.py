@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 from typing import Literal, cast
 
-import discord
+import discord as dc
 from discord import app_commands
 
 from app.components.docs import get_docs_link
@@ -22,7 +22,7 @@ POST_TITLE_TOO_LONG = (
 async def mention_entity(entity_id: int) -> str | None:
     output = await entity_message(
         # Forging a message to use the entity mention logic
-        cast("discord.Message", SimpleNamespace(content=f"#{entity_id}"))
+        cast("dc.Message", SimpleNamespace(content=f"#{entity_id}"))
     )
     return output.content or None
 
@@ -31,7 +31,7 @@ class Close(app_commands.Group):
     @app_commands.command(name="solved", description="Mark post as solved.")
     @app_commands.describe(config_option="Config option name (optional)")
     async def solved(
-        self, interaction: discord.Interaction, config_option: str | None = None
+        self, interaction: dc.Interaction, config_option: str | None = None
     ) -> None:
         if config_option:
             try:
@@ -48,7 +48,7 @@ class Close(app_commands.Group):
 
     @app_commands.command(name="moved", description="Mark post as moved to GitHub.")
     @app_commands.describe(entity_id="New GitHub entity number")
-    async def moved(self, interaction: discord.Interaction, entity_id: int) -> None:
+    async def moved(self, interaction: dc.Interaction, entity_id: int) -> None:
         if not (additional_reply := await mention_entity(entity_id)):
             await interaction.response.send_message(
                 f"Entity #{entity_id} does not exist.", ephemeral=True
@@ -65,7 +65,7 @@ class Close(app_commands.Group):
     @app_commands.describe(
         original="The original GitHub entity (number) or help post (ID or link)"
     )
-    async def duplicate(self, interaction: discord.Interaction, original: str) -> None:
+    async def duplicate(self, interaction: dc.Interaction, original: str) -> None:
         *_, str_id = original.rpartition("/")
         try:
             id_ = int(str_id)
@@ -87,11 +87,11 @@ class Close(app_commands.Group):
         await close_post(interaction, "duplicate", title_prefix, additional_reply)
 
     @app_commands.command(name="stale", description="Mark post as stale.")
-    async def stale(self, interaction: discord.Interaction) -> None:
+    async def stale(self, interaction: dc.Interaction) -> None:
         await close_post(interaction, "stale")
 
     @app_commands.command(name="wontfix", description="Mark post as stale.")
-    async def wontfix(self, interaction: discord.Interaction) -> None:
+    async def wontfix(self, interaction: dc.Interaction) -> None:
         await close_post(interaction, "stale", "[WON'T FIX]")
 
 
@@ -99,13 +99,13 @@ bot.tree.add_command(Close(name="close", description="Mark current post as resol
 
 
 async def close_post(
-    interaction: discord.Interaction,
+    interaction: dc.Interaction,
     tag: Literal["solved", "moved", "duplicate", "stale"],
     title_prefix: str | None = None,
     additional_reply: str | None = None,
 ) -> None:
     if not (
-        isinstance(post := interaction.channel, discord.Thread)
+        isinstance(post := interaction.channel, dc.Thread)
         and post.parent_id == config.HELP_CHANNEL_ID
     ):
         await interaction.response.send_message(
@@ -124,7 +124,7 @@ async def close_post(
 
     help_tags = {
         tag
-        for tag in cast("discord.ForumChannel", post.parent).available_tags
+        for tag in cast("dc.ForumChannel", post.parent).available_tags
         if tag.id in config.HELP_CHANNEL_TAG_IDS.values()
     }
 
@@ -145,7 +145,7 @@ async def close_post(
     try:
         await post.edit(name=f"{title_prefix} {post.name}")
         followup = "Post closed."
-    except discord.HTTPException as e:
+    except dc.HTTPException as e:
         # Re-raise if it's not because the new post title was invalid.
         if e.status != INVALID_REQUEST_DATA or e.code != INVALID_FORM_BODY:
             raise

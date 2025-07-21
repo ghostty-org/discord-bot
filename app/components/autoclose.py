@@ -2,7 +2,7 @@ import datetime as dt
 from collections.abc import Sequence
 from typing import cast
 
-import discord
+import discord as dc
 from discord.ext import tasks
 
 from app.components.status import bot_status
@@ -12,10 +12,10 @@ from app.utils import post_is_solved
 
 @tasks.loop(hours=1)
 async def autoclose_solved_posts() -> None:
-    closed_posts: list[discord.Thread] = []
-    failures: list[discord.Thread] = []
+    closed_posts: list[dc.Thread] = []
+    failures: list[dc.Thread] = []
 
-    help_channel = cast("discord.ForumChannel", bot.get_channel(config.HELP_CHANNEL_ID))
+    help_channel = cast("dc.ForumChannel", bot.get_channel(config.HELP_CHANNEL_ID))
     open_posts = len(help_channel.threads)
     for post in help_channel.threads:
         if post.archived or not post_is_solved(post):
@@ -24,11 +24,11 @@ async def autoclose_solved_posts() -> None:
             failures.append(post)
             continue
         one_day_ago = dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=24)
-        if discord.utils.snowflake_time(post.last_message_id) < one_day_ago:
+        if dc.utils.snowflake_time(post.last_message_id) < one_day_ago:
             await post.edit(archived=True)
             closed_posts.append(post)
 
-    log_channel = cast("discord.TextChannel", bot.get_channel(config.LOG_CHANNEL_ID))
+    log_channel = cast("dc.TextChannel", bot.get_channel(config.LOG_CHANNEL_ID))
     bot_status.last_scan_results = (
         dt.datetime.now(tz=dt.UTC),
         open_posts,
@@ -42,7 +42,7 @@ async def autoclose_solved_posts() -> None:
     await log_channel.send(msg)
 
 
-def _post_list(posts: Sequence[discord.Thread]) -> str:
+def _post_list(posts: Sequence[dc.Thread]) -> str:
     return (
         f"{len(posts)} solved posts:\n"
         + "".join(f"* {post.mention}\n" for post in posts[:30])

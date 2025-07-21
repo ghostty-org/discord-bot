@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import suppress
 from functools import reduce
 
-import discord
+import discord as dc
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
 
@@ -54,7 +54,7 @@ async def find_repo_owner(name: str) -> str:
 
 
 async def resolve_repo_signatures(
-    message: discord.Message,
+    message: dc.Message,
 ) -> AsyncIterator[tuple[str, str, int]]:
     valid_signatures = 0
     for match in ENTITY_REGEX.finditer(remove_codeblocks(message.content)):

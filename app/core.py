@@ -4,7 +4,7 @@ import sys
 from traceback import print_tb
 from typing import cast
 
-import discord
+import discord as dc
 from discord.ext import commands
 from sentry_sdk import capture_exception
 
@@ -60,9 +60,7 @@ async def on_error(*_: object) -> None:
 
 
 @bot.tree.error
-async def on_app_command_error(
-    interaction: discord.Interaction, error: Exception
-) -> None:
+async def on_app_command_error(interaction: dc.Interaction, error: Exception) -> None:
     if not interaction.response.is_done():
         await interaction.response.send_message(
             "Something went wrong :(", ephemeral=True
@@ -71,7 +69,7 @@ async def on_app_command_error(
 
 
 @bot.event
-async def on_message(message: discord.Message) -> None:
+async def on_message(message: dc.Message) -> None:
     # Ignore our own messages
     if message.author == bot.user:
         return
@@ -110,7 +108,7 @@ async def on_message(message: discord.Message) -> None:
 
 
 @bot.event
-async def on_message_edit(before: discord.Message, after: discord.Message) -> None:
+async def on_message_edit(before: dc.Message, after: dc.Message) -> None:
     await asyncio.gather(
         entity_mention_edit_hook(before, after),
         entity_comment_edit_hook(before, after),
@@ -121,7 +119,7 @@ async def on_message_edit(before: discord.Message, after: discord.Message) -> No
 
 
 @bot.event
-async def on_message_delete(message: discord.Message) -> None:
+async def on_message_delete(message: dc.Message) -> None:
     await asyncio.gather(
         entity_mention_delete_hook(message),
         entity_comment_delete_hook(message),
@@ -131,7 +129,7 @@ async def on_message_delete(message: discord.Message) -> None:
     )
 
 
-async def sync(bot: commands.Bot, message: discord.Message) -> None:
+async def sync(bot: commands.Bot, message: dc.Message) -> None:
     """Syncs all global commands."""
     if is_dm(message.author) or not is_mod(message.author):
         return
@@ -148,5 +146,5 @@ def handle_error(error: BaseException) -> None:
 
     print(type(error).__name__, "->", error)
     print_tb(error.__traceback__)
-    if isinstance(error, discord.app_commands.CommandInvokeError):
+    if isinstance(error, dc.app_commands.CommandInvokeError):
         handle_error(error.original)

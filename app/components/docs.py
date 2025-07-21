@@ -2,7 +2,7 @@ import datetime as dt
 import json
 from typing import TYPE_CHECKING, NotRequired, Self, TypedDict, cast
 
-import discord
+import discord as dc
 from discord.app_commands import Choice, autocomplete
 
 from app.common.message_moving import get_or_create_webhook
@@ -86,9 +86,7 @@ def refresh_sitemap() -> None:
 sitemap: dict[str, list[str]] = {}
 
 
-async def section_autocomplete(
-    _: discord.Interaction, current: str
-) -> list[Choice[str]]:
+async def section_autocomplete(_: dc.Interaction, current: str) -> list[Choice[str]]:
     return [
         Choice(name=name, value=name)
         for name in SECTIONS
@@ -97,7 +95,7 @@ async def section_autocomplete(
 
 
 async def page_autocomplete(
-    interaction: discord.Interaction, current: str
+    interaction: dc.Interaction, current: str
 ) -> list[Choice[str]]:
     if not interaction.data:
         return []
@@ -119,13 +117,13 @@ async def page_autocomplete(
 
 @bot.tree.command(name="docs", description="Link a documentation page.")
 @autocomplete(section=section_autocomplete, page=page_autocomplete)
-@discord.app_commands.guild_only()
+@dc.app_commands.guild_only()
 async def docs(
-    interaction: discord.Interaction, section: str, page: str, message: str = ""
+    interaction: dc.Interaction, section: str, page: str, message: str = ""
 ) -> None:
     try:
         if not message or not isinstance(
-            interaction.channel, discord.TextChannel | discord.ForumChannel
+            interaction.channel, dc.TextChannel | dc.ForumChannel
         ):
             await interaction.response.send_message(get_docs_link(section, page))
             return
@@ -138,7 +136,7 @@ async def docs(
         await interaction.response.send_message("Documentation linked.", ephemeral=True)
     except ValueError as exc:
         await interaction.response.send_message(str(exc), ephemeral=True)
-    except discord.HTTPException:
+    except dc.HTTPException:
         await interaction.response.send_message(
             "Message content too long.", ephemeral=True
         )

@@ -6,19 +6,19 @@ import asyncio
 from contextlib import suppress
 from typing import Self
 
-import discord
+import discord as dc
 
 MAX_ATTACHMENT_SIZE = 67_108_864  # 64 MiB
 
 
-class ExtensibleMessage(discord.Message):
+class ExtensibleMessage(dc.Message):
     """
     This class is intended to be subclassed when wanting a constructor that uses the
     state from an existing Message instead of constructing a new one with
     Message.__init__().
     """
 
-    def __init__(self, message: discord.Message) -> None:
+    def __init__(self, message: dc.Message) -> None:
         # Message doesn't expose a __dict__ that we can update() onto our __dict__, so
         # use dir() to manually add them all.
         for attr in dir(message):
@@ -37,9 +37,7 @@ class ExtensibleMessage(discord.Message):
                 setattr(self, attr, getattr(message, attr))
 
 
-async def get_files(
-    attachments: list[discord.Attachment],
-) -> tuple[list[discord.File], int]:
+async def get_files(attachments: list[dc.Attachment]) -> tuple[list[dc.File], int]:
     """
     It's usually a better idea to use MessageData.scrape() instead. Only use this
     function if you do not have a Message.
@@ -52,11 +50,11 @@ async def get_files(
 
 
 class MessageData(ExtensibleMessage):
-    files: list[discord.File]
+    files: list[dc.File]
     skipped_attachments: int
 
     @classmethod
-    async def scrape(cls, message: discord.Message) -> Self:
+    async def scrape(cls, message: dc.Message) -> Self:
         # This code cannot go in __init__ as it is async.
         msg_data = cls(message)
         msg_data.files, msg_data.skipped_attachments = await get_files(
