@@ -21,9 +21,8 @@ if TYPE_CHECKING:
 async def test_original_delete(linker: MessageLinker, delete_hook: DeleteHook) -> None:
     msg = spawn_user_message()
     reply = cast("Mock", spawn_bot_message())
+    reply.delete = TrackedCallable(lambda: delete_hook(reply))
     linker.link(msg, reply)
-    # Async "lambda" hack, imagine it's "TC(async lambda: await delete_hook(reply))"
-    reply.delete = TrackedCallable((await delete_hook(reply) for _ in [0]).__anext__)
 
     await delete_hook(msg)
 
