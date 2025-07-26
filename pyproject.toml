@@ -55,7 +55,7 @@ pylint.max-returns = 15
 isort.known-local-folder = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["FBT"]
+"tests/*" = ["FBT", "SLF001"]
 
 [tool.ruff.lint.flake8-import-conventions.aliases]
 discord = "dc"

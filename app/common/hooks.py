@@ -157,13 +157,6 @@ def create_edit_hook(
             await interactor(after)
             return
 
-        if linker.is_expired(reply):
-            # The original message was updated recently enough, but the edits did not
-            # affect the reply, so we can assume it's expired
-            linker.unlink_from_reply(reply)
-            linker.unfreeze(before)
-            return
-
         if linker.is_frozen(before):
             return
 

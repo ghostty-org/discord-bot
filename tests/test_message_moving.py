@@ -1,5 +1,4 @@
 # pyright: reportPrivateUsage=false
-
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -170,7 +169,7 @@ def test_find_snowflake(
 def test_get_moved_message_author_id(content: str, result: int | None) -> None:
     # NOTE: casting a SimpleNamespace to MovedMessage seems to break the code in
     # ExtensibleMessage, so we shall access _extract_author_id() directly.
-    assert MovedMessage._extract_author_id(content) == result  # noqa: SLF001
+    assert MovedMessage._extract_author_id(content) == result
 
 
 @pytest.mark.parametrize(
