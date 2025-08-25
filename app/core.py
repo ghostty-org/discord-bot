@@ -1,11 +1,11 @@
 import asyncio
 import datetime as dt
 import sys
-from traceback import print_tb
 from typing import cast
 
 import discord as dc
 from discord.ext import commands
+from loguru import logger
 from sentry_sdk import capture_exception
 
 from app.components.activity_status import randomize_activity_status
@@ -64,7 +64,7 @@ async def on_ready() -> None:
     background_tasks.add(asyncio.create_task(monalisten_client.listen()))
 
     bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
-    print(f"Bot logged on as {bot.user}!")
+    logger.info("logged in as {}", bot.user)
 
 
 @bot.event
@@ -159,8 +159,6 @@ def handle_error(error: BaseException) -> None:
     if config.sentry_dsn is not None:
         capture_exception(error)
         return
-
-    print(type(error).__name__, "->", error)
-    print_tb(error.__traceback__)
+    logger.exception(error)
     if isinstance(error, dc.app_commands.CommandInvokeError):
         handle_error(error.original)
