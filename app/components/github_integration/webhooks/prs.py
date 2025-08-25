@@ -4,6 +4,8 @@ import datetime as dt
 from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from loguru import logger
+
 from app.components.github_integration.comments.fetching import FALLBACK_AUTHOR
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.core import (
@@ -231,7 +233,7 @@ async def handle_pr_review_submitted(event: WebhookPullRequestReviewSubmitted) -
         case "changes_requested":
             color, title = "red", "requested changes in"
         case s:
-            print("Unexpected review state in handle_pr_review_submitted:", s)
+            logger.error("unexpected review state: {}", s)
             return
 
     emoji = "pull_" + ("draft" if pr.draft else "merged" if pr.merged_at else pr.state)

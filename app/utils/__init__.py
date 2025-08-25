@@ -7,6 +7,7 @@ from textwrap import shorten
 from typing import TYPE_CHECKING, Any, TypeIs
 
 import discord as dc
+from loguru import logger
 
 from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData, get_files
 from app.setup import config
@@ -75,7 +76,7 @@ async def try_dm(account: Account, content: str, **extras: Any) -> None:
     try:
         await account.send(content, **extras)
     except dc.Forbidden:
-        print(f"Failed to DM {account} with: {shorten(content, width=50)}")
+        logger.error("failed to DM {} with: {}", account, shorten(content, width=50))
 
 
 def post_has_tag(post: dc.Thread, substring: str) -> bool:

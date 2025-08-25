@@ -9,4 +9,6 @@ if config.sentry_dsn is not None:
         profiles_sample_rate=1.0,
     )
 
-bot.run(config.token)
+# Our logging is handled by Loguru; disable discord.py's log handler to avoid duplicated
+# logs showing up in stderr.
+bot.run(config.token, log_handler=None)

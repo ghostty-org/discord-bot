@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypedDict
 
 import discord as dc
+from loguru import logger
 from monalisten import Monalisten
 
 from app.components.github_integration.emoji import EmojiName, emojis
@@ -33,12 +34,12 @@ client = Monalisten(config.github_webhook_url, token=config.github_webhook_secre
 @client.on_internal("auth_issue")
 async def show_issue(issue: AuthIssue, event_data: dict[str, Any]) -> None:
     guid = event_data.get("x-github-delivery", "<missing-guid>")
-    print(f"Token {issue.value} in event {guid}: {event_data}")
+    logger.error("token {} in event {}: {}", issue.value, guid, event_data)
 
 
 @client.on_internal("ready")
 async def ready() -> None:
-    print("Monalisten client ready!")
+    logger.info("monalisten client ready")
 
 
 class EmbedContentArgs(TypedDict, total=False):
