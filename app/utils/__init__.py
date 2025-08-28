@@ -72,6 +72,7 @@ def is_helper(member: dc.Member) -> bool:
 
 async def try_dm(account: Account, content: str, **extras: Any) -> None:
     if account.bot:
+        logger.warning("attempted to DM a bot")
         return
     try:
         await account.send(content, **extras)
@@ -134,8 +135,10 @@ def is_attachment_only(
 
 
 async def suppress_embeds_after_delay(message: dc.Message, delay: float = 5.0) -> None:
+    logger.trace("waiting {} to suppress embeds of {}", delay, message)
     await asyncio.sleep(delay)
     with safe_edit:
+        logger.debug("suppressing embeds of {}", message)
         await message.edit(suppress=True)
 
 
