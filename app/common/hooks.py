@@ -7,6 +7,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar, Self, final
 
 import discord as dc
+from loguru import logger
 
 from app.errors import SafeView
 from app.utils import is_dm, is_mod, safe_edit
@@ -24,8 +25,10 @@ class ProcessedMessage:
 
 
 async def remove_view_after_delay(message: dc.Message, delay: float = 30.0) -> None:
+    logger.trace("waiting {} to remove view of {}", delay, message)
     await asyncio.sleep(delay)
     with safe_edit:
+        logger.debug("removing view of {}", message)
         await message.edit(view=None)
 
 
@@ -44,9 +47,11 @@ class MessageLinker:
         return dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=24)
 
     def freeze(self, message: dc.Message) -> None:
+        logger.debug("freezing message {}", message)
         self._frozen.add(message)
 
     def unfreeze(self, message: dc.Message) -> None:
+        logger.debug("unfreezing message {}", message)
         self._frozen.discard(message)
 
     def is_frozen(self, message: dc.Message) -> bool:
@@ -59,10 +64,12 @@ class MessageLinker:
         # Saving keys to a tuple to avoid a "changed size during iteration" error
         for msg in tuple(self._refs):
             if msg.created_at < self.expiry_threshold:
+                logger.trace("message {} is dangling; freeing", msg)
                 self.unlink(msg)
                 self.unfreeze(msg)
 
     def link(self, original: dc.Message, reply: dc.Message) -> None:
+        logger.debug("linking {} to {}", original, reply)
         self.free_dangling_links()
         if original in self._refs:
             msg = f"message {original.id} already has a reply linked"
@@ -70,6 +77,7 @@ class MessageLinker:
         self._refs[original] = reply
 
     def unlink(self, original: dc.Message) -> None:
+        logger.debug("unlinking {}", original)
         self._refs.pop(original, None)
 
     def get_original_message(self, reply: dc.Message) -> dc.Message | None:
@@ -86,12 +94,17 @@ class MessageLinker:
 
     async def delete(self, message: dc.Message) -> None:
         if message.author.bot and (original := self.get_original_message(message)):
+            logger.trace(
+                "reply {} deleted; unlinking original message {}", message, original
+            )
             self.unlink(original)
             self.unfreeze(original)
         elif (reply := self.get(message)) and not self.is_frozen(message):
             if self.is_expired(message):
+                logger.trace("message {} has expired; unlinking", message)
                 self.unlink(message)
             else:
+                logger.trace("deleting reply {} of message {}", reply, message)
                 # We don't need to do any unlinking here because reply.delete() triggers
                 # on_message_delete which runs the current hook again, and since replies
                 # are bot messages, self.unlink(original) above handles it for us.
@@ -114,7 +127,11 @@ class ItemActions(SafeView):
     async def _reject_early(self, interaction: dc.Interaction, action: str) -> bool:
         assert not is_dm(interaction.user)
         if interaction.user.id == self.message.author.id or is_mod(interaction.user):
+            logger.trace("{} run by author or mod", action)
             return False
+        logger.debug(
+            "{} run by {} who is not the author or a mod", action, interaction.user
+        )
         await interaction.response.send_message(
             "Only the person who "
             + (self.action_singular if self.item_count == 1 else self.action_plural)
@@ -125,6 +142,7 @@ class ItemActions(SafeView):
 
     @dc.ui.button(label="Delete", emoji="❌")
     async def delete(self, interaction: dc.Interaction, _: dc.ui.Button[Self]) -> None:
+        logger.trace("delete button pressed on message {}", interaction.message)
         if await self._reject_early(interaction, "remove"):
             return
         assert interaction.message
@@ -134,6 +152,7 @@ class ItemActions(SafeView):
     async def freeze(
         self, interaction: dc.Interaction, button: dc.ui.Button[Self]
     ) -> None:
+        logger.trace("freeze button pressed on message {}", self.message)
         if await self._reject_early(interaction, "freeze"):
             return
         self.linker.freeze(self.message)
@@ -154,23 +173,31 @@ def create_edit_hook(
     view_type: Callable[[dc.Message, int], dc.ui.View],
     view_timeout: float = 30.0,
 ) -> Callable[[dc.Message, dc.Message], Awaitable[None]]:
+    hook_name = getattr(message_processor, "__name__", message_processor)
+    logger.debug("creating edit hook for {}", hook_name)
+
     async def edit_hook(before: dc.Message, after: dc.Message) -> None:
         if before.content == after.content:
+            logger.trace("content did not change")
             return
 
         if linker.is_expired(before):
             # The original message wasn't updated recently enough
+            logger.trace("message {} has expired; unlinking", before)
             linker.unlink(before)
             return
 
         old_output = await message_processor(before)
         new_output = await message_processor(after)
         if old_output == new_output:
-            # Message changed but objects are the same
+            logger.trace("message changed but objects are the same")
             return
+
+        logger.debug("running edit hook for {}", hook_name)
 
         if not (reply := linker.get(before)):
             if linker.is_frozen(before):
+                logger.trace("skipping frozen message {}", before)
                 return
             if old_output.item_count > 0:
                 # The message was removed from the linker at some point (most likely
@@ -181,6 +208,7 @@ def create_edit_hook(
             return
 
         if linker.is_frozen(before):
+            logger.trace("skipping frozen message {}", before)
             return
 
         # Some processors use negative values to symbolize special error values, so this
