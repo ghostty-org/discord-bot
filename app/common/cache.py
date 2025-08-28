@@ -1,6 +1,8 @@
 import datetime as dt
 from abc import ABC, abstractmethod
 
+from loguru import logger
+
 
 class TTRCache[KT, VT](ABC):
     _ttr: dt.timedelta
@@ -25,10 +27,12 @@ class TTRCache[KT, VT](ABC):
 
     async def _refresh(self, key: KT) -> None:
         if key not in self:
+            logger.debug("{} not in cache; fetching", key)
             await self.fetch(key)
             return
         timestamp, *_ = self[key]
         if dt.datetime.now(tz=dt.UTC) - timestamp >= self._ttr:
+            logger.debug("refreshing outdated key {}", key)
             await self.fetch(key)
 
     async def get(self, key: KT) -> VT:
