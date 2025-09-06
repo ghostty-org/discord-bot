@@ -1,13 +1,9 @@
 import asyncio
 import datetime as dt
-import sys
-from contextlib import suppress
-from typing import cast
 
 import discord as dc
 from discord.ext import commands
 from loguru import logger
-from sentry_sdk import capture_exception
 
 from app.components.activity_status import randomize_activity_status
 from app.components.autoclose import autoclose_solved_posts
@@ -46,7 +42,8 @@ from app.components.zig_codeblocks import (
     zig_codeblock_delete_hook,
     zig_codeblock_edit_hook,
 )
-from app.setup import bot, config
+from app.errors import handle_task_error
+from app.setup import bot
 from app.utils import is_dm, is_mod, try_dm
 
 TASKS = (autoclose_solved_posts, randomize_activity_status, update_recent_mentions)
@@ -68,20 +65,6 @@ async def on_ready() -> None:
 
     bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
     logger.info("logged in as {}", bot.user)
-
-
-@bot.event
-async def on_error(*_: object) -> None:
-    handle_error(cast("BaseException", sys.exc_info()[1]))
-
-
-@bot.tree.error
-async def on_app_command_error(interaction: dc.Interaction, error: Exception) -> None:
-    if not interaction.response.is_done():
-        await interaction.response.send_message(
-            "Something went wrong :(", ephemeral=True
-        )
-    handle_error(error)
 
 
 @bot.event
@@ -156,20 +139,3 @@ async def sync(bot: commands.Bot, message: dc.Message) -> None:
     refresh_sitemap()
     await bot.tree.sync()
     await try_dm(message.author, "Command tree synced.")
-
-
-def handle_task_error(task: asyncio.Task[None]) -> None:
-    with suppress(asyncio.CancelledError):
-        if exc := task.exception():
-            handle_error(exc)
-
-
-def handle_error(error: BaseException) -> None:
-    if config.sentry_dsn is not None:
-        capture_exception(error)
-        return
-    logger.exception(error)
-    for note in getattr(error, "__notes__", []):
-        logger.error(note)
-    if isinstance(error, dc.app_commands.CommandInvokeError):
-        handle_error(error.original)

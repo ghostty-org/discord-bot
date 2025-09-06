@@ -7,6 +7,7 @@ from typing import ClassVar, Self, final
 
 import discord as dc
 
+from app.errors import SafeView
 from app.utils import is_dm, is_mod, safe_edit
 
 
@@ -80,7 +81,7 @@ class MessageLinker:
         return message.created_at < self.expiry_threshold
 
 
-class ItemActions(dc.ui.View):
+class ItemActions(SafeView):
     linker: ClassVar[MessageLinker]
     action_singular: ClassVar[str]
     action_plural: ClassVar[str]

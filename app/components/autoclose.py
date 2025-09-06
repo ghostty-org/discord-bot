@@ -24,8 +24,12 @@ async def autoclose_solved_posts() -> None:
             continue
         one_day_ago = dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=24)
         if dc.utils.snowflake_time(post.last_message_id) < one_day_ago:
-            await post.edit(archived=True)
-            closed_posts.append(post)
+            try:
+                await post.edit(archived=True)
+                closed_posts.append(post)
+            except dc.HTTPException:
+                failures.append(post)
+                continue
 
     bot_status.last_scan_results = (
         dt.datetime.now(tz=dt.UTC),
