@@ -424,8 +424,7 @@ class MovedMessage(ExtensibleMessage, dc.WebhookMessage):  # pyright: ignore[rep
             msg = "not a moved message"
             raise ValueError(msg)
         if author is not None and id_ != author.id:
-            # The author in the subtext isn't the same as the author object
-            # passed.
+            # The author in the subtext isn't the same as the author object passed.
             msg = "incorrect author passed"
             raise ValueError(msg)
         self.original_author_id = id_
@@ -462,8 +461,17 @@ class MovedMessage(ExtensibleMessage, dc.WebhookMessage):  # pyright: ignore[rep
 
     @classmethod
     async def from_message(
-        cls, message: dc.Message, *, webhook_name: str = "Ghostty Moderator"
+        cls,
+        message: dc.Message,
+        *,
+        webhook_name: str = "Ghostty Moderator",
+        author: dc.Member | None = None,
     ) -> Self | MovedMessageLookupFailed:
+        """
+        Providing `author` may save a web request when using get_original_author().
+        ValueError is thrown if the provided `author`'s ID does not match the ID in the
+        message's subtext.
+        """
         if message.webhook_id is None or isinstance(
             message.channel,
             # These types can't even have a webhook.
@@ -479,6 +487,15 @@ class MovedMessage(ExtensibleMessage, dc.WebhookMessage):  # pyright: ignore[rep
             channel = message.channel
             thread = dc.utils.MISSING
 
+        # Before making any API calls, do an early check for the author in the subtext.
+        # NOTE: ensure this precedes all await points in this function!
+        if (author_id := cls._extract_author_id(message.content)) is None:
+            return MovedMessageLookupFailed.NOT_MOVED
+        if author is not None and author_id != author.id:
+            # The author in the subtext isn't the same as the author object passed.
+            msg = "incorrect author passed"
+            raise ValueError(msg)
+
         for webhook in await channel.webhooks():
             if webhook.id == message.webhook_id:
                 break
@@ -489,10 +506,12 @@ class MovedMessage(ExtensibleMessage, dc.WebhookMessage):  # pyright: ignore[rep
             return MovedMessageLookupFailed.NOT_MOVED
 
         try:
-            return cls(await webhook.fetch_message(message.id, thread=thread))
+            return cls(
+                await webhook.fetch_message(message.id, thread=thread), author=author
+            )
         except dc.Forbidden:
             return MovedMessageLookupFailed.NOT_FOUND
-        except (ValueError, dc.NotFound):
+        except dc.NotFound:
             # NOTE: while it may seem like this function should be returning `NotFound`
             # on `dc.NotFound`, that exception is thrown when the *webhook* couldn't
             # find the associated message, rather than when the message doesn't exist.
