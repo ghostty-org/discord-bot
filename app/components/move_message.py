@@ -254,7 +254,7 @@ class HelpPostTitle(SafeModal, title="Turn into #help post"):
             cast("dc.Member", interaction.user),
             thread_name=self.title_.value,
         )
-        await (await msg.channel.send(self._message.author.mention)).delete()
+        await (await msg.channel.send(f"<@{msg.original_author_id}>")).delete()
 
         # Apparently msg.channel.mention is unavailable
         await interaction.followup.send(
