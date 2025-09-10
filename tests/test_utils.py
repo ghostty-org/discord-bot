@@ -18,6 +18,7 @@ from app.utils import (
     async_process_check_output,
     dynamic_timestamp,
     format_diff_note,
+    format_or_file,
     is_attachment_only,
     is_dm,
     is_helper,
@@ -30,7 +31,7 @@ from app.utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Callable
 
     from app.utils import Account
 
@@ -235,6 +236,61 @@ def test_format_diff_note(additions: int, deletions: int, changed_files: int) ->
 
 def test_format_diff_note_unavailable() -> None:
     assert format_diff_note(0, 0, 0) is None
+
+
+@pytest.mark.parametrize(
+    ("content", "template", "transform", "result"),
+    [
+        ("hi", None, None, "hi"),
+        ("hi", "{}!", None, "hi!"),
+        (
+            "HI EVER— I mean, hi everyone!",
+            None,
+            str.swapcase,
+            "hi ever— i MEAN, HI EVERYONE!",
+        ),
+        ("hello", "# ~~{}!~~", str.swapcase, "# ~~HELLO!~~"),
+    ],
+)
+def test_format_or_file_short(
+    content: str,
+    template: str | None,
+    transform: Callable[[str], str],
+    result: str,
+) -> None:
+    assert format_or_file(
+        content,
+        template=template,
+        transform=transform,
+    ) == (result, None)
+
+
+def test_format_or_file_long() -> None:
+    content, file = format_or_file("a" * 10000)
+    assert not content
+    assert file
+    assert file.fp.read() == b"a" * 10000
+
+
+def test_format_or_file_long_template() -> None:
+    content, file = format_or_file("a" * 2001, template="not {}")
+    assert content == "not "
+    assert file
+    assert file.fp.read() == b"a" * 2001
+
+
+def test_format_or_file_long_transform() -> None:
+    content, file = format_or_file("a" * 4321, transform=str.swapcase)
+    assert not content
+    assert file
+    assert file.fp.read() == b"a" * 4321
+
+
+def test_format_or_file_long_template_transform() -> None:
+    content, file = format_or_file("a" * 5000, template="# {}!", transform=str.swapcase)
+    assert content == "# !"
+    assert file
+    assert file.fp.read() == b"a" * 5000
 
 
 @pytest.mark.skipif(not sys.executable, reason="cannot find python interpreter path")
