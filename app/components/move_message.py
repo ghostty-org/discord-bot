@@ -188,20 +188,30 @@ class SelectChannel(SafeView):
         assert isinstance(webhook_channel, dc.TextChannel | dc.ForumChannel)
 
         webhook = await get_or_create_webhook(webhook_channel)
-        await move_message(
+        moved_message = await move_message(
             self.bot, webhook, self.message, self.executor, thread=thread
         )
         await interaction.edit_original_response(
             content=f"Moved the message to {channel.mention}.",
-            view=Ghostping(cast("dc.Member", self.message.author), channel),
+            view=Ghostping(moved_message.original_author_id, channel),
         )
 
 
 @final
 class Ghostping(SafeView):
-    def __init__(self, author: dc.Member, channel: GuildTextChannel) -> None:
+    def __init__(self, author: dc.Member | int, channel: GuildTextChannel) -> None:
+        """
+        Don't forget to use a returned MovedMessage's original author if applicable, so
+        as to correctly handle ghostpings on moved moved messages!.
+        """
+        # An ID is allowed too instead of a full Member as MovedMessages don't normally
+        # have an author attached. While this view would normally only be used after
+        # moving a message, and move_message_via_webhook() does cache the author in the
+        # MovedMessage, assuming that behavior can lead to a reduction in performance in
+        # the future if that behavior is changed, as there is no indication that this
+        # function needs to be updated were that done.
         super().__init__()
-        self._author = author
+        self._author_id = author.id if isinstance(author, dc.Member) else author
         self._channel = channel
 
     @dc.ui.button(label="Ghostping", emoji="👻")
@@ -209,15 +219,16 @@ class Ghostping(SafeView):
         self, interaction: dc.Interaction, button: dc.ui.Button[Self]
     ) -> None:
         button.disabled = True
+        mention = f"<@{self._author_id}>"
         await interaction.response.edit_message(
             content=(
                 f"Moved the message to {self._channel.mention} "
-                f"and ghostpinged {self._author.mention}."
+                f"and ghostpinged {mention}."
             ),
             view=self,
             allowed_mentions=dc.AllowedMentions.none(),
         )
-        await (await self._channel.send(self._author.mention)).delete()
+        await (await self._channel.send(mention)).delete()
 
 
 @final
