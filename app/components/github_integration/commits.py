@@ -141,7 +141,7 @@ class Commits(commands.Cog):
             ):
                 commit_title = commit_summary.message.splitlines()[0]
             else:
-                logger.warning(f"no commit summary found for {full_sha}")
+                logger.warning("no commit summary found for {}", full_sha)
                 commit_title = "(no commit message found)"
 
             await send_embed(
