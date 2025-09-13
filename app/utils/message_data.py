@@ -7,6 +7,7 @@ from contextlib import suppress
 from typing import Self
 
 import discord as dc
+from loguru import logger
 
 MAX_ATTACHMENT_SIZE = 67_108_864  # 64 MiB
 
@@ -56,6 +57,7 @@ class MessageData(ExtensibleMessage):
     @classmethod
     async def scrape(cls, message: dc.Message) -> Self:
         # This code cannot go in __init__ as it is async.
+        logger.debug("scraping message {}", message)
         msg_data = cls(message)
         msg_data.files, msg_data.skipped_attachments = await get_files(
             message.attachments

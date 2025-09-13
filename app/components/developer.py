@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, final
 
 import discord as dc
 from discord.ext import commands
+from loguru import logger
 
 from app.utils import try_dm
 
@@ -18,9 +19,11 @@ class Developer(commands.Cog):
 
     @commands.command(name="sync", description="Sync command tree.")
     async def sync(self, ctx: commands.Context[Any]) -> None:
+        logger.debug("!sync called by non-mod")
         if not self.bot.is_ghostty_mod(ctx.author):
             return
 
+        logger.info("syncing command tree")
         await self.bot.tree.sync()
         await try_dm(ctx.author, "Command tree synced.")
 
@@ -40,4 +43,5 @@ class Developer(commands.Cog):
 
 
 async def setup(bot: GhosttyBot) -> None:
+    logger.debug("adding Developer cog")
     await bot.add_cog(Developer(bot))

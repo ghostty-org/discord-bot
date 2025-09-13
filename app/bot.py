@@ -61,6 +61,11 @@ class GhosttyBot(commands.Bot):
         handle_error(cast("BaseException", sys.exception()))
 
     @override
+    async def load_extension(self, name: str, *, package: str | None = None) -> None:
+        logger.debug("loading extension {}", name.removeprefix("app.components."))
+        await super().load_extension(name, package=package)
+
+    @override
     async def setup_hook(self) -> None:
         coros = (
             self.load_extension(f"app.components.{file.stem}")
@@ -68,6 +73,7 @@ class GhosttyBot(commands.Bot):
             if not file.name.startswith("_")
         )
         await asyncio.gather(*coros)
+        logger.info("loaded {} extensions", len(self.extensions))
 
     async def on_ready(self) -> None:
         self.bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
@@ -89,18 +95,28 @@ class GhosttyBot(commands.Bot):
 
     @dc.utils.cached_property
     def ghostty_guild(self) -> dc.Guild:
+        logger.debug("fetching ghostty guild")
         if self.config.guild_id and (guild := self.get_guild(self.config.guild_id)):
+            logger.trace("found ghostty guild")
             return guild
+        logger.info(
+            "BOT_GUILD_ID unset or specified guild not found; using bot's first guild: "
+            "{} (ID: {})",
+            self.guilds[0].name,
+            self.guilds[0].id,
+        )
         return self.guilds[0]
 
     @dc.utils.cached_property
     def log_channel(self) -> dc.TextChannel:
+        logger.debug("fetching log channel")
         channel = self.get_channel(self.config.log_channel_id)
         assert isinstance(channel, dc.TextChannel)
         return channel
 
     @dc.utils.cached_property
     def help_channel(self) -> dc.ForumChannel:
+        logger.debug("fetching help channel")
         channel = self.get_channel(self.config.help_channel_id)
         assert isinstance(channel, dc.ForumChannel)
         return channel
@@ -109,6 +125,7 @@ class GhosttyBot(commands.Bot):
     def webhook_channels(self) -> dict[WebhookFeedType, dc.TextChannel]:
         channels: dict[WebhookFeedType, dc.TextChannel] = {}
         for feed_type, id_ in self.config.webhook_channel_ids.items():
+            logger.debug("fetching {feed_type} webhook channel", feed_type)
             channel = self.ghostty_guild.get_channel(id_)
             if not isinstance(channel, dc.TextChannel):
                 msg = (
@@ -132,6 +149,7 @@ class GhosttyBot(commands.Bot):
 
         # Simple test
         if message.guild is None and message.content == "ping":
+            logger.debug("ping sent by @{}", message.author.name)
             await try_dm(message.author, "pong")
             return
 

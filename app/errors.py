@@ -11,6 +11,7 @@ from app.config import config
 
 def handle_error(error: BaseException) -> None:
     if config.sentry_dsn is not None:
+        logger.debug("capturing error with sentry")
         capture_exception(error)
         return
     logger.exception(error)

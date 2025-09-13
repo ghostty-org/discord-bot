@@ -57,6 +57,7 @@ def setup(config: Config) -> None:
     )
 
     if config.sentry_dsn is not None:
+        logger.info("initializing sentry")
         sentry_sdk.init(
             dsn=config.sentry_dsn.get_secret_value(),
             traces_sample_rate=1.0,
