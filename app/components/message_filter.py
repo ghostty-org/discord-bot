@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple, cast, final
 import discord as dc
 from discord.ext import commands
 
-from app.common.message_moving import format_or_file
-from app.utils import try_dm
+from app.utils import format_or_file, try_dm
 
 if TYPE_CHECKING:
     from collections.abc import Callable
