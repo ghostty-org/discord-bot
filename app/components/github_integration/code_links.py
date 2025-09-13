@@ -86,9 +86,9 @@ class CodeLinkActions(ItemActions):
 class CodeLinks(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.code_linker = MessageLinker()
-        CodeLinkActions.linker = self.code_linker
-        self.content_cache = ContentCache(self.bot.gh, minutes=30)
+        self.linker = MessageLinker()
+        CodeLinkActions.linker = self.linker
+        self.cache = ContentCache(self.bot.gh, minutes=30)
 
     async def get_snippets(self, content: str) -> AsyncGenerator[Snippet]:
         for match in CODE_LINK_PATTERN.finditer(content):
@@ -103,7 +103,7 @@ class CodeLinks(commands.Cog):
                 int(range_end) if range_end else range_start,
             )
 
-            snippet = await self.content_cache.get(snippet_path)
+            snippet = await self.cache.get(snippet_path)
             selected_lines = "\n".join(snippet.splitlines()[content_range])
             lang = snippet_path.path.rpartition(".")[2]
             if lang == "zig":
@@ -141,7 +141,7 @@ class CodeLinks(commands.Cog):
             f" {ref_type}: [`{snippet.rev}`](<{tree_url}>)"
         ) + (f"\n```{snippet.lang}\n{snippet.body}\n```" * include_body)
 
-    async def snippet_message(self, message: dc.Message) -> ProcessedMessage:
+    async def process(self, message: dc.Message) -> ProcessedMessage:
         snippets = [s async for s in self.get_snippets(message.content)]
         if not snippets:
             return ProcessedMessage(item_count=0)
@@ -172,7 +172,7 @@ class CodeLinks(commands.Cog):
     async def reply_with_code(self, message: dc.Message) -> None:
         if message.author.bot:
             return
-        output = await self.snippet_message(message)
+        output = await self.process(message)
         if output.item_count != 0:
             await message.edit(suppress=True)
         if output.item_count < 1:
@@ -186,7 +186,7 @@ class CodeLinks(commands.Cog):
             allowed_mentions=dc.AllowedMentions.none(),
             view=CodeLinkActions(message, output.item_count),
         )
-        self.code_linker.link(message, sent_message)
+        self.linker.link(message, sent_message)
         await asyncio.gather(
             suppress_embeds_after_delay(message),
             remove_view_after_delay(sent_message),
@@ -194,13 +194,13 @@ class CodeLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: dc.Message) -> None:
-        await self.code_linker.delete(message)
+        await self.linker.delete(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
         return await create_edit_hook(
-            linker=self.code_linker,
-            message_processor=self.snippet_message,
+            linker=self.linker,
+            message_processor=self.process,
             interactor=self.reply_with_code,
             view_type=CodeLinkActions,
             view_timeout=60,
