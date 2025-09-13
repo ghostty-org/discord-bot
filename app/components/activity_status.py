@@ -24,18 +24,18 @@ STATUSES = (
 class ActivityStatus(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.randomize_activity_status.start()
+        self.randomize.start()
 
     @override
     async def cog_unload(self) -> None:
-        self.randomize_activity_status.cancel()
+        self.randomize.cancel()
 
     @tasks.loop(hours=2)
-    async def randomize_activity_status(self) -> None:
+    async def randomize(self) -> None:
         await self.bot.change_presence(activity=secrets.choice(STATUSES))
 
-    @randomize_activity_status.before_loop
-    async def before_randomize_activity_status(self) -> None:
+    @randomize.before_loop
+    async def before_randomize(self) -> None:
         await self.bot.wait_until_ready()
 
 

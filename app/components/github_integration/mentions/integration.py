@@ -45,8 +45,8 @@ class MentionActions(ItemActions):
 class MentionIntegration(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.mention_linker = MessageLinker()
-        MentionActions.linker = self.mention_linker
+        self.linker = MessageLinker()
+        MentionActions.linker = self.linker
 
         self.update_recent_mentions.start()
 
@@ -56,11 +56,11 @@ class MentionIntegration(commands.Cog):
 
     @tasks.loop(hours=1)
     async def update_recent_mentions(self) -> None:
-        self.mention_linker.free_dangling_links()
+        self.linker.free_dangling_links()
         entity_to_message_map = defaultdict[Entity, list[dc.Message]](list)
 
         # Gather all currently actively mentioned entities
-        for msg in self.mention_linker.refs:
+        for msg in self.linker.refs:
             with safe_edit:
                 entities = await extract_entities(msg)
                 for entity in entities:
@@ -78,7 +78,7 @@ class MentionIntegration(commands.Cog):
         messages_to_update = set(chain.from_iterable(entity_to_message_map.values()))
 
         for msg in messages_to_update:
-            reply = self.mention_linker.get(msg)
+            reply = self.linker.get(msg)
             assert reply is not None
 
             new_output = await entity_message(self.bot, msg)
@@ -120,7 +120,7 @@ class MentionIntegration(commands.Cog):
             allowed_mentions=dc.AllowedMentions.none(),
             view=MentionActions(message, output.item_count),
         )
-        self.mention_linker.link(message, sent_message)
+        self.linker.link(message, sent_message)
 
         coros = [remove_view_after_delay(sent_message)]
         # The suppress is done here (instead of in resolve_repo_signatures) to prevent
@@ -134,12 +134,12 @@ class MentionIntegration(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: dc.Message) -> None:
-        await self.mention_linker.delete(message)
+        await self.linker.delete(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
         return await create_edit_hook(
-            linker=self.mention_linker,
+            linker=self.linker,
             message_processor=partial(entity_message, self.bot),
             interactor=self.reply_with_entities,
             view_type=MentionActions,

@@ -108,8 +108,8 @@ class CodeblockActions(ItemActions):
 class ZigCodeblocks(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.codeblock_linker = MessageLinker()
-        CodeblockActions.linker = self.codeblock_linker
+        self.linker = MessageLinker()
+        CodeblockActions.linker = self.linker
 
     @staticmethod
     async def _collect_attachments(message: dc.Message) -> list[dc.File]:
@@ -163,7 +163,7 @@ class ZigCodeblocks(commands.Cog):
 
         return content
 
-    async def codeblock_processor(self, message: dc.Message) -> ProcessedMessage:
+    async def process(self, message: dc.Message) -> ProcessedMessage:
         attachments = await self._collect_attachments(message)
         zig_codeblocks = [
             c for c in extract_codeblocks(message.content) if c.lang == "zig"
@@ -210,7 +210,7 @@ class ZigCodeblocks(commands.Cog):
     async def check_for_zig_code(self, message: dc.Message) -> None:
         if message.author.bot:
             return
-        output = await self.codeblock_processor(message)
+        output = await self.process(message)
         if not output.item_count:
             return
         reply = await message.reply(
@@ -219,18 +219,18 @@ class ZigCodeblocks(commands.Cog):
             files=output.files,
             mention_author=False,
         )
-        self.codeblock_linker.link(message, reply)
+        self.linker.link(message, reply)
         await remove_view_after_delay(reply, 60)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: dc.Message) -> None:
-        await self.codeblock_linker.delete(message)
+        await self.linker.delete(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
         return await create_edit_hook(
-            linker=self.codeblock_linker,
-            message_processor=self.codeblock_processor,
+            linker=self.linker,
+            message_processor=self.process,
             interactor=self.check_for_zig_code,
             view_type=partial(CodeblockActions, self.bot),
             view_timeout=60,

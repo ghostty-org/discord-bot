@@ -124,9 +124,9 @@ class Commits(commands.Cog):
     def __init__(self, bot: GhosttyBot, monalisten_client: Monalisten) -> None:
         self.bot = bot
         self.monalisten_client = monalisten_client
-        self.commit_linker = MessageLinker()
+        self.linker = MessageLinker()
         CommitActions.linker = MessageLinker()
-        self.commit_cache = CommitCache(self.bot.gh)
+        self.cache = CommitCache(self.bot.gh)
 
     @override
     async def cog_load(self) -> None:
@@ -136,7 +136,7 @@ class Commits(commands.Cog):
             sha = full_sha[:7]
 
             owner, _, repo_name = event.repository.full_name.partition("/")
-            if commit_summary := await self.commit_cache.get(
+            if commit_summary := await self.cache.get(
                 CommitKey(owner, repo_name, full_sha)
             ):
                 commit_title = commit_summary.message.splitlines()[0]
@@ -155,7 +155,7 @@ class Commits(commands.Cog):
                 Footer("commit", f"Commit {sha}: {commit_title}"),
             )
 
-    def _format_commit_mention(self, commit: CommitSummary) -> str:
+    def _format(self, commit: CommitSummary) -> str:
         emoji = self.bot.ghostty_emojis["commit"]
         title = commit.message.splitlines()[0]
         heading = f"{emoji} **Commit [`{commit.sha[:7]}`](<{commit.url}>):** {title}"
@@ -209,21 +209,19 @@ class Commits(commands.Cog):
                 if valid_signatures == 10:
                     break
 
-    async def commit_links(self, message: dc.Message) -> ProcessedMessage:
+    async def process(self, message: dc.Message) -> ProcessedMessage:
         shas = dict.fromkeys(COMMIT_SHA_PATTERN.findall(message.content))
         shas = [r async for r in self.resolve_repo_signatures(shas)]
-        commit_summaries = await asyncio.gather(
-            *(self.commit_cache.get(c) for c in shas)
-        )
+        commit_summaries = await asyncio.gather(*(self.cache.get(c) for c in shas))
         valid_shas = list(filter(None, commit_summaries))
-        content = "\n\n".join(map(self._format_commit_mention, valid_shas))
+        content = "\n\n".join(map(self._format, valid_shas))
         return ProcessedMessage(item_count=len(valid_shas), content=content)
 
     @commands.Cog.listener("on_message")
     async def reply_with_commit_details(self, message: dc.Message) -> None:
         if message.author.bot:
             return
-        output = await self.commit_links(message)
+        output = await self.process(message)
         if output.item_count == 0:
             return
         reply = await message.reply(
@@ -233,7 +231,7 @@ class Commits(commands.Cog):
             allowed_mentions=dc.AllowedMentions.none(),
             view=CommitActions(message, output.item_count),
         )
-        self.commit_linker.link(message, reply)
+        self.linker.link(message, reply)
         await asyncio.gather(
             suppress_embeds_after_delay(message),
             remove_view_after_delay(reply),
@@ -241,13 +239,13 @@ class Commits(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: dc.Message) -> None:
-        await self.commit_linker.delete(message)
+        await self.linker.delete(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
         return await create_edit_hook(
-            linker=self.commit_linker,
-            message_processor=self.commit_links,
+            linker=self.linker,
+            message_processor=self.process,
             interactor=self.reply_with_commit_details,
             view_type=CommitActions,
             view_timeout=60,

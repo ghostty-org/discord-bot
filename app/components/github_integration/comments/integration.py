@@ -45,8 +45,8 @@ class CommentActions(ItemActions):
 class CommentIntegration(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.comment_linker = MessageLinker()
-        CommentActions.linker = self.comment_linker
+        self.linker = MessageLinker()
+        CommentActions.linker = self.linker
 
     def comment_to_embed(self, comment: Comment) -> dc.Embed:
         emoji = get_entity_emoji(self.bot, comment.entity)
@@ -100,25 +100,25 @@ class CommentIntegration(commands.Cog):
             view=CommentActions(message, len(embeds)),
         )
         await message.edit(suppress=True)
-        self.comment_linker.link(message, sent_message)
+        self.linker.link(message, sent_message)
         await asyncio.gather(
             suppress_embeds_after_delay(message),
             remove_view_after_delay(sent_message),
         )
 
-    async def comment_processor(self, msg: dc.Message) -> ProcessedMessage:
+    async def process(self, msg: dc.Message) -> ProcessedMessage:
         comments = [self.comment_to_embed(i) async for i in get_comments(msg.content)]
         return ProcessedMessage(embeds=comments, item_count=len(comments))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: dc.Message) -> None:
-        await self.comment_linker.delete(message)
+        await self.linker.delete(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
         return await create_edit_hook(
-            linker=self.comment_linker,
-            message_processor=self.comment_processor,
+            linker=self.linker,
+            message_processor=self.process,
             interactor=self.reply_with_comments,
             view_type=CommentActions,
         )(before, after)
