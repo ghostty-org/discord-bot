@@ -11,7 +11,7 @@ from tests.hooks.utils import spawn_bot_message, spawn_user_message
 if TYPE_CHECKING:
     from unittest.mock import Mock
 
-    from app.common.hooks import MessageLinker
+    from app.common.linker import MessageLinker
 
 
 @pytest.mark.asyncio

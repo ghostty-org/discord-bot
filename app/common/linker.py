@@ -98,6 +98,63 @@ class MessageLinker:
                 await reply.delete()
         self.unfreeze(message)
 
+    async def edit(  # noqa: PLR0913
+        self,
+        before: dc.Message,
+        after: dc.Message,
+        *,
+        message_processor: Callable[[dc.Message], Awaitable[ProcessedMessage]],
+        interactor: Callable[[dc.Message], Awaitable[None]],
+        view_type: Callable[[dc.Message, int], dc.ui.View],
+        view_timeout: float = 30.0,
+    ) -> None:
+        if before.content == after.content:
+            return
+
+        if self.is_expired(before):
+            # The original message wasn't updated recently enough
+            self.unlink(before)
+            return
+
+        old_output = await message_processor(before)
+        new_output = await message_processor(after)
+        if old_output == new_output:
+            # Message changed but objects are the same
+            return
+
+        if not (reply := self.get(before)):
+            if self.is_frozen(before):
+                return
+            if old_output.item_count > 0:
+                # The message was removed from the linker at some point (most likely
+                # when the reply was deleted)
+                return
+            # There were no objects before, so treat this as a new message
+            await interactor(after)
+            return
+
+        if self.is_frozen(before):
+            return
+
+        # Some processors use negative values to symbolize special error values, so this
+        # can't be `== 0`. An example of this is the snippet_message() function in the
+        # file app/components/github_integration/code_links.py
+        if new_output.item_count <= 0:
+            # All objects were edited out
+            self.unlink(before)
+            await reply.delete()
+            return
+
+        await reply.edit(
+            content=new_output.content,
+            embeds=new_output.embeds,
+            attachments=new_output.files,
+            suppress=not new_output.embeds,
+            view=view_type(after, new_output.item_count),
+            allowed_mentions=dc.AllowedMentions.none(),
+        )
+        await remove_view_after_delay(reply, view_timeout)
+
 
 class ItemActions(SafeView):
     linker: ClassVar[MessageLinker]
@@ -144,62 +201,3 @@ class ItemActions(SafeView):
             " what happens to your original message.",
             ephemeral=True,
         )
-
-
-def create_edit_hook(
-    *,
-    linker: MessageLinker,
-    message_processor: Callable[[dc.Message], Awaitable[ProcessedMessage]],
-    interactor: Callable[[dc.Message], Awaitable[None]],
-    view_type: Callable[[dc.Message, int], dc.ui.View],
-    view_timeout: float = 30.0,
-) -> Callable[[dc.Message, dc.Message], Awaitable[None]]:
-    async def edit_hook(before: dc.Message, after: dc.Message) -> None:
-        if before.content == after.content:
-            return
-
-        if linker.is_expired(before):
-            # The original message wasn't updated recently enough
-            linker.unlink(before)
-            return
-
-        old_output = await message_processor(before)
-        new_output = await message_processor(after)
-        if old_output == new_output:
-            # Message changed but objects are the same
-            return
-
-        if not (reply := linker.get(before)):
-            if linker.is_frozen(before):
-                return
-            if old_output.item_count > 0:
-                # The message was removed from the linker at some point (most likely
-                # when the reply was deleted)
-                return
-            # There were no objects before, so treat this as a new message
-            await interactor(after)
-            return
-
-        if linker.is_frozen(before):
-            return
-
-        # Some processors use negative values to symbolize special error values, so this
-        # can't be `== 0`. An example of this is the snippet_message() function in the
-        # file app/components/github_integration/code_links.py
-        if new_output.item_count <= 0:
-            # All objects were edited out
-            linker.unlink(before)
-            await reply.delete()
-            return
-
-        await reply.edit(
-            content=new_output.content,
-            embeds=new_output.embeds,
-            attachments=new_output.files,
-            suppress=not new_output.embeds,
-            view=view_type(after, new_output.item_count),
-            allowed_mentions=dc.AllowedMentions.none(),
-        )
-        await remove_view_after_delay(reply, view_timeout)
-
-    return edit_hook

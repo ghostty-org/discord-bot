@@ -14,11 +14,10 @@ from discord.ext import commands
 from zig_codeblocks import highlight_zig_code
 
 from app.common.cache import TTRCache
-from app.common.hooks import (
+from app.common.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
-    create_edit_hook,
     remove_view_after_delay,
 )
 from app.components.zig_codeblocks import THEME
@@ -198,10 +197,11 @@ class CodeLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
-        return await create_edit_hook(
-            linker=self.code_linker,
+        await self.code_linker.edit(
+            before,
+            after,
             message_processor=self.snippet_message,
             interactor=self.reply_with_code,
             view_type=CodeLinkActions,
             view_timeout=60,
-        )(before, after)
+        )

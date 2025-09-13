@@ -5,12 +5,7 @@ from typing import TYPE_CHECKING, final
 
 import pytest
 
-from app.common.hooks import (
-    ItemActions,
-    MessageLinker,
-    ProcessedMessage,
-    create_edit_hook,
-)
+from app.common.linker import ItemActions, MessageLinker, ProcessedMessage
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -51,18 +46,19 @@ class TrackedCallable[**P, R]:
 @final
 class EditHook:
     def __init__(self, linker: MessageLinker) -> None:
+        self.linker = linker
         self.message_processor = TrackedCallable(extract_numbers_then_hex)
         self.interactor = TrackedCallable(print_hex_nums)
-        self._hook = create_edit_hook(
-            linker=linker,
+
+    async def __call__(self, before: dc.Message, after: dc.Message) -> None:
+        return await self.linker.edit(
+            before,
+            after,
             message_processor=self.message_processor,
             interactor=self.interactor,
             view_type=ItemActions,
             view_timeout=0,
         )
-
-    async def __call__(self, before: dc.Message, after: dc.Message) -> None:
-        return await self._hook(before, after)
 
 
 @pytest.fixture

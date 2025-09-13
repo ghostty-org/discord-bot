@@ -11,11 +11,10 @@ from discord.ext import commands
 from githubkit.exception import RequestFailed
 from loguru import logger
 
-from app.common.hooks import (
+from app.common.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
-    create_edit_hook,
     remove_view_after_delay,
 )
 from app.components.github_integration.mentions.resolution import (
@@ -245,10 +244,11 @@ class Commits(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
-        return await create_edit_hook(
-            linker=self.commit_linker,
+        await self.commit_linker.edit(
+            before,
+            after,
             message_processor=self.commit_links,
             interactor=self.reply_with_commit_details,
             view_type=CommitActions,
             view_timeout=60,
-        )(before, after)
+        )

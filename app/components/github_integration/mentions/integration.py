@@ -11,12 +11,7 @@ from discord.ext import commands, tasks
 
 from .cache import entity_cache
 from .fmt import entity_message, extract_entities
-from app.common.hooks import (
-    ItemActions,
-    MessageLinker,
-    create_edit_hook,
-    remove_view_after_delay,
-)
+from app.common.linker import ItemActions, MessageLinker, remove_view_after_delay
 from app.components.github_integration.mentions.resolution import ENTITY_REGEX
 from app.components.github_integration.models import Entity
 from app.utils import (
@@ -138,9 +133,10 @@ class MentionIntegration(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
-        return await create_edit_hook(
-            linker=self.mention_linker,
+        await self.mention_linker.edit(
+            before,
+            after,
             message_processor=partial(entity_message, self.bot),
             interactor=self.reply_with_entities,
             view_type=MentionActions,
-        )(before, after)
+        )

@@ -7,11 +7,10 @@ import discord as dc
 from discord.ext import commands
 
 from .fetching import get_comments
-from app.common.hooks import (
+from app.common.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
-    create_edit_hook,
     remove_view_after_delay,
 )
 from app.components.github_integration.mentions.fmt import get_entity_emoji
@@ -116,9 +115,10 @@ class CommentIntegration(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
-        return await create_edit_hook(
-            linker=self.comment_linker,
+        await self.comment_linker.edit(
+            before,
+            after,
             message_processor=self.comment_processor,
             interactor=self.reply_with_comments,
             view_type=CommentActions,
-        )(before, after)
+        )

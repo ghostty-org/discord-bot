@@ -10,7 +10,7 @@ from tests.hooks.utils import spawn_message
 if TYPE_CHECKING:
     import discord as dc
 
-    from app.common.hooks import MessageLinker
+    from app.common.linker import MessageLinker
 
 
 def test_double_link_fails(linker: MessageLinker) -> None:

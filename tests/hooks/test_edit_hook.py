@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
     from tests.fixtures.hooks import EditHook
 
-    from app.common.hooks import MessageLinker
+    from app.common.linker import MessageLinker
 
 
 @pytest.mark.asyncio

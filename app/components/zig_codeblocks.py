@@ -17,11 +17,10 @@ from zig_codeblocks import (
     process_markdown,
 )
 
-from app.common.hooks import (
+from app.common.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
-    create_edit_hook,
     remove_view_after_delay,
 )
 from app.common.message_moving import get_or_create_webhook, move_message
@@ -228,13 +227,14 @@ class ZigCodeblocks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
-        return await create_edit_hook(
-            linker=self.codeblock_linker,
+        await self.codeblock_linker.edit(
+            before,
+            after,
             message_processor=self.codeblock_processor,
             interactor=self.check_for_zig_code,
             view_type=partial(CodeblockActions, self.bot),
             view_timeout=60,
-        )(before, after)
+        )
 
 
 async def setup(bot: GhosttyBot) -> None:

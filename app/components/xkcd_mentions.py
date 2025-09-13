@@ -11,11 +11,10 @@ from discord.ext import commands
 from pydantic import BaseModel
 
 from app.common.cache import TTRCache
-from app.common.hooks import (
+from app.common.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
-    create_edit_hook,
     remove_view_after_delay,
 )
 
@@ -118,12 +117,13 @@ class XKCDMentions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: dc.Message, after: dc.Message) -> None:
-        return await create_edit_hook(
-            linker=self.xkcd_mention_linker,
+        await self.xkcd_mention_linker.edit(
+            before,
+            after,
             message_processor=self.xkcd_mention_message,
             interactor=self.handle_xkcd_mentions,
             view_type=XKCDActions,
-        )(before, after)
+        )
 
 
 async def setup(bot: GhosttyBot) -> None:
