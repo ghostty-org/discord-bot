@@ -123,6 +123,8 @@ class CommitActions(ItemActions):
 class Commits(commands.Cog):
     def __init__(self, bot: GhosttyBot, monalisten_client: Monalisten) -> None:
         self.bot = bot
+        self.bot.bot_status.commit_links = self.commit_links
+
         self.monalisten_client = monalisten_client
         self.commit_linker = MessageLinker()
         CommitActions.linker = MessageLinker()
@@ -154,6 +156,10 @@ class Commits(commands.Cog):
                 ),
                 Footer("commit", f"Commit {sha}: {commit_title}"),
             )
+
+    @override
+    async def cog_unload(self) -> None:
+        self.bot.bot_status.commit_links = None
 
     def _format_commit_mention(self, commit: CommitSummary) -> str:
         emoji = self.bot.ghostty_emojis["commit"]
