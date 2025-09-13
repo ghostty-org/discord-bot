@@ -7,6 +7,7 @@ import discord as dc
 from discord import app_commands
 from discord.ext import commands
 
+from app.common.message_moving import MovedMessage
 from app.components.github_integration import fmt
 from app.utils import is_dm, is_helper, is_mod
 
@@ -32,7 +33,9 @@ class Close(commands.GroupCog, group_name="close"):
         self.bot = bot
 
     @override
-    def interaction_check(self, interaction: dc.Interaction, /) -> bool:
+    # This code does work, and the docs also state "this function **can** be
+    # a coroutine", but the type signature doesn't have an async override. ¯\_(ツ)_/¯
+    async def interaction_check(self, interaction: dc.Interaction, /) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         user = interaction.user
         if is_dm(user) or not (
             isinstance((post := interaction.channel), dc.Thread)
@@ -41,8 +44,21 @@ class Close(commands.GroupCog, group_name="close"):
             # Can only close posts in #help
             return False
 
-        # Only helpers and the author can close posts
-        return is_mod(user) or is_helper(user) or user.id == post.owner_id
+        # Allow mods and helpers to close posts, as well as the author of the post.
+        if is_mod(user) or is_helper(user) or user.id == post.owner_id:
+            return True
+
+        # When "Turn into #help post" is used, the owner ID is the ID of the webhook
+        # used to send the moved message. Get the real author's ID from the subtext, if
+        # possible.
+        moved_message = await MovedMessage.from_message(
+            # NOTE: a thread's starter message's ID is the same as the thread's ID.
+            post.starter_message or await post.fetch_message(post.id)
+        )
+        return (
+            isinstance(moved_message, MovedMessage)  # An error wasn't returned.
+            and user.id == moved_message.original_author_id
+        )
 
     @override
     async def cog_app_command_error(
