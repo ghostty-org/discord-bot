@@ -73,10 +73,7 @@ class GhosttyBot(commands.Bot):
     async def setup_hook(self) -> None:
         await self.bot_status.load_git_data()
         await asyncio.gather(
-            *(
-                self.load_extension(file)
-                for file in self.get_component_extension_names()
-            )
+            *map(self.load_extension, self.get_component_extension_names())
         )
         logger.info("loaded {} extensions", len(self.extensions))
 
@@ -162,8 +159,9 @@ class GhosttyBot(commands.Bot):
         for module_info in pkgutil.walk_packages(
             [Path(__file__).parent / "components"], "app.components."
         ):
-            imported = importlib.import_module(module_info.name)
-            if not inspect.isfunction(getattr(imported, "setup", None)):
+            if not inspect.isfunction(
+                getattr(importlib.import_module(module_info.name), "setup", None)
+            ):
                 # If it lacks a setup function, it's not an extension.
                 continue
             modules.add(module_info.name)
@@ -172,8 +170,14 @@ class GhosttyBot(commands.Bot):
 
     @staticmethod
     def is_valid_extension(extension: str) -> bool:
-        return extension.startswith("app.components.") and bool(
-            importlib.util.find_spec(extension)
+        return (
+            extension.startswith("app.components.")
+            and bool(importlib.util.find_spec(extension))
+            and (
+                inspect.isfunction(
+                    getattr(importlib.import_module(extension), "setup", None)
+                )
+            )
         )
 
     async def load_emojis(self) -> None:
