@@ -4,7 +4,6 @@ import asyncio
 import datetime as dt
 import importlib
 import importlib.util
-import inspect
 import pkgutil
 import sys
 from pathlib import Path
@@ -154,17 +153,14 @@ class GhosttyBot(commands.Bot):
 
         await self.process_commands(message)
 
-    def get_component_extension_names(self) -> frozenset[str]:
+    @classmethod
+    def get_component_extension_names(cls) -> frozenset[str]:
         modules: set[str] = set()
         for module_info in pkgutil.walk_packages(
             [Path(__file__).parent / "components"], "app.components."
         ):
-            if not inspect.isfunction(
-                getattr(importlib.import_module(module_info.name), "setup", None)
-            ):
-                # If it lacks a setup function, it's not an extension.
-                continue
-            modules.add(module_info.name)
+            if cls.is_valid_extension(module_info.name):
+                modules.add(module_info.name)
 
         return frozenset(modules)
 
@@ -173,11 +169,7 @@ class GhosttyBot(commands.Bot):
         return (
             extension.startswith("app.components.")
             and bool(importlib.util.find_spec(extension))
-            and (
-                inspect.isfunction(
-                    getattr(importlib.import_module(extension), "setup", None)
-                )
-            )
+            and callable(getattr(importlib.import_module(extension), "setup", None))
         )
 
     async def load_emojis(self) -> None:
