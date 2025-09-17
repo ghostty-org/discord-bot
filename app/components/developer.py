@@ -22,14 +22,17 @@ class Developer(commands.Cog):
     async def existing_extension_autocomplete(
         self, _: dc.Interaction, current: str
     ) -> list[Choice[str]]:
-        return [
-            Choice(name=name, value=cog_module.__name__)
-            for name, cog in (c for c in self.bot.cogs.items())
-            if (
-                current.casefold() in name.casefold()
-                and (cog_module := inspect.getmodule(cog))
-            )
-        ]
+        return sorted(
+            (
+                Choice(name=name, value=cog_module.__name__)
+                for name, cog in (c for c in self.bot.cogs.items())
+                if (
+                    current.casefold() in name.casefold()
+                    and (cog_module := inspect.getmodule(cog))
+                )
+            ),
+            key=lambda x: x.name,
+        )[:25]
 
     @commands.command(name="sync", description="Sync command tree.")
     async def sync(self, ctx: commands.Context[Any]) -> None:
@@ -83,7 +86,11 @@ class Developer(commands.Cog):
             extensions = [extension]
         else:
             # If no extension is provided, reload all extensions
-            extensions = self.bot.get_component_extension_names()
+            # Skip the bare github_integration, as this module should only be ran once.
+            # This special skip should be updated once monalisten is refactored.
+            extensions = self.bot.get_component_extension_names() - {
+                "app.components.github_integration"
+            }
 
         reloaded_extensions: list[str] = []
         failed_reloaded_extensions: list[str] = []
@@ -214,14 +221,22 @@ class Developer(commands.Cog):
             for cog in self.bot.cogs.values()
             if (cog_module := inspect.getmodule(cog))
         }
-        unloaded_cogs_paths = (
-            self.bot.get_component_extension_names() - loaded_extensions
+        unloaded_extension_paths = (
+            self.bot.get_component_extension_names()
+            - loaded_extensions
+            # Special case (to be removed) - ignore this extension due to not containing
+            # a cog
+            # <https://github.com/ghostty-org/discord-bot/pull/366#discussion_r2350486767>
+            - {"app.components.github_integration"}
         )
-        return [
-            Choice(name=name, value=name)
-            for name in unloaded_cogs_paths
-            if current.casefold() in name.casefold()
-        ]
+        return sorted(
+            (
+                Choice(name=name, value=name)
+                for name in unloaded_extension_paths
+                if current.casefold() in name.casefold()
+            ),
+            key=lambda x: x.name,
+        )[:25]
 
 
 async def setup(bot: GhosttyBot) -> None:
