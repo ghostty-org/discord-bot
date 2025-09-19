@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import importlib
+import importlib.util
+import inspect
+import pkgutil
 import sys
 from pathlib import Path
 from types import MappingProxyType
@@ -68,32 +72,18 @@ class GhosttyBot(commands.Bot):
     @override
     async def setup_hook(self) -> None:
         await self.bot_status.load_git_data()
-
-        coros = (
-            self.load_extension(f"app.components.{file.stem}")
-            for file in (Path(__file__).parent / "components").iterdir()
-            if not file.name.startswith("_")
+        await asyncio.gather(
+            *(
+                self.load_extension(file)
+                for file in self.get_component_extension_names()
+            )
         )
-        await asyncio.gather(*coros)
         logger.info("loaded {} extensions", len(self.extensions))
 
     async def on_ready(self) -> None:
         self.bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
         await self.load_emojis()
         logger.info("logged in as {}", self.user)
-
-    async def load_emojis(self) -> None:
-        valid_emoji_names = frozenset(get_args(EmojiName))
-
-        for emoji in self.ghostty_guild.emojis:
-            if emoji.name in valid_emoji_names:
-                self._ghostty_emojis[cast("EmojiName", emoji.name)] = emoji
-
-        if missing_emojis := valid_emoji_names - self._ghostty_emojis.keys():
-            await self.log_channel.send(
-                "Failed to load the following emojis: " + ", ".join(missing_emojis)
-            )
-            self._ghostty_emojis |= dict.fromkeys(missing_emojis, "❓")
 
     @dc.utils.cached_property
     def ghostty_guild(self) -> dc.Guild:
@@ -166,3 +156,35 @@ class GhosttyBot(commands.Bot):
             return
 
         await self.process_commands(message)
+
+    def get_component_extension_names(self) -> frozenset[str]:
+        modules: set[str] = set()
+        for module_info in pkgutil.walk_packages(
+            [Path(__file__).parent / "components"], "app.components."
+        ):
+            imported = importlib.import_module(module_info.name)
+            if not inspect.isfunction(getattr(imported, "setup", None)):
+                # If it lacks a setup function, it's not an extension.
+                continue
+            modules.add(module_info.name)
+
+        return frozenset(modules)
+
+    @staticmethod
+    def is_valid_extension(extension: str) -> bool:
+        return extension.startswith("app.components.") and bool(
+            importlib.util.find_spec(extension)
+        )
+
+    async def load_emojis(self) -> None:
+        valid_emoji_names = frozenset(get_args(EmojiName))
+
+        for emoji in self.ghostty_guild.emojis:
+            if emoji.name in valid_emoji_names:
+                self._ghostty_emojis[cast("EmojiName", emoji.name)] = emoji
+
+        if missing_emojis := valid_emoji_names - self._ghostty_emojis.keys():
+            await self.log_channel.send(
+                "Failed to load the following emojis: " + ", ".join(missing_emojis)
+            )
+            self._ghostty_emojis |= dict.fromkeys(missing_emojis, "❓")
