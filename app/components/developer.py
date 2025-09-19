@@ -101,12 +101,13 @@ class Developer(commands.Cog):
                 reloaded_extensions.append(ext)
             except commands.ExtensionFailed as error:
                 logger.opt(exception=error).exception(
-                    f"{interaction.user.id} failed to reload `{ext}`"
+                    f"{pretty_print_account(interaction.user)} failed to reload `{ext}`"
                 )
                 failed_reloaded_extensions.append(ext)
             except commands.ExtensionError as error:
                 logger.warning(
-                    f"{interaction.user.id} failed to reload `{ext}`\n{error}"
+                    f"{pretty_print_account(interaction.user)} failed to reload "
+                    f"`{ext}`: {error}"
                 )
                 failed_reloaded_extensions.append(ext)
 
@@ -151,11 +152,13 @@ class Developer(commands.Cog):
             )
         except commands.ExtensionFailed as error:
             logger.opt(exception=error).exception(
-                f"{interaction.user.id} failed to unload `{extension}`"
+                f"{pretty_print_account(interaction.user)} failed to unload "
+                f"`{extension}`"
             )
         except commands.ExtensionError as error:
             logger.warning(
-                f"{interaction.user.id} failed to unload `{extension}`\n{error}"
+                f"{pretty_print_account(interaction.user)} failed to unload "
+                f"`{extension}`: {error}"
             )
         else:
             return
@@ -188,11 +191,12 @@ class Developer(commands.Cog):
             )
         except commands.ExtensionFailed as error:
             logger.opt(exception=error).exception(
-                f"{interaction.user.id} failed to load `{extension}`"
+                f"{pretty_print_account(interaction.user)} failed to load `{extension}`"
             )
         except commands.ExtensionError as error:
             logger.warning(
-                f"{interaction.user.id} failed to load `{extension}`\n{error}"
+                f"{pretty_print_account(interaction.user)} failed to load "
+                f"`{extension}`: {error}"
             )
         else:
             return
