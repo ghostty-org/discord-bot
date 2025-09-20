@@ -10,7 +10,6 @@ from app.components.github_integration.webhooks.core import (
     Footer,
     send_embed,
 )
-from app.components.github_integration.webhooks.core import client as monalisten_client
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import DiscussionPropCategory, SimpleUser
@@ -187,7 +186,3 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             discussion_footer(discussion),
             feed_type="discussions",
         )
-
-
-async def setup(bot: GhosttyBot) -> None:
-    await bot.add_cog(Discussions(bot, monalisten_client))

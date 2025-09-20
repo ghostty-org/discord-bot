@@ -12,7 +12,6 @@ from app.components.github_integration.webhooks.core import (
     Footer,
     send_embed,
 )
-from app.components.github_integration.webhooks.core import client as monalisten_client
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
@@ -223,7 +222,3 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             EmbedContent(title, event.comment.html_url, event.comment.body),
             Footer(emoji, f"{entity}: {issue.title}"),
         )
-
-
-async def setup(bot: GhosttyBot) -> None:
-    await bot.add_cog(Issues(bot, monalisten_client))

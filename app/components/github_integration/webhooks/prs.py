@@ -13,7 +13,6 @@ from app.components.github_integration.webhooks.core import (
     Footer,
     send_embed,
 )
-from app.components.github_integration.webhooks.core import client as monalisten_client
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
@@ -283,7 +282,3 @@ def _format_reviewer(event: Any) -> str:
     if requested_reviewer := getattr(event, "requested_reviewer", None):
         return GitHubUser(**requested_reviewer.model_dump()).hyperlink
     return "`?`"
-
-
-async def setup(bot: GhosttyBot) -> None:
-    await bot.add_cog(PRs(bot, monalisten_client))

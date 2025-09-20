@@ -22,7 +22,6 @@ from app.components.github_integration.mentions.resolution import (
     resolve_repo_signature,
 )
 from app.components.github_integration.models import GitHubUser
-from app.components.github_integration.webhooks import monalisten_client
 from app.components.github_integration.webhooks.core import (
     EmbedContent,
     Footer,
@@ -262,7 +261,3 @@ class Commits(commands.Cog):
             view_type=CommitActions,
             view_timeout=60,
         )
-
-
-async def setup(bot: GhosttyBot) -> None:
-    await bot.add_cog(Commits(bot, monalisten_client))

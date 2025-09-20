@@ -3,18 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, NamedTuple, TypedDict
 
 import discord as dc
-import sentry_sdk
-from loguru import logger
-from monalisten import Monalisten
 
 from app.components.github_integration.models import GitHubUser
-from app.config import config
-from app.errors import handle_error
 from app.utils import truncate
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import SimpleUser
-    from monalisten import AuthIssue, Error
 
     from app.bot import EmojiName, GhosttyBot
     from app.config import WebhookFeedType
@@ -29,31 +23,6 @@ EMBED_COLORS: dict[EmbedColor, int] = {
     "orange": 0xEDB74A,
     "blue": 0x4C8CED,
 }
-
-client = Monalisten(
-    config.github_webhook_url.get_secret_value(),
-    token=config.github_webhook_secret.get_secret_value()
-    if config.github_webhook_secret
-    else None,
-)
-
-
-@client.internal.error
-async def forward_error(error: Error) -> None:
-    error.exc.add_note(f"payload: {error.payload}")
-    sentry_sdk.set_context("payload", error.payload or {})  # pyright: ignore[reportArgumentType]
-    handle_error(error.exc)
-
-
-@client.internal.auth_issue
-async def show_issue(issue: AuthIssue) -> None:
-    guid = issue.payload.get("x-github-delivery", "<missing-guid>")
-    logger.warning("token {} in event {}: {}", issue.kind.value, guid, issue.payload)
-
-
-@client.internal.ready
-async def ready() -> None:
-    logger.info("monalisten client ready")
 
 
 class EmbedContentArgs(TypedDict, total=False):
