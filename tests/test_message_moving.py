@@ -1,8 +1,6 @@
 # pyright: reportPrivateUsage=false
-from __future__ import annotations
-
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
+from typing import cast
 from unittest.mock import Mock
 
 import discord as dc
@@ -10,17 +8,10 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from app.common.message_moving import (
-    MovedMessage,
-    _find_snowflake,
-    _format_emoji,
-    _unattachable_embed,
-    format_or_file,
-    message_can_be_moved,
-)
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
+from app.common.message_moving import MovedMessage, message_can_be_moved
+from app.common.message_moving.conversion import _unattachable_embed
+from app.common.message_moving.moved_message import _find_snowflake
+from app.common.message_moving.subtext import _format_emoji
 
 # A random list of Unicode emojis that default to the emoji presentation.
 UNICODE_EMOJIS = "📨🌼🎬⌛🧆🦯🤩👤🥈🏑🌊🤲👦🛝🍏🥫🐙👰🇫🤏🚋🏽🐾🌄🔛🐸🤣🐎💿👃🔘🍋🚈👘🚹"
@@ -210,58 +201,3 @@ def test_get_moved_message_author_id(content: str, result: int | None) -> None:
     # NOTE: casting a SimpleNamespace to MovedMessage seems to break the code in
     # ExtensibleMessage, so we shall access _extract_author_id() directly.
     assert MovedMessage._extract_author_id(content) == result
-
-
-@pytest.mark.parametrize(
-    ("content", "template", "transform", "result"),
-    [
-        ("hi", None, None, "hi"),
-        ("hi", "{}!", None, "hi!"),
-        (
-            "HI EVER— I mean, hi everyone!",
-            None,
-            str.swapcase,
-            "hi ever— i MEAN, HI EVERYONE!",
-        ),
-        ("hello", "# ~~{}!~~", str.swapcase, "# ~~HELLO!~~"),
-    ],
-)
-def test_format_or_file_short(
-    content: str,
-    template: str | None,
-    transform: Callable[[str], str],
-    result: str,
-) -> None:
-    assert format_or_file(
-        content,
-        template=template,
-        transform=transform,
-    ) == (result, None)
-
-
-def test_format_or_file_long() -> None:
-    content, file = format_or_file("a" * 10000)
-    assert not content
-    assert file
-    assert file.fp.read() == b"a" * 10000
-
-
-def test_format_or_file_long_template() -> None:
-    content, file = format_or_file("a" * 2001, template="not {}")
-    assert content == "not "
-    assert file
-    assert file.fp.read() == b"a" * 2001
-
-
-def test_format_or_file_long_transform() -> None:
-    content, file = format_or_file("a" * 4321, transform=str.swapcase)
-    assert not content
-    assert file
-    assert file.fp.read() == b"a" * 4321
-
-
-def test_format_or_file_long_template_transform() -> None:
-    content, file = format_or_file("a" * 5000, template="# {}!", transform=str.swapcase)
-    assert content == "# !"
-    assert file
-    assert file.fp.read() == b"a" * 5000

@@ -4,6 +4,7 @@ import asyncio
 import re
 import subprocess
 from contextlib import suppress
+from io import BytesIO
 from textwrap import shorten
 from typing import TYPE_CHECKING, Any, TypeIs
 
@@ -36,7 +37,7 @@ __all__ = (
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncGenerator, AsyncIterable
+    from collections.abc import AsyncGenerator, AsyncIterable, Callable
 
 _INVITE_LINK_REGEX = re.compile(r"\b(?:https?://)?(discord\.gg/[^\s]+)\b")
 _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
@@ -149,6 +150,26 @@ def format_diff_note(additions: int, deletions: int, changed_files: int) -> str 
     if not (changed_files and (additions or deletions)):
         return None  # Diff size unavailable
     return f"diff size: `+{additions}` `-{deletions}` ({changed_files} files changed)"
+
+
+def format_or_file(
+    message: str,
+    *,
+    template: str | None = None,
+    transform: Callable[[str], str] | None = None,
+) -> tuple[str, dc.File | None]:
+    if template is None:
+        template = "{}"
+
+    full_message = template.format(message)
+    if transform is not None:
+        full_message = transform(full_message)
+
+    if len(full_message) > 2000:
+        return template.format(""), dc.File(
+            BytesIO(message.encode()), filename="content.md"
+        )
+    return full_message, None
 
 
 async def async_process_check_output(program: str, *args: str, **kwargs: Any) -> str:
