@@ -4,6 +4,7 @@ import datetime as dt
 from typing import TYPE_CHECKING, final, override
 
 import discord as dc
+import sentry_sdk
 from discord.ext import commands, tasks
 
 from app.utils import post_is_solved
@@ -31,20 +32,22 @@ class AutoClose(commands.Cog):
         failures: list[dc.Thread] = []
 
         open_posts = len(self.bot.help_channel.threads)
-        for post in self.bot.help_channel.threads:
-            if post.archived or not post_is_solved(post):
-                continue
-            if post.last_message_id is None:
-                failures.append(post)
-                continue
-            one_day_ago = dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=24)
-            if dc.utils.snowflake_time(post.last_message_id) < one_day_ago:
-                try:
-                    await post.edit(archived=True)
-                    closed_posts.append(post)
-                except dc.HTTPException:
-                    failures.append(post)
-                    continue
+        with sentry_sdk.start_transaction(op="bot.scan", name="all of help_channel"):
+            for post in self.bot.help_channel.threads:
+                with sentry_sdk.start_span(op="bot.scan", name="post"):
+                    if post.archived or not post_is_solved(post):
+                        continue
+                    if post.last_message_id is None:
+                        failures.append(post)
+                        continue
+                    one_day_ago = dt.datetime.now(tz=dt.UTC) - dt.timedelta(hours=24)
+                    if dc.utils.snowflake_time(post.last_message_id) < one_day_ago:
+                        try:
+                            await post.edit(archived=True)
+                            closed_posts.append(post)
+                        except dc.HTTPException:
+                            failures.append(post)
+                            continue
 
         self.bot.bot_status.last_scan_results = (
             dt.datetime.now(tz=dt.UTC),

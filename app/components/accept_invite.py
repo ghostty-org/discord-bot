@@ -39,5 +39,4 @@ class AcceptInvite(commands.Cog):
 
 
 async def setup(bot: GhosttyBot) -> None:
-    logger.debug("adding AcceptInvite cog")
     await bot.add_cog(AcceptInvite(bot))

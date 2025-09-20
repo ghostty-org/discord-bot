@@ -4,16 +4,9 @@ from typing import Any, override
 
 import discord as dc
 from loguru import logger
-from sentry_sdk import capture_exception
-
-from app.config import config
 
 
 def handle_error(error: BaseException) -> None:
-    if config.sentry_dsn is not None:
-        logger.debug("capturing error with sentry")
-        capture_exception(error)
-        return
     logger.exception(error)
     for note in getattr(error, "__notes__", []):
         logger.error(note)

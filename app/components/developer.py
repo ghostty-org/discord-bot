@@ -19,7 +19,6 @@ class Developer(commands.Cog):
 
     @commands.command(name="sync", description="Sync command tree.")
     async def sync(self, ctx: commands.Context[Any]) -> None:
-        logger.debug("!sync called by non-mod")
         if not self.bot.is_ghostty_mod(ctx.author):
             logger.debug(
                 "!sync called by {} who is not a mod", pretty_print_account(ctx.author)
@@ -46,5 +45,4 @@ class Developer(commands.Cog):
 
 
 async def setup(bot: GhosttyBot) -> None:
-    logger.debug("adding Developer cog")
     await bot.add_cog(Developer(bot))

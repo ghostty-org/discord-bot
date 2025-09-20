@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, override
 
 import sentry_sdk
 from loguru import logger
+from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
 if TYPE_CHECKING:
     from app.config import Config
@@ -60,6 +61,9 @@ def setup(config: Config) -> None:
         logger.info("initializing sentry")
         sentry_sdk.init(
             dsn=config.sentry_dsn.get_secret_value(),
+            enable_logs=True,
             traces_sample_rate=1.0,
             profiles_sample_rate=1.0,
+            profile_lifecycle="trace",
+            integrations=[AsyncioIntegration()],
         )
