@@ -205,3 +205,7 @@ class CodeLinks(commands.Cog):
             view_type=CodeLinkActions,
             view_timeout=60,
         )
+
+
+async def setup(bot: GhosttyBot) -> None:
+    await bot.add_cog(CodeLinks(bot))

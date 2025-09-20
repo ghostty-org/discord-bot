@@ -122,3 +122,7 @@ class Comments(commands.Cog):
             interactor=self.reply_with_comments,
             view_type=CommentActions,
         )
+
+
+async def setup(bot: GhosttyBot) -> None:
+    await bot.add_cog(Comments(bot))

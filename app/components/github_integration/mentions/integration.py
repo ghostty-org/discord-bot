@@ -141,3 +141,7 @@ class Mentions(commands.Cog):
             interactor=self.reply_with_entities,
             view_type=MentionActions,
         )
+
+
+async def setup(bot: GhosttyBot) -> None:
+    await bot.add_cog(Mentions(bot))
