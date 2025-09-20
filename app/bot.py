@@ -8,6 +8,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, cast, final, get_args, override
 
 import discord as dc
+import sentry_sdk
 from discord.ext import commands
 from loguru import logger
 
@@ -62,20 +63,22 @@ class GhosttyBot(commands.Bot):
 
     @override
     async def load_extension(self, name: str, *, package: str | None = None) -> None:
-        logger.debug("loading extension {}", name.removeprefix("app.components."))
-        await super().load_extension(name, package=package)
+        short_name = name.removeprefix("app.components.")
+        logger.debug("loading extension {}", short_name)
+        with sentry_sdk.start_span(op="bot.load_extension", name=short_name):
+            await super().load_extension(name, package=package)
 
     @override
     async def setup_hook(self) -> None:
-        await self.bot_status.load_git_data()
-
-        coros = (
-            self.load_extension(f"app.components.{file.stem}")
-            for file in (Path(__file__).parent / "components").iterdir()
-            if not file.name.startswith("_")
-        )
-        await asyncio.gather(*coros)
-        logger.info("loaded {} extensions", len(self.extensions))
+        with sentry_sdk.start_transaction(op="bot.setup", name="Initial load"):
+            await self.bot_status.load_git_data()
+            coros = (
+                self.load_extension(f"app.components.{file.stem}")
+                for file in (Path(__file__).parent / "components").iterdir()
+                if not file.name.startswith("_")
+            )
+            await asyncio.gather(*coros)
+            logger.info("loaded {} extensions", len(self.extensions))
 
     async def on_ready(self) -> None:
         self.bot_status.last_login_time = dt.datetime.now(tz=dt.UTC)
