@@ -113,8 +113,10 @@ class Developer(commands.Cog):
                 failed_reloaded_extensions.append(ext)
             except commands.ExtensionError as error:
                 logger.warning(
-                    f"{pretty_print_account(interaction.user)} failed to reload "
-                    f"`{ext}`: {error}"
+                    "{} failed to reload `{}`: {}",
+                    pretty_print_account(interaction.user),
+                    ext,
+                    error,
                 )
                 failed_reloaded_extensions.append(ext)
 
@@ -164,8 +166,10 @@ class Developer(commands.Cog):
             )
         except commands.ExtensionError as error:
             logger.warning(
-                f"{pretty_print_account(interaction.user)} failed to unload "
-                f"`{extension}`: {error}"
+                "{} failed to unload `{}`: {}",
+                pretty_print_account(interaction.user),
+                extension,
+                error,
             )
         else:
             return
@@ -202,8 +206,10 @@ class Developer(commands.Cog):
             )
         except commands.ExtensionError as error:
             logger.warning(
-                f"{pretty_print_account(interaction.user)} failed to load "
-                f"`{extension}`: {error}"
+                "{} failed to load `{}`: {}",
+                pretty_print_account(interaction.user),
+                extension,
+                error,
             )
         else:
             return
