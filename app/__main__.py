@@ -11,7 +11,7 @@ from app.config import config, gh
 async def main() -> None:
     log.setup(config)
 
-    logger.trace("creating GhosttyBot instance for starting bot")
+    logger.trace("creating a GhosttyBot instance for starting")
     async with GhosttyBot(config, gh) as bot:
         logger.debug("starting the bot")
         await bot.start(config.token.get_secret_value())
