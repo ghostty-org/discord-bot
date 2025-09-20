@@ -86,11 +86,7 @@ class Developer(commands.Cog):
             extensions = [extension]
         else:
             # If no extension is provided, reload all extensions
-            # Skip the bare github_integration, as this module should only be ran once.
-            # This special skip should be updated once monalisten is refactored.
-            extensions = self.bot.get_component_extension_names() - {
-                "app.components.github_integration"
-            }
+            extensions = self.bot.get_component_extension_names()
 
         reloaded_extensions: list[str] = []
         failed_reloaded_extensions: list[str] = []
@@ -228,12 +224,7 @@ class Developer(commands.Cog):
             if (cog_module := inspect.getmodule(cog))
         }
         unloaded_extension_paths = (
-            self.bot.get_component_extension_names()
-            - loaded_extensions
-            # Special case (to be removed) - ignore this extension due to not containing
-            # a cog
-            # <https://github.com/ghostty-org/discord-bot/pull/366#discussion_r2350486767>
-            - {"app.components.github_integration"}
+            self.bot.get_component_extension_names() - loaded_extensions
         )
         return sorted(
             (

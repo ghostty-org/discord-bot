@@ -1,9 +1,11 @@
 # pyright: reportUnannotatedClassAttribute=false
 from __future__ import annotations
 
+import copy
 import datetime as dt
 from typing import TYPE_CHECKING, Annotated, Literal, NamedTuple, Self, cast, override
 
+from githubkit.exception import RequestFailed
 from pydantic import (
     AliasChoices,
     BaseModel,
@@ -16,6 +18,7 @@ from pydantic import (
 from app.utils import truncate
 
 if TYPE_CHECKING:
+    from githubkit import GitHub, TokenAuthStrategy
     from githubkit.versions.latest.models import IssuePropLabelsItemsOneof1
 
 
@@ -149,3 +152,64 @@ class Comment(BaseModel):
             msg = "`body` must be a string or None"
             raise ValueError(msg)
         return truncate(value or "", 4096)
+
+
+class CommitKey(NamedTuple):
+    owner: str
+    repo: str
+    sha: str
+
+
+class CommitSummary(NamedTuple):
+    sha: str
+    author: GitHubUser | None
+    committer: GitHubUser | None
+    message: str
+    additions: int
+    deletions: int
+    files_changed: int
+    url: str
+    date: dt.datetime | None
+    signed: bool
+
+
+class CommitCache:
+    def __init__(self, gh: GitHub[TokenAuthStrategy]) -> None:
+        self.gh: GitHub[TokenAuthStrategy] = gh
+        self._cache: dict[CommitKey, CommitSummary] = {}
+
+    def _filter_prefix(self, prefix: str) -> list[CommitKey]:
+        return [key for key in self._cache if key.sha.startswith(prefix)]
+
+    async def get(self, key: CommitKey) -> CommitSummary | None:
+        match self._filter_prefix(key.sha):
+            case []:
+                return await self._fetch(key)
+            case [full_sha]:
+                return self._cache.get(full_sha)
+            case _:
+                # Behave like GitHub: treat ambiguous short SHAs as invalid
+                return None
+
+    async def _fetch(self, key: CommitKey) -> CommitSummary | None:
+        try:
+            resp = await self.gh.rest.repos.async_get_commit(*key)
+        except RequestFailed:
+            return None
+        obj = resp.parsed_data
+        stats = obj.stats or 0
+        commit_summary = CommitSummary(
+            sha=obj.sha,
+            author=GitHubUser(**a.model_dump()) if (a := obj.author) else None,
+            committer=GitHubUser(**c.model_dump()) if (c := obj.committer) else None,
+            message=obj.commit.message,
+            additions=stats and (stats.additions or 0),
+            deletions=stats and (stats.deletions or 0),
+            files_changed=len(obj.files or ()),
+            url=obj.html_url,
+            date=(c := obj.commit.committer) and (c.date or None),
+            signed=bool((v := obj.commit.verification) and v.verified),
+        )
+        key_with_full_sha = copy.replace(key, sha=obj.sha)
+        self._cache[key_with_full_sha] = commit_summary
+        return commit_summary

@@ -7,8 +7,8 @@ import discord as dc
 from discord import app_commands
 from discord.ext import commands
 
+import app.components.github_integration.entities.fmt as github_entities_fmt
 from app.common.message_moving import MovedMessage
-from app.components.github_integration import fmt
 from app.utils import is_dm, is_helper, is_mod
 
 if TYPE_CHECKING:
@@ -75,7 +75,7 @@ class Close(commands.GroupCog, group_name="close"):
         interaction.extras["error_handled"] = True
 
     async def mention_entity(self, entity_id: int) -> str | None:
-        output = await fmt.entity_message(
+        output = await github_entities_fmt.entity_message(
             self.bot,
             # Forging a message to use the entity mention logic
             cast("dc.Message", SimpleNamespace(content=f"#{entity_id}")),

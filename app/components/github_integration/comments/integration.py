@@ -125,4 +125,4 @@ class GitHubComments(commands.Cog):
 
 
 async def setup(bot: GhosttyBot) -> None:
-    await bot.add_cog(Comments(bot))
+    await bot.add_cog(GitHubComments(bot))

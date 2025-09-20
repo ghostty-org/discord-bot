@@ -135,4 +135,4 @@ class GitHubEntities(commands.Cog):
 
 
 async def setup(bot: GhosttyBot) -> None:
-    await bot.add_cog(Mentions(bot))
+    await bot.add_cog(GitHubEntities(bot))

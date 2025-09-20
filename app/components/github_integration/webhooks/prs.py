@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import datetime as dt
 from itertools import dropwhile
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast, final, override
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
-from discord.ext import commands
 from loguru import logger
 
 from app.components.github_integration.models import GitHubUser
-from app.components.github_integration.webhooks.core import (
+from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,
     send_embed,
@@ -47,17 +46,6 @@ def pr_embed_content(
     pr: PRLike, template: str, body: str | None = None
 ) -> EmbedContent:
     return EmbedContent(template.format(f"PR #{pr.number}"), pr.html_url, body)
-
-
-@final
-class PRs(commands.Cog):
-    def __init__(self, bot: GhosttyBot, monalisten_client: Monalisten) -> None:
-        self.bot = bot
-        self.monalisten_client = monalisten_client
-
-    @override
-    async def cog_load(self) -> None:
-        register_hooks(self.bot, self.monalisten_client)
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: C901, PLR0915

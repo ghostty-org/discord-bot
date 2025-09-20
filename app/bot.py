@@ -54,7 +54,6 @@ class GhosttyBot(commands.Bot):
         self.config = config
         self.gh = gh
         self.bot_status = BotStatus()
-        self.background_tasks = set[asyncio.Task[None]]()
 
         self._ghostty_emojis: dict[EmojiName, dc.Emoji] = {}
         self.ghostty_emojis = MappingProxyType(self._ghostty_emojis)
