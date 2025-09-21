@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from app.components.github_integration.models import CommitCache, CommitKey
+from app.components.github_integration.commit_types import CommitCache, CommitKey
 from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,

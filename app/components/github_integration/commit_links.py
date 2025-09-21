@@ -16,15 +16,15 @@ from app.common.linker import (
     ProcessedMessage,
     remove_view_after_delay,
 )
+from app.components.github_integration.commit_types import CommitCache, CommitKey
 from app.components.github_integration.entities.resolution import resolve_repo_signature
-from app.components.github_integration.models import CommitCache, CommitKey
 from app.utils import dynamic_timestamp, format_diff_note, suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Iterable
 
     from app.bot import GhosttyBot
-    from app.components.github_integration.models import CommitSummary
+    from app.components.github_integration.commit_types import CommitSummary
 
 COMMIT_SHA_PATTERN = re.compile(
     r"(?P<site>\bhttps?://(?:www\.)?github\.com/)?"
