@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Protocol, cast, final, override
-
-from discord.ext import commands
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 from app.components.github_integration.models import GitHubUser
-from app.components.github_integration.webhooks.core import (
+from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,
     send_embed,
@@ -46,17 +44,6 @@ def discussion_embed_content(
         discussion.html_url,
         body,
     )
-
-
-@final
-class Discussions(commands.Cog):
-    def __init__(self, bot: GhosttyBot, monalisten_client: Monalisten) -> None:
-        self.bot = bot
-        self.monalisten_client = monalisten_client
-
-    @override
-    async def cog_load(self) -> None:
-        register_hooks(self.bot, self.monalisten_client)
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:

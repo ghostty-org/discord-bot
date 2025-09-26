@@ -5,12 +5,10 @@ import copy
 import re
 import string
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, NamedTuple, cast, final, override
+from typing import TYPE_CHECKING, cast, final
 
 import discord as dc
 from discord.ext import commands
-from githubkit.exception import RequestFailed
-from loguru import logger
 
 from app.common.linker import (
     ItemActions,
@@ -18,23 +16,15 @@ from app.common.linker import (
     ProcessedMessage,
     remove_view_after_delay,
 )
+from app.components.github_integration.commit_types import CommitCache, CommitKey
 from app.components.github_integration.entities.resolution import resolve_repo_signature
-from app.components.github_integration.models import GitHubUser
-from app.components.github_integration.webhooks.core import (
-    EmbedContent,
-    Footer,
-    send_embed,
-)
 from app.utils import dynamic_timestamp, format_diff_note, suppress_embeds_after_delay
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import AsyncGenerator, Iterable
 
-    from githubkit import GitHub, TokenAuthStrategy
-    from monalisten import Monalisten, events
-
     from app.bot import GhosttyBot
+    from app.components.github_integration.commit_types import CommitSummary
 
 COMMIT_SHA_PATTERN = re.compile(
     r"(?P<site>\bhttps?://(?:www\.)?github\.com/)?"
@@ -48,68 +38,6 @@ COMMIT_SHA_PATTERN = re.compile(
 )  # fmt: skip
 
 
-class CommitKey(NamedTuple):
-    owner: str
-    repo: str
-    sha: str
-
-
-class CommitSummary(NamedTuple):
-    sha: str
-    author: GitHubUser | None
-    committer: GitHubUser | None
-    message: str
-    additions: int
-    deletions: int
-    files_changed: int
-    url: str
-    date: dt.datetime | None
-    signed: bool
-
-
-@final
-class CommitCache:
-    def __init__(self, gh: GitHub[TokenAuthStrategy]) -> None:
-        self.gh = gh
-        self._cache: dict[CommitKey, CommitSummary] = {}
-
-    def _filter_prefix(self, prefix: str) -> list[CommitKey]:
-        return [key for key in self._cache if key.sha.startswith(prefix)]
-
-    async def get(self, key: CommitKey) -> CommitSummary | None:
-        match self._filter_prefix(key.sha):
-            case []:
-                return await self._fetch(key)
-            case [full_sha]:
-                return self._cache.get(full_sha)
-            case _:
-                # Behave like GitHub: treat ambiguous short SHAs as invalid
-                return None
-
-    async def _fetch(self, key: CommitKey) -> CommitSummary | None:
-        try:
-            resp = await self.gh.rest.repos.async_get_commit(*key)
-        except RequestFailed:
-            return None
-        obj = resp.parsed_data
-        stats = obj.stats or 0
-        commit_summary = CommitSummary(
-            sha=obj.sha,
-            author=GitHubUser(**a.model_dump()) if (a := obj.author) else None,
-            committer=GitHubUser(**c.model_dump()) if (c := obj.committer) else None,
-            message=obj.commit.message,
-            additions=stats and (stats.additions or 0),
-            deletions=stats and (stats.deletions or 0),
-            files_changed=len(obj.files or ()),
-            url=obj.html_url,
-            date=(c := obj.commit.committer) and (c.date or None),
-            signed=bool((v := obj.commit.verification) and v.verified),
-        )
-        key_with_full_sha = copy.replace(key, sha=obj.sha)
-        self._cache[key_with_full_sha] = commit_summary
-        return commit_summary
-
-
 @final
 class CommitActions(ItemActions):
     action_singular = "mentioned this commit"
@@ -117,10 +45,9 @@ class CommitActions(ItemActions):
 
 
 @final
-class Commits(commands.Cog):
-    def __init__(self, bot: GhosttyBot, monalisten_client: Monalisten) -> None:
+class CommitLinks(commands.Cog):
+    def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.monalisten_client = monalisten_client
         self.linker = MessageLinker()
         CommitActions.linker = MessageLinker()
         self.cache = CommitCache(self.bot.gh)
@@ -135,33 +62,6 @@ class Commits(commands.Cog):
             fake_message = cast("dc.Message", SimpleNamespace(content=commit_url))
             if (links := await self.process(fake_message)).item_count:
                 self.bot.bot_status.commit_data = links.content
-
-    @override
-    async def cog_load(self) -> None:
-        @self.monalisten_client.event.commit_comment
-        async def _(event: events.CommitComment) -> None:
-            full_sha = event.comment.commit_id
-            sha = full_sha[:7]
-
-            owner, _, repo_name = event.repository.full_name.partition("/")
-            if commit_summary := await self.cache.get(
-                CommitKey(owner, repo_name, full_sha)
-            ):
-                commit_title = commit_summary.message.splitlines()[0]
-            else:
-                logger.warning("no commit summary found for {}", full_sha)
-                commit_title = "(no commit message found)"
-
-            await send_embed(
-                self.bot,
-                event.sender,
-                EmbedContent(
-                    f"commented on commit `{sha}`",
-                    event.comment.html_url,
-                    event.comment.body,
-                ),
-                Footer("commit", f"Commit {sha}: {commit_title}"),
-            )
 
     def _format(self, commit: CommitSummary) -> str:
         emoji = self.bot.ghostty_emojis["commit"]
@@ -259,3 +159,7 @@ class Commits(commands.Cog):
             view_type=CommitActions,
             view_timeout=60,
         )
+
+
+async def setup(bot: GhosttyBot) -> None:
+    await bot.add_cog(CommitLinks(bot))

@@ -132,3 +132,7 @@ class GitHubEntities(commands.Cog):
             interactor=self.reply_with_entities,
             view_type=EntityActions,
         )
+
+
+async def setup(bot: GhosttyBot) -> None:
+    await bot.add_cog(GitHubEntities(bot))

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from typing import TYPE_CHECKING, Any, Protocol, cast, final, override
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
-from discord.ext import commands
 from loguru import logger
 
-from app.components.github_integration.webhooks.core import (
+from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,
     send_embed,
@@ -64,17 +63,6 @@ def issue_embed_content(
     issue: IssueLike, template: str, body: str | None = None
 ) -> EmbedContent:
     return EmbedContent(template.format(f"issue #{issue.number}"), issue.html_url, body)
-
-
-@final
-class Issues(commands.Cog):
-    def __init__(self, bot: GhosttyBot, monalisten_client: Monalisten) -> None:
-        self.bot = bot
-        self.monalisten_client = monalisten_client
-
-    @override
-    async def cog_load(self) -> None:
-        register_hooks(self.bot, self.monalisten_client)
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR0915
