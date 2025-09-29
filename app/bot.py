@@ -39,7 +39,7 @@ EmojiName = Literal[
     "pull_open",
 ]
 
-type Emojis = MappingProxyType[EmojiName, dc.Emoji]
+type Emojis = MappingProxyType[EmojiName, dc.Emoji | str]
 
 
 @final
@@ -59,8 +59,9 @@ class GhosttyBot(commands.Bot):
         self.gh = gh
         self.bot_status = BotStatus()
 
-        self._ghostty_emojis: dict[EmojiName, dc.Emoji] = {}
+        self._ghostty_emojis: dict[EmojiName, dc.Emoji | str] = {}
         self.ghostty_emojis: Emojis = MappingProxyType(self._ghostty_emojis)
+        self.emojis_loaded = asyncio.Event()
 
     @override
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
@@ -220,6 +221,8 @@ class GhosttyBot(commands.Bot):
         )
 
     async def load_emojis(self) -> None:
+        self.emojis_loaded.clear()
+
         valid_emoji_names = frozenset(get_args(EmojiName))
 
         for emoji in self.ghostty_guild.emojis:
@@ -231,3 +234,5 @@ class GhosttyBot(commands.Bot):
                 "Failed to load the following emojis: " + ", ".join(missing_emojis)
             )
             self._ghostty_emojis |= dict.fromkeys(missing_emojis, "❓")
+
+        self.emojis_loaded.set()

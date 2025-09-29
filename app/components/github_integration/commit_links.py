@@ -59,8 +59,8 @@ class CommitLinks(commands.Cog):
         # Pass a commit mention of the current commit back to the bot's status
         # functionality for display.
         if commit_url := self.bot.bot_status.commit_url:
-            # Avoid race condition with bot.py on_ready, by forcing emojis to be loaded.
-            await self.bot.load_emojis()
+            # Commit links need the emojis, so wait until they're loaded.
+            await self.bot.emojis_loaded.wait()
             fake_message = cast("dc.Message", SimpleNamespace(content=commit_url))
             if (links := await self.process(fake_message)).item_count:
                 self.bot.bot_status.commit_data = links.content
