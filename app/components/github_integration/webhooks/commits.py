@@ -41,4 +41,5 @@ def register_hooks(bot: GhosttyBot, monalisten_client: Monalisten) -> None:
                 event.comment.body,
             ),
             Footer("commit", f"Commit {sha}: {commit_title}"),
+            origin_repo=event.repository,
         )

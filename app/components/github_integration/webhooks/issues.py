@@ -18,23 +18,14 @@ if TYPE_CHECKING:
 
     from app.bot import EmojiName, GhosttyBot
 
-CONVERTED_DISCUSSION_HEADER = re.compile(
-    r"\s*### Discussed in https://github.com/.*?/discussions/(?P<discussion_number>\d+)"
-    r"\s*<div type='discussions-op-text'>"
-    r"\s*<sup>(?P<subtext>.+?)</sup>",
-    re.MULTILINE,
+
+DISUCSSION_DIV_TAG = re.compile(
+    r"\s*<div type='discussions-op-text'>((?:.|\s)*?)\s*</div>\s*", re.MULTILINE
 )
 
 
-def reformat_converted_discussion_header(body: str | None, repo_url: str) -> str | None:
-    if body is None or not (match := CONVERTED_DISCUSSION_HEADER.match(body)):
-        return body
-
-    d, subtext = match["discussion_number"], match["subtext"]
-    new_heading = f"### Discussed in [#{d}]({repo_url}/discussions/{d})\n-# {subtext}\n"
-
-    _, end = match.span()
-    return new_heading + "".join(body[end:].lstrip().rsplit("</div>", maxsplit=1))
+def remove_discussion_div(body: str | None) -> str | None:
+    return DISUCSSION_DIV_TAG.sub(r"\g<1>", body) if body else body
 
 
 class IssueLike(Protocol):
@@ -69,15 +60,14 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     @webhook.event.issues.opened
     async def _(event: events.IssuesOpened) -> None:
         issue = event.issue
-        body = reformat_converted_discussion_header(
-            issue.body, event.repository.html_url
-        )
+        body = remove_discussion_div(issue.body)
         await send_embed(
             bot,
             event.sender,
             issue_embed_content(issue, "opened {}", body),
             issue_footer(issue, emoji="issue_open"),
             color="green",
+            origin_repo=event.repository,
         )
 
     @webhook.event.issues.closed
@@ -183,4 +173,5 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             event.sender,
             EmbedContent(title, event.comment.html_url, event.comment.body),
             Footer(emoji, f"{entity}: {issue.title}"),
+            origin_repo=event.repository,
         )

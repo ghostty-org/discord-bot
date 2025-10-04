@@ -58,6 +58,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             pr_embed_content(pr, "opened {}", pr.body),
             pr_footer(pr, emoji="pull_open"),
             color="green",
+            origin_repo=event.repository,
         )
 
     @webhook.event.pull_request.closed
@@ -70,6 +71,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             pr_embed_content(pr, f"{action} {{}}"),
             pr_footer(pr, emoji="pull_" + action),
             color=color,
+            origin_repo=event.repository,
         )
 
     @webhook.event.pull_request.reopened
@@ -154,6 +156,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             event.sender,
             pr_embed_content(pr, "removed review request for {}", content),
             pr_footer(pr),
+            origin_repo=event.repository,
         )
 
     @webhook.event.pull_request_review.submitted
@@ -186,6 +189,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             EmbedContent(f"{title} PR #{pr.number}", review.html_url, review.body),
             pr_footer(pr, emoji=emoji),
             color=color,
+            origin_repo=event.repository,
         )
 
     @webhook.event.pull_request_review.dismissed
@@ -227,6 +231,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
                 content,
             ),
             pr_footer(pr, from_review=True),
+            origin_repo=event.repository,
         )
 
 

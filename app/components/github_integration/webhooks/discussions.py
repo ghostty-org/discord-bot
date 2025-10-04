@@ -65,6 +65,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             discussion_footer(discussion, emoji="discussion"),
             color="gray",
             feed_type="discussions",
+            origin_repo=event.repository,
         )
 
     @webhook.event.discussion.closed
@@ -106,6 +107,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             discussion_footer(discussion, emoji="discussion_answered"),
             color="green",
             feed_type="discussions",
+            origin_repo=event.repository,
         )
 
     @webhook.event.discussion.unanswered
@@ -177,4 +179,5 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             discussion_embed_content(discussion, "commented on", event.comment.body),
             discussion_footer(discussion),
             feed_type="discussions",
+            origin_repo=event.repository,
         )
