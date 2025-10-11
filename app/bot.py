@@ -72,6 +72,43 @@ class GhosttyBot(commands.Bot):
         with sentry_sdk.start_span(op="bot.load_extension", name=short_name):
             await super().load_extension(name, package=package)
 
+    async def _try_extension(
+        self,
+        operation: Literal["load", "unload"],
+        name: str,
+        *,
+        package: str | None = None,
+        user: Account | None = None,
+    ) -> bool:
+        extension_operation = (
+            self.load_extension if operation == "load" else self.unload_extension
+        )
+        try:
+            await extension_operation(name, package=package)
+        except commands.ExtensionFailed as error:
+            logger.opt(exception=error).exception(
+                (f"{pretty_print_account(user)} " if user else "")
+                + f"failed to {operation} `{name}`"
+            )
+        except commands.ExtensionError as error:
+            message = (
+                f"{user} " if user else ""
+            ) + f"failed to {operation} `{name}`: {error}"
+            logger.warning(message)
+        else:
+            return True
+        return False
+
+    async def try_load_extension(
+        self, name: str, *, package: str | None = None, user: Account | None = None
+    ) -> bool:
+        return await self._try_extension("load", name, package=package, user=user)
+
+    async def try_unload_extension(
+        self, name: str, *, package: str | None = None, user: Account | None = None
+    ) -> bool:
+        return await self._try_extension("unload", name, package=package, user=user)
+
     @override
     async def setup_hook(self) -> None:
         with sentry_sdk.start_transaction(op="bot.setup", name="Initial load"):

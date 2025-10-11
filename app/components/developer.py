@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from contextlib import suppress
 from typing import TYPE_CHECKING, final
 
 import discord as dc
@@ -98,24 +97,10 @@ class Developer(commands.Cog):
 
         await interaction.response.defer(thinking=True, ephemeral=True)
         for ext in extensions:
-            try:
-                with suppress(commands.ExtensionNotLoaded):
-                    # If already not loaded, ignore error
-                    await self.bot.unload_extension(ext)
-                await self.bot.load_extension(ext)
+            await self.bot.try_unload_extension(ext, user=interaction.user)
+            if await self.bot.try_load_extension(ext, user=interaction.user):
                 reloaded_extensions.append(ext)
-            except commands.ExtensionFailed as error:
-                logger.opt(exception=error).exception(
-                    f"{pretty_print_account(interaction.user)} failed to reload `{ext}`"
-                )
-                failed_reloaded_extensions.append(ext)
-            except commands.ExtensionError as error:
-                logger.warning(
-                    "{} failed to reload `{}`: {}",
-                    pretty_print_account(interaction.user),
-                    ext,
-                    error,
-                )
+            else:
                 failed_reloaded_extensions.append(ext)
 
         reload_message = ""
@@ -152,29 +137,14 @@ class Developer(commands.Cog):
             )
             return
 
-        try:
-            await self.bot.unload_extension(extension)
+        if await self.bot.try_unload_extension(extension, user=interaction.user):
             await interaction.response.send_message(
                 f"Unloaded `{extension}`", ephemeral=True
             )
-        except commands.ExtensionFailed as error:
-            logger.opt(exception=error).exception(
-                f"{pretty_print_account(interaction.user)} failed to unload "
-                f"`{extension}`"
-            )
-        except commands.ExtensionError as error:
-            logger.warning(
-                "{} failed to unload `{}`: {}",
-                pretty_print_account(interaction.user),
-                extension,
-                error,
-            )
         else:
-            return
-
-        await interaction.response.send_message(
-            f"Failed to unload `{extension}`", ephemeral=True
-        )
+            await interaction.response.send_message(
+                f"Failed to unload `{extension}`", ephemeral=True
+            )
 
     @dc.app_commands.command(description="Load bot extension.")
     @dc.app_commands.guild_only()
@@ -193,28 +163,14 @@ class Developer(commands.Cog):
             )
             return
 
-        try:
-            await self.bot.load_extension(extension)
+        if await self.bot.try_load_extension(extension, user=interaction.user):
             await interaction.response.send_message(
                 f"Loaded `{extension}`", ephemeral=True
             )
-        except commands.ExtensionFailed as error:
-            logger.opt(exception=error).exception(
-                f"{pretty_print_account(interaction.user)} failed to load `{extension}`"
-            )
-        except commands.ExtensionError as error:
-            logger.warning(
-                "{} failed to load `{}`: {}",
-                pretty_print_account(interaction.user),
-                extension,
-                error,
-            )
         else:
-            return
-
-        await interaction.response.send_message(
-            f"Failed to load `{extension}`", ephemeral=True
-        )
+            await interaction.response.send_message(
+                f"Failed to load `{extension}`", ephemeral=True
+            )
 
     @load.autocomplete("extension")
     async def unloaded_extensions_autocomplete(
