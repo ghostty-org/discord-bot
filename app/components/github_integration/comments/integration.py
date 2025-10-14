@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, final
 import discord as dc
 from discord.ext import commands
 
-from .fetching import get_comments
+from .fetching import CommentCache
 from app.common.linker import (
     ItemActions,
     MessageLinker,
@@ -46,6 +46,7 @@ class GitHubComments(commands.Cog):
         self.bot = bot
         self.linker = MessageLinker()
         CommentActions.linker = self.linker
+        self.comment_cache = CommentCache(self.bot.gh, minutes=30)
 
     def comment_to_embed(self, comment: Comment) -> dc.Embed:
         emoji = get_entity_emoji(self.bot, comment.entity)
@@ -82,7 +83,7 @@ class GitHubComments(commands.Cog):
             return
         embeds = [
             self.comment_to_embed(comment)
-            async for comment in get_comments(message.content)
+            async for comment in self.comment_cache.get_comments(message.content)
         ]
         if not embeds:
             return
@@ -105,7 +106,10 @@ class GitHubComments(commands.Cog):
             group.create_task(remove_view_after_delay(sent_message))
 
     async def process(self, msg: dc.Message) -> ProcessedMessage:
-        comments = [self.comment_to_embed(i) async for i in get_comments(msg.content)]
+        comments = [
+            self.comment_to_embed(i)
+            async for i in self.comment_cache.get_comments(msg.content)
+        ]
         return ProcessedMessage(embeds=comments, item_count=len(comments))
 
     @commands.Cog.listener()

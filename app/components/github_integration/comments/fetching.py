@@ -18,13 +18,13 @@ from app.components.github_integration.models import (
     GitHubUser,
     Reactions,
 )
-from app.config import gh
 from app.utils import escape_special
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncGenerator, Callable
 
+    from githubkit import GitHub, TokenAuthStrategy
     from githubkit.typing import Missing
     from githubkit.versions.latest.models import (
         Issue,
@@ -147,17 +147,21 @@ def _format_commit_id(
 
 
 class CommentCache(TTRCache[tuple[EntityGist, str, int], Comment]):
+    def __init__(self, gh: GitHub[TokenAuthStrategy], **ttr: float) -> None:
+        super().__init__(**ttr)
+        self._gh: GitHub[TokenAuthStrategy] = gh
+
     @override
     async def fetch(self, key: tuple[EntityGist, str, int]) -> None:
         entity_gist, event_type, event_no = key
         coro = {
             "discussioncomment-": get_discussion_comment,
-            "issuecomment-": _get_issue_comment,
-            "pullrequestreview-": _get_pr_review,
-            "discussion_r": _get_pr_review_comment,
-            "event-": _get_event,
-            "discussion-": _get_entity_starter,
-            "issue-": _get_entity_starter,
+            "issuecomment-": self._get_issue_comment,
+            "pullrequestreview-": self._get_pr_review,
+            "discussion_r": self._get_pr_review_comment,
+            "event-": self._get_event,
+            "discussion-": self._get_entity_starter,
+            "issue-": self._get_entity_starter,
         }.get(event_type)
         if coro is None:
             return
@@ -165,200 +169,205 @@ class CommentCache(TTRCache[tuple[EntityGist, str, int], Comment]):
             if result := await coro(entity_gist, event_no):
                 self[key] = result
 
+    def _make_author(self, user: BaseModel | None) -> GitHubUser:
+        return GitHubUser(**user.model_dump()) if user else GitHubUser.default()
 
-comment_cache = CommentCache(minutes=30)
+    def _make_reactions(
+        self, rollup: ReactionRollup | Missing[ReactionRollup]
+    ) -> Reactions:
+        """Asserts that `rollup` is not Missing."""
+        if not isinstance(rollup, ReactionRollup):
+            # While every usage of this function takes Reactions | None, this function
+            # shouldn't even be called if the API doesn't return reactions for some
+            # case, so a TypeError is thrown instead of returning None to catch any bugs
+            # instead of silently removing the reactions.
+            msg = f"expected type ReactionRollup, found {type(rollup)}"
+            raise TypeError(msg)
+        return Reactions(**rollup.model_dump())
 
+    async def _get_issue_comment(
+        self, entity_gist: EntityGist, comment_id: int
+    ) -> Comment | None:
+        owner, repo, _ = entity_gist
+        comment_resp, entity = await asyncio.gather(
+            self._gh.rest.issues.async_get_comment(owner, repo, comment_id),
+            entity_cache.get(entity_gist),
+        )
+        comment = comment_resp.parsed_data
+        return entity and Comment(
+            author=self._make_author(comment.user),
+            body=cast("str", comment.body),
+            reactions=self._make_reactions(comment.reactions),
+            entity=entity,
+            entity_gist=entity_gist,
+            created_at=comment.created_at,
+            html_url=comment.html_url,
+        )
 
-def _make_author(user: BaseModel | None) -> GitHubUser:
-    return GitHubUser(**user.model_dump()) if user else GitHubUser.default()
+    async def _get_pr_review(
+        self, entity_gist: EntityGist, comment_id: int
+    ) -> Comment | None:
+        comment = (
+            await self._gh.rest.pulls.async_get_review(*entity_gist, comment_id)
+        ).parsed_data
+        entity = await entity_cache.get(entity_gist)
+        return entity and Comment(
+            author=self._make_author(comment.user),
+            body=comment.body,
+            # For some reason, GitHub's API doesn't include them for PR reviews, despite
+            # there being reactions visible in the UI.
+            reactions=None,
+            entity=entity,
+            entity_gist=entity_gist,
+            created_at=cast("dt.datetime", comment.submitted_at),
+            html_url=comment.html_url,
+            color=STATE_TO_COLOR.get(comment.state),
+            kind="Review",
+        )
 
+    async def _get_pr_review_comment(
+        self, entity_gist: EntityGist, comment_id: int
+    ) -> Comment | None:
+        owner, repo, _ = entity_gist
+        comment = (
+            await self._gh.rest.pulls.async_get_review_comment(owner, repo, comment_id)
+        ).parsed_data
+        entity = await entity_cache.get(entity_gist)
+        return entity and Comment(
+            author=self._make_author(comment.user),
+            body=self._prettify_suggestions(comment),
+            reactions=self._make_reactions(comment.reactions),
+            entity=entity,
+            entity_gist=entity_gist,
+            created_at=comment.created_at,
+            html_url=comment.html_url,
+            kind="Review comment",
+        )
 
-def _make_reactions(rollup: ReactionRollup | Missing[ReactionRollup]) -> Reactions:
-    """Asserts that `rollup` is not Missing."""
-    if not isinstance(rollup, ReactionRollup):
-        # While every usage of this function takes Reactions | None, this function
-        # shouldn't even be called if the API doesn't return reactions for some case, so
-        # a TypeError is thrown instead of returning None to catch any bugs instead of
-        # silently removing the reactions.
-        msg = f"expected type ReactionRollup, found {type(rollup)}"
-        raise TypeError(msg)
-    return Reactions(**rollup.model_dump())
+    def _prettify_suggestions(self, comment: PullRequestReviewComment) -> str:
+        suggestions = [
+            c for c in extract_codeblocks(comment.body) if c.lang == "suggestion"
+        ]
+        body = comment.body
+        if not suggestions:
+            return body
 
+        start = cast("int | None", comment.original_start_line)
+        end = cast("int", comment.original_line)
+        hunk_size = end - (end if start is None else start) + 1
+        hunk_as_deleted_diff = "\n".join(
+            ("-" + line[1:] if line[0] == "+" else line)
+            for line in comment.diff_hunk.splitlines()[-hunk_size:]
+        )
 
-async def _get_issue_comment(
-    entity_gist: EntityGist, comment_id: int
-) -> Comment | None:
-    owner, repo, _ = entity_gist
-    comment_resp, entity = await asyncio.gather(
-        gh.rest.issues.async_get_comment(owner, repo, comment_id),
-        entity_cache.get(entity_gist),
-    )
-    comment = comment_resp.parsed_data
-    return entity and Comment(
-        author=_make_author(comment.user),
-        body=cast("str", comment.body),
-        reactions=_make_reactions(comment.reactions),
-        entity=entity,
-        entity_gist=entity_gist,
-        created_at=comment.created_at,
-        html_url=comment.html_url,
-    )
-
-
-async def _get_pr_review(entity_gist: EntityGist, comment_id: int) -> Comment | None:
-    comment = (
-        await gh.rest.pulls.async_get_review(*entity_gist, comment_id)
-    ).parsed_data
-    entity = await entity_cache.get(entity_gist)
-    return entity and Comment(
-        author=_make_author(comment.user),
-        body=comment.body,
-        # For some reason, GitHub's API doesn't include them for PR reviews, despite
-        # there being reactions visible in the UI.
-        reactions=None,
-        entity=entity,
-        entity_gist=entity_gist,
-        created_at=cast("dt.datetime", comment.submitted_at),
-        html_url=comment.html_url,
-        color=STATE_TO_COLOR.get(comment.state),
-        kind="Review",
-    )
-
-
-async def _get_pr_review_comment(
-    entity_gist: EntityGist, comment_id: int
-) -> Comment | None:
-    owner, repo, _ = entity_gist
-    comment = (
-        await gh.rest.pulls.async_get_review_comment(owner, repo, comment_id)
-    ).parsed_data
-    entity = await entity_cache.get(entity_gist)
-    return entity and Comment(
-        author=_make_author(comment.user),
-        body=_prettify_suggestions(comment),
-        reactions=_make_reactions(comment.reactions),
-        entity=entity,
-        entity_gist=entity_gist,
-        created_at=comment.created_at,
-        html_url=comment.html_url,
-        kind="Review comment",
-    )
-
-
-def _prettify_suggestions(comment: PullRequestReviewComment) -> str:
-    suggestions = [
-        c for c in extract_codeblocks(comment.body) if c.lang == "suggestion"
-    ]
-    body = comment.body
-    if not suggestions:
+        for sug in suggestions:
+            suggestion_as_added_diff = f"{hunk_as_deleted_diff}\n" + "\n".join(
+                f"+{line}" for line in sug.body.splitlines()
+            )
+            body = body.replace(
+                self._make_crlf_codeblock("suggestion", sug.body.replace("\r\n", "\n")),
+                self._make_crlf_codeblock("diff", suggestion_as_added_diff),
+                1,
+            )
         return body
 
-    start = cast("int | None", comment.original_start_line)
-    end = cast("int", comment.original_line)
-    hunk_size = end - (end if start is None else start) + 1
-    hunk_as_deleted_diff = "\n".join(
-        ("-" + line[1:] if line[0] == "+" else line)
-        for line in comment.diff_hunk.splitlines()[-hunk_size:]
-    )
+    def _make_crlf_codeblock(self, lang: str, body: str) -> str:
+        # GitHub seems to use CRLF for everything...
+        return f"```{lang}\n{body}\n```".replace("\n", "\r\n")
 
-    for sug in suggestions:
-        suggestion_as_added_diff = f"{hunk_as_deleted_diff}\n" + "\n".join(
-            f"+{line}" for line in sug.body.splitlines()
-        )
-        body = body.replace(
-            _make_crlf_codeblock("suggestion", sug.body.replace("\r\n", "\n")),
-            _make_crlf_codeblock("diff", suggestion_as_added_diff),
-            1,
-        )
-    return body
-
-
-def _make_crlf_codeblock(lang: str, body: str) -> str:
-    # GitHub seems to use CRLF for everything...
-    return f"```{lang}\n{body}\n```".replace("\n", "\r\n")
-
-
-async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None:
-    owner, repo, entity_no = entity_gist
-    event = (await gh.rest.issues.async_get_event(owner, repo, comment_id)).parsed_data
-    entity = await entity_cache.get(entity_gist)
-    if not entity:
-        return None
-    if event.event in ("review_requested", "review_request_removed"):
-        # Special-cased to handle requests for both users and teams
-        if event.requested_reviewer:
-            reviewer = event.requested_reviewer.login
-        else:
-            assert event.requested_team
-            # Throwing in the org name to make it clear that it's a team
-            org_name = event.requested_team.html_url.split("/", 5)[4]
-            reviewer = f"{org_name}/{event.requested_team.name}"
-        formatter = SUPPORTED_EVENTS[event.event]
-        if not isinstance(formatter, str):
-            msg = f"formatter for {event.event} must be a string"
-            raise TypeError(msg)
-        body = formatter.format(reviewer=reviewer)
-    elif event.event in ENTITY_UPDATE_EVENTS:
-        body = f"{event.event.capitalize()} the {entity.kind.lower()}"
-        if event.lock_reason:
-            body += f"\nReason: `{event.lock_reason}`"
-    elif event.event == "review_dismissed":
-        # Special-cased since async functions need to be called
-        dismissed_review = cast("IssueEventDismissedReview", event.dismissed_review)
-        review = (
-            await gh.rest.pulls.async_get_review(
-                owner, repo, entity_no, dismissed_review.review_id
-            )
+    async def _get_event(
+        self, entity_gist: EntityGist, comment_id: int
+    ) -> Comment | None:
+        owner, repo, entity_no = entity_gist
+        event = (
+            await self._gh.rest.issues.async_get_event(owner, repo, comment_id)
         ).parsed_data
-        commit_id = dismissed_review.dismissal_commit_id
-        author = f"`{review.user.login}`'s" if review.user is not None else "a"
-        commit = (
-            f" via {_format_commit_id(event, commit_id)}"
-            if isinstance(commit_id, str)
-            else ""
+        entity = await entity_cache.get(entity_gist)
+        if not entity:
+            return None
+        if event.event in ("review_requested", "review_request_removed"):
+            # Special-cased to handle requests for both users and teams
+            if event.requested_reviewer:
+                reviewer = event.requested_reviewer.login
+            else:
+                assert event.requested_team
+                # Throwing in the org name to make it clear that it's a team
+                org_name = event.requested_team.html_url.split("/", 5)[4]
+                reviewer = f"{org_name}/{event.requested_team.name}"
+            formatter = SUPPORTED_EVENTS[event.event]
+            if not isinstance(formatter, str):
+                msg = f"formatter for {event.event} must be a string"
+                raise TypeError(msg)
+            body = formatter.format(reviewer=reviewer)
+        elif event.event in ENTITY_UPDATE_EVENTS:
+            body = f"{event.event.capitalize()} the {entity.kind.lower()}"
+            if event.lock_reason:
+                body += f"\nReason: `{event.lock_reason}`"
+        elif event.event == "review_dismissed":
+            # Special-cased since async functions need to be called
+            dismissed_review = cast("IssueEventDismissedReview", event.dismissed_review)
+            review = (
+                await self._gh.rest.pulls.async_get_review(
+                    owner, repo, entity_no, dismissed_review.review_id
+                )
+            ).parsed_data
+            commit_id = dismissed_review.dismissal_commit_id
+            author = f"`{review.user.login}`'s" if review.user is not None else "a"
+            commit = (
+                f" via {_format_commit_id(event, commit_id)}"
+                if isinstance(commit_id, str)
+                else ""
+            )
+            msg = (
+                f": {m}"
+                if (m := dismissed_review.dismissal_message) is not None
+                else ""
+            )
+            body = (
+                f"Dismissed {author} [stale review](<{review.html_url}>){commit}{msg}"
+            )
+        elif formatter := SUPPORTED_EVENTS.get(event.event):
+            body = (
+                formatter(event)
+                if callable(formatter)
+                else formatter.format(event=event)
+            )
+        else:
+            body = f"👻 Unsupported event: `{event.event}`"
+        # The API doesn't return an html_url, gotta construct it manually. It's fine to
+        # say "issues" here, GitHub will resolve the correct type
+        url = f"https://github.com/{owner}/{repo}/issues/{entity_no}#event-{comment_id}"
+        return Comment(
+            author=self._make_author(event.actor),
+            body=f"**{body}**",
+            entity=entity,
+            entity_gist=entity_gist,
+            created_at=event.created_at,
+            html_url=url,
+            kind="Event",
+            color=EVENT_COLOR,
         )
-        msg = f": {m}" if (m := dismissed_review.dismissal_message) is not None else ""
-        body = f"Dismissed {author} [stale review](<{review.html_url}>){commit}{msg}"
-    elif formatter := SUPPORTED_EVENTS.get(event.event):
-        body = (
-            formatter(event) if callable(formatter) else formatter.format(event=event)
+
+    async def _get_entity_starter(
+        self, entity_gist: EntityGist, _: int
+    ) -> Comment | None:
+        entity = await entity_cache.get(entity_gist)
+        return entity and Comment(
+            author=entity.user,
+            body=entity.body or "",
+            reactions=entity.reactions,
+            entity=entity,
+            entity_gist=entity_gist,
+            created_at=entity.created_at,
+            html_url=entity.html_url,
         )
-    else:
-        body = f"👻 Unsupported event: `{event.event}`"
-    # The API doesn't return an html_url, gotta construct it manually. It's fine to say
-    # "issues" here, GitHub will resolve the correct type
-    url = f"https://github.com/{owner}/{repo}/issues/{entity_no}#event-{comment_id}"
-    return Comment(
-        author=_make_author(event.actor),
-        body=f"**{body}**",
-        entity=entity,
-        entity_gist=entity_gist,
-        created_at=event.created_at,
-        html_url=url,
-        kind="Event",
-        color=EVENT_COLOR,
-    )
 
-
-async def _get_entity_starter(entity_gist: EntityGist, _: int) -> Comment | None:
-    entity = await entity_cache.get(entity_gist)
-    return entity and Comment(
-        author=entity.user,
-        body=entity.body or "",
-        reactions=entity.reactions,
-        entity=entity,
-        entity_gist=entity_gist,
-        created_at=entity.created_at,
-        html_url=entity.html_url,
-    )
-
-
-async def get_comments(content: str) -> AsyncGenerator[Comment]:
-    found_comments = set[Comment]()
-    for match in COMMENT_PATTERN.finditer(content):
-        owner, repo, _, number, event, event_no = map(str, match.groups())
-        entity_gist = EntityGist(owner, repo, int(number))
-        comment = await comment_cache.get((entity_gist, event, int(event_no)))
-        if comment and comment not in found_comments:
-            found_comments.add(comment)
-            yield comment
+    async def get_comments(self, content: str) -> AsyncGenerator[Comment]:
+        found_comments = set[Comment]()
+        for match in COMMENT_PATTERN.finditer(content):
+            owner, repo, _, number, event, event_no = map(str, match.groups())
+            entity_gist = EntityGist(owner, repo, int(number))
+            comment = await self.get((entity_gist, event, int(event_no)))
+            if comment and comment not in found_comments:
+                found_comments.add(comment)
+                yield comment
