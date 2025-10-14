@@ -5,6 +5,7 @@ import datetime as dt
 import difflib
 import re
 from functools import partial
+from itertools import islice
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, TypedDict
 
 import discord as dc
@@ -117,7 +118,7 @@ async def send_edit_difference(
         )
         # Skip the header 3 lines. All of that info is duplicated in other locations of
         # the embed.
-        diff = "".join(list(difflib.unified_diff(from_file, to_file))[3:])
+        diff = "".join(islice(difflib.unified_diff(from_file, to_file), 3, None))
         diff = truncate(diff, 500 - len("```diff\n\n```"))
         content = f"```diff\n{diff}\n```"
     elif changes.title:
