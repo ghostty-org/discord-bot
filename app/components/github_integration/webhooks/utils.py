@@ -106,19 +106,17 @@ async def send_edit_difference(
     if changes.body and changes.body.from_:
         # HACK: replace all 3+ backticks with reverse primes to avoid breaking the diff
         # block while maintaining the intent.
-        from_file = CODEBLOCK.sub(_convert_codeblock, changes.body.from_).splitlines(
-            keepends=True
-        )
+        from_file = CODEBLOCK.sub(_convert_codeblock, changes.body.from_).splitlines()
         to_file = (
-            CODEBLOCK.sub(_convert_codeblock, event_object.body).splitlines(
-                keepends=True
-            )
+            CODEBLOCK.sub(_convert_codeblock, event_object.body).splitlines()
             if event_object.body
             else ""
         )
         # Skip the header 2 lines. All of that info is duplicated in other locations of
         # the embed.
-        diff = "".join(islice(difflib.unified_diff(from_file, to_file), 2, None))
+        diff = "\n".join(
+            islice(difflib.unified_diff(from_file, to_file, lineterm=""), 2, None)
+        )
         diff = truncate(diff, 500 - len("```diff\n\n```"))
         content = f"```diff\n{diff}\n```"
     elif changes.title:
