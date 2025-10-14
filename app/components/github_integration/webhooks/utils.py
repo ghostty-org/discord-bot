@@ -116,9 +116,9 @@ async def send_edit_difference(
             if event_object.body
             else ""
         )
-        # Skip the header 3 lines. All of that info is duplicated in other locations of
+        # Skip the header 2 lines. All of that info is duplicated in other locations of
         # the embed.
-        diff = "".join(islice(difflib.unified_diff(from_file, to_file), 3, None))
+        diff = "".join(islice(difflib.unified_diff(from_file, to_file), 2, None))
         diff = truncate(diff, 500 - len("```diff\n\n```"))
         content = f"```diff\n{diff}\n```"
     elif changes.title:
