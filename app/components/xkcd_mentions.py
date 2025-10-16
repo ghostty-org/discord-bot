@@ -17,6 +17,7 @@ from app.common.linker import (
     ProcessedMessage,
     remove_view_after_delay,
 )
+from app.utils import SUPPORTED_IMAGE_FORMATS
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
@@ -31,8 +32,9 @@ class XKCD(BaseModel):
     day: int
     month: int
     year: int
-    img: str
     title: str
+    img: str
+    transcript: str
     alt: str
 
     @property
@@ -89,11 +91,20 @@ class XKCDMentions(commands.Cog):
                 date = dt.datetime(
                     day=xkcd.day, month=xkcd.month, year=xkcd.year, tzinfo=dt.UTC
                 )
-                return (
-                    dc.Embed(title=xkcd.title, url=xkcd.url)
-                    .set_image(url=xkcd.img)
-                    .set_footer(text=f"{xkcd.alt} • {date:%B %-d, %Y}")
+                embed = dc.Embed(title=xkcd.title, url=xkcd.url).set_footer(
+                    text=f"{xkcd.alt} • {date:%B %-d, %Y}"
                 )
+                # Some interactive comics have https://imgs.xkcd.com/comics/ as
+                # their image, which results in no image showing because that
+                # URL is not an image and also 403s. Check the extension
+                # instead of hardcoding that URL since there could be other
+                # comics with a different problematic image URL.
+                _, _, ext = xkcd.img.rpartition(".")
+                if f".{ext}" in SUPPORTED_IMAGE_FORMATS:
+                    embed.set_image(url=xkcd.img)
+                elif xkcd.transcript:
+                    embed.description = xkcd.transcript
+                return embed
             case UnknownXKCD(comic_id):
                 return dc.Embed(color=dc.Color.red()).set_footer(
                     text=f"xkcd #{comic_id} does not exist"
