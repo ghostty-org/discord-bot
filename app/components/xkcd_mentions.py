@@ -36,6 +36,7 @@ class XKCD(BaseModel):
     img: str
     transcript: str
     alt: str
+    extra_parts: dict[str, str] | None = None
 
     @property
     def url(self) -> str:
@@ -104,6 +105,13 @@ class XKCDMentions(commands.Cog):
                     embed.set_image(url=xkcd.img)
                 elif xkcd.transcript:
                     embed.description = xkcd.transcript
+                if xkcd.extra_parts:
+                    embed.add_field(
+                        name="",
+                        value="*This is an interactive comic; [press "
+                        f"here]({xkcd.url}) to view it on xkcd.com.*",
+                    )
+                    embed.color = dc.Color.yellow()
                 return embed
             case UnknownXKCD(comic_id):
                 return dc.Embed(color=dc.Color.red()).set_footer(
