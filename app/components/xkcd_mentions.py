@@ -34,6 +34,7 @@ class XKCD(BaseModel):
     year: int
     title: str
     img: str
+    link: str
     transcript: str
     alt: str
     extra_parts: dict[str, str] | None = None
@@ -112,6 +113,11 @@ class XKCDMentions(commands.Cog):
                         f"here]({xkcd.url}) to view it on xkcd.com.*",
                     )
                     embed.color = dc.Color.yellow()
+                if xkcd.link:
+                    embed.add_field(
+                        name="",
+                        value=f"[Press here]({xkcd.link}) to view the image's link.",
+                    )
                 return embed
             case UnknownXKCD(comic_id):
                 return dc.Embed(color=dc.Color.red()).set_footer(
