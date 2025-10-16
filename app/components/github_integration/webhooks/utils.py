@@ -112,12 +112,16 @@ async def send_edit_difference(
             if event_object.body
             else ""
         )
-        # Skip the header 2 lines. All of that info is duplicated in other locations of
-        # the embed.
-        diff = "\n".join(
-            islice(difflib.unified_diff(from_file, to_file, lineterm=""), 2, None)
+        old_title = changes.title.from_ if changes.title else event_object.title
+        new_title = event_object.title
+        diff_lines = difflib.unified_diff(
+            from_file, to_file, fromfile=old_title, tofile=new_title, lineterm=""
         )
-        diff = truncate(diff, 500 - len("```diff\n\n```"))
+        if old_title == new_title:
+            # If the titles are the same, there's no point in showing them;
+            # they just take up a lot of the 500 available characters.
+            diff_lines = islice(diff_lines, 2, None)
+        diff = truncate("\n".join(diff_lines), 500 - len("```diff\n\n```"))
         content = f"```diff\n{diff}\n```"
     elif changes.title:
         content = f'Renamed from "{changes.title.from_}" to "{event_object.title}"'
