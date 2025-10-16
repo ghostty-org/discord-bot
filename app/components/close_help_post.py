@@ -115,9 +115,21 @@ class Close(commands.GroupCog, group_name="close"):
         return generate_autocomplete(current, docs.sitemap.get("option", []))
 
     @app_commands.command(name="moved", description="Mark post as moved to GitHub.")
-    @app_commands.describe(entity_id="New GitHub entity number")
-    async def moved(self, interaction: dc.Interaction, entity_id: int) -> None:
-        if not (additional_reply := await self.mention_entity(entity_id)):
+    @app_commands.describe(
+        entity_id="New GitHub entity number",
+        include_mention="Whether to include an entity mention",
+    )
+    async def moved(
+        self,
+        interaction: dc.Interaction,
+        entity_id: int,
+        *,
+        include_mention: bool = True,
+    ) -> None:
+        additional_reply = None
+        if include_mention and not (
+            additional_reply := await self.mention_entity(entity_id)
+        ):
             await interaction.response.send_message(
                 f"Entity #{entity_id} does not exist.", ephemeral=True
             )
@@ -131,9 +143,16 @@ class Close(commands.GroupCog, group_name="close"):
 
     @app_commands.command(name="duplicate", description="Mark post as duplicate.")
     @app_commands.describe(
-        original="The original GitHub entity (number) or help post (ID or link)"
+        original="The original GitHub entity (number) or help post (ID or link)",
+        include_mention="Whether to include an entity mention for GitHub entities",
     )
-    async def duplicate(self, interaction: dc.Interaction, original: str) -> None:
+    async def duplicate(
+        self,
+        interaction: dc.Interaction,
+        original: str,
+        *,
+        include_mention: bool = True,
+    ) -> None:
         *_, str_id = original.rpartition("/")
         try:
             id_ = int(str_id)
@@ -143,7 +162,10 @@ class Close(commands.GroupCog, group_name="close"):
         if len(str_id) < 10:
             # GitHub entity number
             title_prefix = f"[DUPLICATE: #{id_}]"
-            if not (additional_reply := await self.mention_entity(int(id_))):
+            additional_reply = None
+            if include_mention and not (
+                additional_reply := await self.mention_entity(int(id_))
+            ):
                 await interaction.response.send_message(
                     f"Entity #{id_} does not exist.", ephemeral=True
                 )
