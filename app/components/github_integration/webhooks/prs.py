@@ -56,7 +56,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             bot,
             event.sender,
             pr_embed_content(pr, "opened {}", pr.body),
-            pr_footer(pr, emoji="pull_open"),
+            pr_footer(pr),
             color="green",
             origin_repo=event.repository,
         )
