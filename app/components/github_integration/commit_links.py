@@ -18,7 +18,12 @@ from app.common.linker import (
 )
 from app.components.github_integration.commit_types import CommitCache, CommitKey
 from app.components.github_integration.entities.resolution import resolve_repo_signature
-from app.utils import dynamic_timestamp, format_diff_note, suppress_embeds_after_delay
+from app.utils import (
+    REGULAR_MESSAGE_TYPES,
+    dynamic_timestamp,
+    format_diff_note,
+    suppress_embeds_after_delay,
+)
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Iterable
@@ -127,7 +132,11 @@ class CommitLinks(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def reply_with_commit_details(self, message: dc.Message) -> None:
-        if message.author.bot or self.bot.fails_message_filters(message):
+        if (
+            message.author.bot
+            or message.type not in REGULAR_MESSAGE_TYPES
+            or self.bot.fails_message_filters(message)
+        ):
             return
         output = await self.process(message)
         if not output.item_count:

@@ -13,7 +13,7 @@ from app.common.linker import (
     ProcessedMessage,
     remove_view_after_delay,
 )
-from app.utils import suppress_embeds_after_delay
+from app.utils import REGULAR_MESSAGE_TYPES, suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -89,7 +89,11 @@ class FixupEmbeds(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: dc.Message) -> None:
-        if message.author.bot or self.bot.fails_message_filters(message):
+        if (
+            message.author.bot
+            or message.type not in REGULAR_MESSAGE_TYPES
+            or self.bot.fails_message_filters(message)
+        ):
             return
         output = await self.process(message)
         if not output.item_count:
