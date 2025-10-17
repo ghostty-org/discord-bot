@@ -47,6 +47,17 @@ _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 # (including the leading dot).
 SUPPORTED_IMAGE_FORMATS = frozenset({".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"})
 
+# Regular types taken from the description of
+# https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
+REGULAR_MESSAGE_TYPES = frozenset({
+    dc.MessageType.default,
+    dc.MessageType.reply,
+})
+BOT_COMMAND_MESSAGE_TYPES = frozenset({
+    dc.MessageType.chat_input_command,
+    dc.MessageType.context_menu_command,
+})
+
 type Account = dc.User | dc.Member
 # Not a PEP 695 type alias because of runtime isinstance() checks
 GuildTextChannel = dc.TextChannel | dc.Thread
