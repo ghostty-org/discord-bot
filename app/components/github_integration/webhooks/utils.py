@@ -5,6 +5,7 @@ import datetime as dt
 import difflib
 import re
 from functools import partial
+from itertools import islice
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, TypedDict
 
 import discord as dc
@@ -105,20 +106,22 @@ async def send_edit_difference(
     if changes.body and changes.body.from_:
         # HACK: replace all 3+ backticks with reverse primes to avoid breaking the diff
         # block while maintaining the intent.
-        from_file = CODEBLOCK.sub(_convert_codeblock, changes.body.from_).splitlines(
-            keepends=True
-        )
+        from_file = CODEBLOCK.sub(_convert_codeblock, changes.body.from_).splitlines()
         to_file = (
-            CODEBLOCK.sub(_convert_codeblock, event_object.body).splitlines(
-                keepends=True
-            )
+            CODEBLOCK.sub(_convert_codeblock, event_object.body).splitlines()
             if event_object.body
             else ""
         )
-        # Skip the header 3 lines. All of that info is duplicated in other locations of
-        # the embed.
-        diff = "".join(list(difflib.unified_diff(from_file, to_file))[3:])
-        diff = truncate(diff, 500 - len("```diff\n\n```"))
+        old_title = changes.title.from_ if changes.title else event_object.title
+        new_title = event_object.title
+        diff_lines = difflib.unified_diff(
+            from_file, to_file, fromfile=old_title, tofile=new_title, lineterm=""
+        )
+        if old_title == new_title:
+            # If the titles are the same, there's no point in showing them;
+            # they just take up a lot of the 500 available characters.
+            diff_lines = islice(diff_lines, 2, None)
+        diff = truncate("\n".join(diff_lines), 500 - len("```diff\n\n```"))
         content = f"```diff\n{diff}\n```"
     elif changes.title:
         content = f'Renamed from "{changes.title.from_}" to "{event_object.title}"'
