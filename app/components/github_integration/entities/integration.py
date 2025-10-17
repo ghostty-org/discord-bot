@@ -14,12 +14,7 @@ from .fmt import entity_message, extract_entities
 from .resolution import ENTITY_REGEX
 from app.common.linker import ItemActions, MessageLinker, remove_view_after_delay
 from app.components.github_integration.models import Entity
-from app.utils import (
-    REGULAR_MESSAGE_TYPES,
-    is_dm,
-    safe_edit,
-    suppress_embeds_after_delay,
-)
+from app.utils import is_dm, safe_edit, suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
@@ -85,11 +80,8 @@ class GitHubEntities(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def reply_with_entities(self, message: dc.Message) -> None:
-        if (
-            message.author.bot
-            or message.type not in REGULAR_MESSAGE_TYPES
-            or self.bot.fails_message_filters(message)
-            or not ENTITY_REGEX.search(message.content)
+        if self.bot.on_message_preconditions_fail(message) or not ENTITY_REGEX.search(
+            message.content
         ):
             return
 

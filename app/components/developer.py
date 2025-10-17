@@ -36,7 +36,10 @@ class Developer(commands.Cog):
     async def on_message(self, message: dc.Message) -> None:
         # Handle !sync command. This can't be a slash command because this command is
         # the one that actually adds the slash commands in the first place.
-        if message.author.bot or message.content.strip() != "!sync":
+        if (
+            self.bot.on_message_preconditions_fail(message)
+            or message.content.strip() != "!sync"
+        ):
             return
 
         if not self.bot.is_ghostty_mod(message.author):
