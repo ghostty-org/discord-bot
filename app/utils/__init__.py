@@ -43,6 +43,10 @@ if TYPE_CHECKING:
 _INVITE_LINK_REGEX = re.compile(r"\b(?:https?://)?(discord\.gg/[^\s]+)\b")
 _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 
+# A list of image formats supported by Discord, in the form of their file extension
+# (including the leading dot).
+SUPPORTED_IMAGE_FORMATS = frozenset({".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"})
+
 type Account = dc.User | dc.Member
 # Not a PEP 695 type alias because of runtime isinstance() checks
 GuildTextChannel = dc.TextChannel | dc.Thread

@@ -9,16 +9,12 @@ import discord as dc
 import httpx
 
 from .subtext import Subtext
-from app.utils import get_files, truncate
+from app.utils import SUPPORTED_IMAGE_FORMATS, get_files, truncate
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
-
-# A list of image formats supported by Discord, in the form of their file extension
-# (including the leading dot).
-SUPPORTED_IMAGE_FORMATS = frozenset({".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"})
 
 # Non-system-message types taken from the description of
 # https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
