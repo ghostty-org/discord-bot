@@ -35,13 +35,6 @@ EMBED_SITES: tuple[SiteTransformation, ...] = (
     ),
     (
         re.compile(
-            r"https://(?:www\.)?bsky\.app/"
-            rf"(profile/{VALID_URI_CHARS}+/post/{VALID_URI_CHARS}+)"
-        ),
-        lambda match: f"https://fxbsky.app/{match[1]}",
-    ),
-    (
-        re.compile(
             rf"https://(?:www\.)?pixiv\.net/({VALID_URI_CHARS}+/{VALID_URI_CHARS}+)"
         ),
         lambda match: f"https://phixiv.net/{match[1]}",
