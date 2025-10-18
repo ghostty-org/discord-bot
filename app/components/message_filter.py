@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple, cast, final
 import discord as dc
 from discord.ext import commands
 
-from app.utils import format_or_file, try_dm
+from app.utils import REGULAR_MESSAGE_TYPES, format_or_file, try_dm
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,7 +26,6 @@ _COPY_TEXT_HINT = (
     "-# **Hint:** you can get your original message with formatting preserved "
     'by using the "Copy Text" action in the context menu.'
 )
-_REGULAR_MESSAGE_TYPES = frozenset({dc.MessageType.default, dc.MessageType.reply})
 
 
 class MessageFilterTuple(NamedTuple):
@@ -78,7 +77,7 @@ class MessageFilter(commands.Cog):
         await message.delete()
 
         # Don't DM the user if it's a system message (e.g. "@user started a thread")
-        if message.type not in _REGULAR_MESSAGE_TYPES:
+        if message.type not in REGULAR_MESSAGE_TYPES:
             return
 
         notification = _MESSAGE_DELETION_TEMPLATE.format(

@@ -19,11 +19,6 @@ from app.utils import is_dm, safe_edit, suppress_embeds_after_delay
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
 
-IGNORED_MESSAGE_TYPES = frozenset((
-    dc.MessageType.thread_created,
-    dc.MessageType.channel_name_change,
-))
-
 
 @final
 class EntityActions(ItemActions):
@@ -85,11 +80,8 @@ class GitHubEntities(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def reply_with_entities(self, message: dc.Message) -> None:
-        if (
-            message.author.bot
-            or message.type in IGNORED_MESSAGE_TYPES
-            or self.bot.fails_message_filters(message)
-            or not ENTITY_REGEX.search(message.content)
+        if self.bot.on_message_preconditions_fail(message) or not ENTITY_REGEX.search(
+            message.content
         ):
             return
 

@@ -9,26 +9,22 @@ import discord as dc
 import httpx
 
 from .subtext import Subtext
-from app.utils import SUPPORTED_IMAGE_FORMATS, get_files, truncate
+from app.utils import (
+    BOT_COMMAND_MESSAGE_TYPES,
+    REGULAR_MESSAGE_TYPES,
+    SUPPORTED_IMAGE_FORMATS,
+    get_files,
+    truncate,
+)
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
 
-# Non-system-message types taken from the description of
-# https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
-# However, also include bot commands, despite them being system messages.
-NON_SYSTEM_MESSAGE_TYPES = frozenset({
-    dc.MessageType.default,
-    dc.MessageType.reply,
-    dc.MessageType.chat_input_command,
-    dc.MessageType.context_menu_command,
-})
-
 
 def message_can_be_moved(message: dc.Message) -> bool:
-    return message.type in NON_SYSTEM_MESSAGE_TYPES
+    return message.type in REGULAR_MESSAGE_TYPES | BOT_COMMAND_MESSAGE_TYPES
 
 
 async def _get_original_message(message: dc.Message) -> dc.Message | None:

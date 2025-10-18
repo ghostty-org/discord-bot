@@ -78,7 +78,7 @@ class GitHubComments(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def reply_with_comments(self, message: dc.Message) -> None:
-        if message.author.bot or self.bot.fails_message_filters(message):
+        if self.bot.on_message_preconditions_fail(message):
             return
         embeds = [
             self.comment_to_embed(comment)

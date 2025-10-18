@@ -17,7 +17,7 @@ from loguru import logger
 
 from app.errors import handle_error, interaction_error_handler
 from app.status import BotStatus
-from app.utils import is_mod, pretty_print_account, try_dm
+from app.utils import REGULAR_MESSAGE_TYPES, is_mod, pretty_print_account, try_dm
 
 if TYPE_CHECKING:
     from githubkit import GitHub, TokenAuthStrategy
@@ -176,6 +176,13 @@ class GhosttyBot(commands.Bot):
         # cycle.
         message_filter: Any = self.get_cog("MessageFilter")
         return message_filter and message_filter.check(message)
+
+    def on_message_preconditions_fail(self, message: dc.Message) -> bool:
+        return (
+            message.author.bot
+            or message.type not in REGULAR_MESSAGE_TYPES
+            or self.fails_message_filters(message)
+        )
 
     @override
     async def on_message(self, message: dc.Message, /) -> None:
