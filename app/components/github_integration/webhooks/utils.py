@@ -55,12 +55,17 @@ class EmbedContent(NamedTuple):
     title: str
     url: str
     body: str | None = None
+    description: str | None = None
 
     @property
     def dict(self) -> EmbedContentArgs:
         args: EmbedContentArgs = {"title": self.title, "url": self.url}
         if self.body:
             args["description"] = truncate(self.body, 500)
+        if self.description:
+            # If provided a description explicitly, don't truncate. However, discord has
+            # a description character size limit.
+            args["description"] = truncate(self.description, 6000)
         return args
 
 
@@ -77,7 +82,13 @@ class Footer(NamedTuple):
 
 class ContentGenerator(Protocol):
     def __call__(
-        self, event_like: Any, template: str, body: str | None = None, /
+        self,
+        event_like: Any,
+        template: str,
+        body: str | None = None,
+        /,
+        *,
+        description: str | None = None,
     ) -> EmbedContent: ...
 
 
@@ -121,7 +132,7 @@ async def send_edit_difference(
             # If the titles are the same, there's no point in showing them;
             # they just take up a lot of the 500 available characters.
             diff_lines = islice(diff_lines, 2, None)
-        diff = truncate("\n".join(diff_lines), 500 - len("```diff\n\n```"))
+        diff = truncate("\n".join(diff_lines), 750 - len("```diff\n\n```"))
         content = f"```diff\n{diff}\n```"
     elif changes.title:
         content = f'Renamed from "{changes.title.from_}" to "{event_object.title}"'
@@ -132,7 +143,7 @@ async def send_edit_difference(
     await send_embed(
         bot,
         event.sender,
-        content_generator(event_object, "edited {}", content),
+        content_generator(event_object, "edited {}", None, description=content),
         footer_generator(event_object),
     )
 
