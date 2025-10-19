@@ -32,14 +32,13 @@ class Developer(commands.Cog):
             ),
         )
 
-    @commands.Cog.listener()
-    async def on_message(self, message: dc.Message) -> None:
+    @commands.Cog.listener("on_post_message_filter")
+    async def sync_handler(self, message: dc.Message) -> None:
         # Handle !sync command. This can't be a slash command because this command is
-        # the one that actually adds the slash commands in the first place.
-        if (
-            self.bot.on_message_preconditions_fail(message)
-            or message.content.strip() != "!sync"
-        ):
+        # the one that actually adds the slash commands in the first place. This is a
+        # fake command because the bot only supports slash commands (special case
+        # matching "!sync lateral"
+        if message.content.strip() != "!sync":
             return
 
         if not self.bot.is_ghostty_mod(message.author):

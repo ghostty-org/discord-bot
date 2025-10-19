@@ -121,6 +121,9 @@ class MessageLinker:
         view_type: Callable[[dc.Message, int], dc.ui.View],
         view_timeout: float = 30.0,
     ) -> None:
+        if before.author.bot:
+            logger.trace("ignore edits from bot messages")
+            return
         if before.content == after.content:
             logger.trace("content did not change")
             return

@@ -171,7 +171,7 @@ class GhosttyBot(commands.Bot):
         member = self.ghostty_guild.get_member(user.id)
         return member is not None and is_mod(member)
 
-    def fails_message_filters(self, message: dc.Message) -> bool:
+    def _fails_message_filters(self, message: dc.Message) -> bool:
         # This can't be the MessageFilter cog type because that would cause an import
         # cycle.
         message_filter: Any = self.get_cog("MessageFilter")
@@ -181,7 +181,7 @@ class GhosttyBot(commands.Bot):
         return (
             message.author.bot
             or message.type not in REGULAR_MESSAGE_TYPES
-            or self.fails_message_filters(message)
+            or self._fails_message_filters(message)
         )
 
     @override
@@ -196,11 +196,8 @@ class GhosttyBot(commands.Bot):
             await try_dm(message.author, "pong")
             return
 
-        # Don't continue if the message would be deleted by a message filter.
-        if self.fails_message_filters(message):
-            return
-
-        await self.process_commands(message)
+        if not self.on_message_preconditions_fail(message):
+            self.dispatch("post_message_filter", message)
 
     @classmethod
     def get_component_extension_names(cls) -> frozenset[str]:
