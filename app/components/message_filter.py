@@ -85,11 +85,11 @@ class MessageFilter(commands.Cog):
         )
         if message.content:
             notification += _MESSAGE_CONTENT_NOTICE
-        await try_dm(message.author, notification, silent=bool(message.content))
+        await try_dm(message.author, notification)
 
         if message.content:
             content, file = format_or_file(message.content)
-            await try_dm(message.author, content, file=file)
+            await try_dm(message.author, content, file=file, silent=True)
             await try_dm(message.author, _COPY_TEXT_HINT, silent=True)
 
 
