@@ -122,7 +122,7 @@ class MessageLinker:
         view_timeout: float = 30.0,
     ) -> None:
         if before.author.bot:
-            logger.trace("ignore edits from bot messages")
+            logger.trace("ignoring bot message edit")
             return
         if before.content == after.content:
             logger.trace("content did not change")
