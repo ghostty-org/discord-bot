@@ -177,17 +177,9 @@ class GhosttyBot(commands.Bot):
         message_filter: Any = self.get_cog("MessageFilter")
         return message_filter and message_filter.check(message)
 
-    def on_message_preconditions_fail(self, message: dc.Message) -> bool:
-        return (
-            message.author.bot
-            or message.type not in REGULAR_MESSAGE_TYPES
-            or self._fails_message_filters(message)
-        )
-
     @override
     async def on_message(self, message: dc.Message, /) -> None:
-        # Ignore our own messages
-        if message.author == self.user:
+        if message.author.bot or message.type not in REGULAR_MESSAGE_TYPES:
             return
 
         # Simple test
@@ -196,7 +188,7 @@ class GhosttyBot(commands.Bot):
             await try_dm(message.author, "pong")
             return
 
-        if not self.on_message_preconditions_fail(message):
+        if not self._fails_message_filters(message):
             self.dispatch("post_message_filter", message)
 
     @classmethod
