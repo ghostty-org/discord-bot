@@ -125,7 +125,7 @@ class CommitLinks(commands.Cog):
         content = "\n\n".join(map(self._format, valid_shas))
         return ProcessedMessage(item_count=len(valid_shas), content=content)
 
-    @commands.Cog.listener("on_post_message_filter")
+    @commands.Cog.listener("on_message_filter_passed")
     async def reply_with_commit_details(self, message: dc.Message) -> None:
         output = await self.process(message)
         if not output.item_count:

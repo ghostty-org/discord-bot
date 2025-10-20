@@ -139,7 +139,7 @@ class XKCDMentions(commands.Cog):
             embeds = [*embeds[:9], omitted]
         return ProcessedMessage(embeds=embeds, item_count=len(embeds))
 
-    @commands.Cog.listener("on_post_message_filter")
+    @commands.Cog.listener("on_message_filter_passed")
     async def handle_mentions(self, message: dc.Message) -> None:
         output = await self.process(message)
         if output.item_count < 1:

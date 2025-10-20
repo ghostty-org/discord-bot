@@ -189,7 +189,7 @@ class GhosttyBot(commands.Bot):
             return
 
         if not self._fails_message_filters(message):
-            self.dispatch("post_message_filter", message)
+            self.dispatch("message_filter_passed", message)
 
     @classmethod
     def get_component_extension_names(cls) -> frozenset[str]:
