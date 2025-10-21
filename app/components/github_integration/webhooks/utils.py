@@ -61,9 +61,9 @@ class EmbedContent(NamedTuple):
     def dict(self) -> EmbedContentArgs:
         args: EmbedContentArgs = {"title": self.title, "url": self.url}
         if self.description:
-            # If provided a description explicitly, don't truncate. However, discord has
-            # a description character size limit.
-            args["description"] = truncate(self.description, 6000)
+            # If a description is provided explicitly, don't truncate. However, Discord
+            # has a description character size limit.
+            args["description"] = truncate(self.description, 4096)
         elif self.body:
             args["description"] = truncate(self.body, 500)
         return args
