@@ -205,10 +205,8 @@ class ZigCodeblocks(commands.Cog):
             item_count=len(highlighted_codeblocks) + len(attachments),
         )
 
-    @commands.Cog.listener("on_message")
+    @commands.Cog.listener("on_message_filter_passed")
     async def check_for_zig_code(self, message: dc.Message) -> None:
-        if self.bot.on_message_preconditions_fail(message):
-            return
         output = await self.process(message)
         if not output.item_count:
             return

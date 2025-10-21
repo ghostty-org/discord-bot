@@ -78,11 +78,9 @@ class GitHubEntities(commands.Cog):
     async def before_update_recent_mentions(self) -> None:
         await self.bot.wait_until_ready()
 
-    @commands.Cog.listener("on_message")
+    @commands.Cog.listener("on_message_filter_passed")
     async def reply_with_entities(self, message: dc.Message) -> None:
-        if self.bot.on_message_preconditions_fail(message) or not ENTITY_REGEX.search(
-            message.content
-        ):
+        if not ENTITY_REGEX.search(message.content):
             return
 
         if is_dm(message.author):

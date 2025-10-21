@@ -139,10 +139,8 @@ class XKCDMentions(commands.Cog):
             embeds = [*embeds[:9], omitted]
         return ProcessedMessage(embeds=embeds, item_count=len(embeds))
 
-    @commands.Cog.listener("on_message")
+    @commands.Cog.listener("on_message_filter_passed")
     async def handle_mentions(self, message: dc.Message) -> None:
-        if self.bot.on_message_preconditions_fail(message):
-            return
         output = await self.process(message)
         if output.item_count < 1:
             return

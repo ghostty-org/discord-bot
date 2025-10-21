@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import discord as dc
 
 
-def spawn_message(**kwargs: Any) -> dc.Message:
+def _spawn_message(**kwargs: Any) -> dc.Message:
     kwargs = {"created_at": dt.datetime.now(tz=dt.UTC)} | kwargs
     if age := kwargs.pop("age", None):
         kwargs["created_at"] -= cast("dt.timedelta", age)
@@ -13,8 +13,8 @@ def spawn_message(**kwargs: Any) -> dc.Message:
 
 
 def spawn_user_message(**kwargs: Any) -> dc.Message:
-    return spawn_message(author=Mock(bot=False), **kwargs)
+    return _spawn_message(author=Mock(bot=False), **kwargs)
 
 
 def spawn_bot_message(**kwargs: Any) -> dc.Message:
-    return spawn_message(author=Mock(bot=True), **kwargs)
+    return _spawn_message(author=Mock(bot=True), **kwargs)

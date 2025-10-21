@@ -88,9 +88,7 @@ class FixupEmbeds(commands.Cog):
         )
 
     @commands.Cog.listener()
-    async def on_message(self, message: dc.Message) -> None:
-        if self.bot.on_message_preconditions_fail(message):
-            return
+    async def on_message_filter_passed(self, message: dc.Message) -> None:
         output = await self.process(message)
         if not output.item_count:
             return
@@ -117,7 +115,7 @@ class FixupEmbeds(commands.Cog):
             before,
             after,
             message_processor=self.process,
-            interactor=self.on_message,
+            interactor=self.on_message_filter_passed,
             view_type=FixUpActions,
         )
 
