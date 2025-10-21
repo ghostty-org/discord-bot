@@ -43,9 +43,16 @@ def pr_footer(
 
 
 def pr_embed_content(
-    pr: PRLike, template: str, body: str | None = None, /
+    pr: PRLike,
+    template: str,
+    body: str | None = None,
+    /,
+    *,
+    description: str | None = None,
 ) -> EmbedContent:
-    return EmbedContent(template.format(f"PR #{pr.number}"), pr.html_url, body)
+    return EmbedContent(
+        template.format(f"PR #{pr.number}"), pr.html_url, body, description
+    )
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR0915

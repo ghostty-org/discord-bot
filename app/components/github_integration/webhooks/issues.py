@@ -50,9 +50,16 @@ def issue_footer(issue: IssueLike, /, *, emoji: EmojiName | None = None) -> Foot
 
 
 def issue_embed_content(
-    issue: IssueLike, template: str, body: str | None = None, /
+    issue: IssueLike,
+    template: str,
+    body: str | None = None,
+    /,
+    *,
+    description: str | None = None,
 ) -> EmbedContent:
-    return EmbedContent(template.format(f"issue #{issue.number}"), issue.html_url, body)
+    return EmbedContent(
+        template.format(f"issue #{issue.number}"), issue.html_url, body, description
+    )
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
