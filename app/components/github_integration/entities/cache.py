@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, final, override
 
 from githubkit.exception import RequestFailed
 
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 type EntitySignature = tuple[str, str, int]
 
 
+@final
 class EntityCache(TTRCache[EntitySignature, Entity]):
     def __init__(self, gh: GitHub[TokenAuthStrategy], **ttr: float) -> None:
         super().__init__(**ttr)

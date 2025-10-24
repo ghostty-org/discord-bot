@@ -60,6 +60,7 @@ class Snippet(NamedTuple):
     range: slice
 
 
+@final
 class ContentCache(TTRCache[SnippetPath, str]):
     def __init__(self, gh: GitHub[TokenAuthStrategy], **ttr: float) -> None:
         super().__init__(**ttr)

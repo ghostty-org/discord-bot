@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from contextlib import suppress
 from functools import reduce
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, final, override
 
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
@@ -28,6 +28,7 @@ ENTITY_REGEX = re.compile(
 )
 
 
+@final
 class OwnerCache(TTRCache[str, str]):
     @override
     async def fetch(self, key: str) -> None:
