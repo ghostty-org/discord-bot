@@ -175,7 +175,7 @@ class GhosttyBot(commands.Bot):
         # This can't be the MessageFilter cog type because that would cause an import
         # cycle.
         message_filter: Any = self.get_cog("MessageFilter")
-        return message_filter and message_filter.check(message)
+        return bool(message_filter and message_filter.check(message))
 
     @override
     async def on_message(self, message: dc.Message, /) -> None:

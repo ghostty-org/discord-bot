@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, final
 
 from githubkit.exception import RequestFailed
 
@@ -32,6 +32,7 @@ class CommitSummary(NamedTuple):
     signed: bool
 
 
+@final
 class CommitCache:
     def __init__(self, gh: GitHub[TokenAuthStrategy]) -> None:
         self._gh: GitHub[TokenAuthStrategy] = gh

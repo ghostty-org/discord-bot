@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from contextlib import suppress
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, cast, final, override
 
 from githubkit.exception import RequestFailed
 from githubkit.versions.latest.models import IssuePropPullRequest, ReactionRollup
@@ -146,6 +146,7 @@ def _format_commit_id(
     return f"[`{commit_id[:shorten_to]}`](<{url}>)"
 
 
+@final
 class CommentCache(TTRCache[tuple[EntityGist, str, int], Comment]):
     @override
     async def fetch(self, key: tuple[EntityGist, str, int]) -> None:

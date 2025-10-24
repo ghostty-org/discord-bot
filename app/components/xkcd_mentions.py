@@ -52,6 +52,7 @@ class XKCDFetchFailed(NamedTuple):
     comic_id: int
 
 
+@final
 class XKCDMentionCache(TTRCache[int, XKCDResult]):
     @override
     async def fetch(self, key: int) -> None:

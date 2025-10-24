@@ -94,6 +94,9 @@ class Entity(BaseModel):
             return name
         return name[0] + "".join(f" {c}" if c.isupper() else c for c in name[1:])
 
+    def __bool__(self) -> Literal[True]:
+        return True
+
 
 class Issue(Entity):
     closed: Annotated[bool, Field(alias="state"), BeforeValidator(state_validator)]
