@@ -24,11 +24,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "ruff==0.14.0",
-  "basedpyright==1.32.1",
+  "ruff==0.14.5",
+  "basedpyright==1.33.0",
   "taplo==0.9.3",
-  "pytest==8.4.2",
-  "hypothesis==6.140.3",
+  "pytest==9.0.1",
+  "hypothesis==6.148.0",
   "anyio==4.11.0",
   "msgpack-types==0.5",
 ]
