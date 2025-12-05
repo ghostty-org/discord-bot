@@ -73,11 +73,10 @@ Or you can find a different emoji picker that doesn't include the VS16 in the fi
 place. Discord's one, for example.
 
 There is one other case where you may want to ignore the VS16: when you *specifically*
-want the emoji to not be converted to an SVG Twemoji, for some reason. In that case, it
-is a better idea to put a backslash before the emoji, to tell Discord that you don't
-want the emoji to be touched whatsoever by Discord. Of course, this isn't possible
-everywhere, such as in view buttons; in those cases, ignore the VS16, but also add
-another comment elaborating on why you're ignoring a VS16 that isn't necessary!
+want the emoji to not be converted to an SVG Twemoji, for some reason. In that case,
+ignore the VS16, but also add another comment elaborating on why you're ignoring a VS16
+that isn't necessary! Do not use a backslash before the emoji: that shows the emoji
+without conversion on desktop, and the emoji short-code on mobile.
 
 One note: if you already committed before running the tests, please amend your commit
 (git commit --amend) instead of adding a new one! Since variation selectors are
