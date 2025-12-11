@@ -7,7 +7,7 @@ check:
     uv run taplo fmt --check --diff pyproject.toml
     uv run ruff format --check
     uv run ruff check
-    uv run pytest
+    uv run pytest -p terminalprogress
     uv run basedpyright app tests
 
 # Run taplo and ruff in fix mode
