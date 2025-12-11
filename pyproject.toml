@@ -11,12 +11,12 @@ authors = [
 ]
 dependencies = [
   "discord-py~=2.6.3",
-  "githubkit~=0.13.1",
+  "githubkit~=0.14.0",
   "pydantic>=2.11.7,<3",
   "sentry-sdk~=2.36",
   "zig-codeblocks==0.3.3",
   "httpx~=0.28.1",
-  "monalisten==0.3.1",
+  "monalisten==0.3.2",
   "pydantic-settings>=2.10.1,<3",
   "loguru~=0.7.0",
   "msgpack~=1.1",
@@ -24,12 +24,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "ruff==0.14.5",
-  "basedpyright==1.33.0",
+  "ruff==0.14.10",
+  "basedpyright==1.36.2",
   "taplo==0.9.3",
-  "pytest==9.0.1",
-  "hypothesis==6.148.0",
-  "anyio==4.11.0",
+  "pytest==9.0.2",
+  "hypothesis==6.148.9",
+  "anyio==4.12.0",
   "msgpack-types==0.5",
 ]
 
