@@ -69,6 +69,7 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     "ready_for_review": "Marked this pull request as ready for review",
     "review_requested": "Requested a review from `{reviewer}`",
     "review_request_removed": "Removed the request for a review from `{reviewer}`",
+    "copilot_work_started": "Started a Copilot review",
     "auto_merge_enabled": "Enabled auto-merge",
     "auto_squash_enabled": "Enabled auto-merge (squash)",
     "auto_merge_disabled": "Disabled auto-merge",
@@ -83,9 +84,15 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     "automatic_base_change_succeeded": "Base automatically changed",
     "converted_to_discussion": "Converted this issue to a discussion",
     "parent_issue_added": "Added a parent issue",
+    "parent_issue_removed": "Removed a parent issue",
     "sub_issue_added": "Added a sub-issue",
+    "sub_issue_removed": "Removed a sub-issue",
     "marked_as_duplicate": "Marked an issue as a duplicate of this one",
     "unmarked_as_duplicate": "Unmarked an issue as a duplicate of this one",
+    "blocking_added": "Marked this issue as blocking another",
+    "blocking_removed": "Unmarked this issue as blocking another",
+    "blocked_by_added": "Marked this issue as blocked by another",
+    "blocked_by_removed": "Unmarked this issue as blocked by another",
     "referenced": lambda event: (
         "Referenced this issue in commit "
         + _format_commit_id(event, cast("str", event.commit_id), preserve_repo_url=True)
