@@ -115,9 +115,12 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
         else "Linked a pull request that may close this issue"
     ),
     "disconnected": lambda event: (
-        "Removed a link to " + "a pull request"
-        if isinstance(cast("Issue", event.issue).pull_request, IssuePropPullRequest)
-        else "an issue"
+        "Removed a link to "
+        + (
+            "a pull request"
+            if isinstance(cast("Issue", event.issue).pull_request, IssuePropPullRequest)
+            else "an issue"
+        )
     ),
     "added_to_project_v2": "Added this to a project",
     "project_v2_item_status_changed": "Changed the status of this in a project",
