@@ -307,7 +307,7 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None
             raise TypeError(msg)
         body = formatter.format(reviewer=reviewer)
     elif event.event in ENTITY_UPDATE_EVENTS:
-        body = f"{event.event.capitalize()} the {entity.kind.lower()}"
+        body = f"{event.event.capitalize()} this {entity.kind.lower()}"
         if event.lock_reason:
             body += f"\nReason: `{event.lock_reason}`"
     elif event.event == "review_dismissed":
