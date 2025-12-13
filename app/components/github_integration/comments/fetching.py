@@ -89,6 +89,8 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     "unmarked_as_duplicate": "Unmarked an issue as a duplicate of this one",
     "blocking_added": "Marked this issue as blocking another",
     "blocking_removed": "Unmarked this issue as blocking another",
+    "blocked_by_added": "Marked this issue as blocked by another",
+    "blocked_by_removed": "Unmarked this issue as blocked by another",
     "referenced": lambda event: (
         "Referenced this issue in commit "
         + _format_commit_id(event, cast("str", event.commit_id), preserve_repo_url=True)
