@@ -69,6 +69,7 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     "ready_for_review": "Marked this pull request as ready for review",
     "review_requested": "Requested a review from `{reviewer}`",
     "review_request_removed": "Removed the request for a review from `{reviewer}`",
+    "copilot_work_started": "Started a Copilot review",
     "auto_merge_enabled": "Enabled auto-merge",
     "auto_squash_enabled": "Enabled auto-merge (squash)",
     "auto_merge_disabled": "Disabled auto-merge",
