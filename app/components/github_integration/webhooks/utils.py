@@ -177,7 +177,8 @@ async def send_embed(  # noqa: PLR0913
 
     author = GitHubUser(**actor.model_dump())
     embed = (
-        dc.Embed(color=color and EMBED_COLORS.get(color), **content.dict)
+        dc
+        .Embed(color=color and EMBED_COLORS.get(color), **content.dict)
         .set_footer(**footer.dict(bot))
         .set_author(**author.model_dump())
     )

@@ -56,7 +56,8 @@ class GitHubComments(commands.Cog):
             if count
         ]
         embed = (
-            dc.Embed(
+            dc
+            .Embed(
                 description=comment.body,
                 title=title,
                 url=comment.html_url,

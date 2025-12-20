@@ -61,9 +61,11 @@ EMBED_SITES: tuple[SiteTransformation, ...] = (
             r"https://(?:www\.)?(?P<site>x|twitter)\.com/"
             rf"(?P<post>{VALID_URI_CHARS}+/status/{VALID_URI_CHARS}+)"
         ),
-        lambda match: "https://"
-        f"{'fixupx' if match['site'] == 'x' else 'fxtwitter'}.com/"
-        f"{match['post']}",
+        lambda match: (
+            "https://"
+            f"{'fixupx' if match['site'] == 'x' else 'fxtwitter'}.com/"
+            f"{match['post']}"
+        ),
     ),
     (
         re.compile(

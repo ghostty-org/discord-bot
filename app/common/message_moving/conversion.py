@@ -109,7 +109,8 @@ def format_reply(reply: dc.Message) -> dc.Embed:
         else:
             description = "> *Some forwarded content elided.*"
     return (
-        dc.Embed(description=f"{description_prefix}{truncate(description, 100)}")
+        dc
+        .Embed(description=f"{description_prefix}{truncate(description, 100)}")
         .set_author(
             name=f"↪️ Replying to {reply.author.display_name}",  # test: allow-vs16
             icon_url=reply.author.display_avatar,
