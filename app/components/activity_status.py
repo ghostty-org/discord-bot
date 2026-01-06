@@ -3,20 +3,20 @@ from __future__ import annotations
 import secrets
 from typing import TYPE_CHECKING, final, override
 
-from discord import Activity, ActivityType, CustomActivity
+from discord import CustomActivity
 from discord.ext import commands, tasks
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
 
 STATUSES = (
-    Activity(type=ActivityType.watching, name="over the Ghostty server 👻"),
-    CustomActivity(name="Haunting your threads 🧵"),
-    Activity(type=ActivityType.watching, name="posts in #showcase"),
-    Activity(type=ActivityType.watching, name="over #help"),
-    Activity(type=ActivityType.listening, name="your complaints"),
-    Activity(type=ActivityType.playing, name="with my config file"),
-    Activity(type=ActivityType.competing, name="the terminal game"),
+    CustomActivity("Watching over the Ghostty server 👻"),
+    CustomActivity("Haunting your threads 🧵"),
+    CustomActivity("Admiring posts in #showcase"),
+    CustomActivity("Watching over #help"),
+    CustomActivity("Listening to your complaints"),
+    CustomActivity("Playing with my config file"),
+    CustomActivity("Competing in the terminal game"),
 )
 
 
