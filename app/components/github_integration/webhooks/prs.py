@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 

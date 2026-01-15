@@ -1,7 +1,5 @@
 # PPE is strongly recommended in this file. Blindfolds are even better.
 
-from __future__ import annotations
-
 import asyncio
 import itertools
 from contextlib import suppress

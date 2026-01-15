@@ -1,7 +1,5 @@
 """Toolkit for monkeypatching githubkit requests"""
 
-from __future__ import annotations
-
 from typing import Any, Self, cast, final, override
 
 
