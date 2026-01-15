@@ -2,14 +2,13 @@ import inspect
 from typing import TYPE_CHECKING, final
 
 import discord as dc
+from discord.app_commands import Choice  # noqa: TC002
 from discord.ext import commands
 from loguru import logger
 
 from app.utils import generate_autocomplete, pretty_print_account
 
 if TYPE_CHECKING:
-    from discord.app_commands import Choice
-
     from app.bot import GhosttyBot
 
 
