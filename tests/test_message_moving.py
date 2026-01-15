@@ -23,7 +23,7 @@ def test_format_unicode_emoji(emoji: str) -> None:
 
 
 @pytest.mark.parametrize("emoji", list(UNICODE_EMOJIS))
-def test_format_unicode_partialemoji(emoji: str) -> None:
+def test_format_unicode_partial_emoji(emoji: str) -> None:
     assert _format_emoji(dc.PartialEmoji(name=emoji)) == emoji
 
 
