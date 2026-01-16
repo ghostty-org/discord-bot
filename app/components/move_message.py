@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Self, cast, final, override
 import discord as dc
 from discord.ext import commands
 
-from app.common.message_moving import (
+from toolbox.errors import SafeModal, SafeView
+from toolbox.message_moving import (
     MovedMessage,
     MovedMessageLookupFailed,
     SplitSubtext,
@@ -16,11 +17,9 @@ from app.common.message_moving import (
     message_can_be_moved,
     move_message,
 )
-from app.errors import SafeModal, SafeView
-from app.utils import (
-    MAX_ATTACHMENT_SIZE,
+from toolbox.messages import MAX_ATTACHMENT_SIZE, MessageData
+from toolbox.misc import (
     GuildTextChannel,
-    MessageData,
     dynamic_timestamp,
     is_attachment_only,
     is_dm,
@@ -30,7 +29,7 @@ from app.utils import (
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
-    from app.utils import Account
+    from toolbox.misc import Account
 
 
 # From https://discord.com/developers/docs/topics/opcodes-and-status-codes#json-json-error-codes.

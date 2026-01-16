@@ -8,10 +8,10 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from app.common.message_moving import MovedMessage, message_can_be_moved
-from app.common.message_moving.conversion import _unattachable_embed
-from app.common.message_moving.moved_message import _find_snowflake
-from app.common.message_moving.subtext import _format_emoji
+from toolbox.message_moving import MovedMessage, message_can_be_moved
+from toolbox.message_moving.conversion import _unattachable_embed
+from toolbox.message_moving.moved_message import _find_snowflake
+from toolbox.message_moving.subtext import _format_emoji
 
 # A random list of Unicode emojis that default to the emoji presentation.
 UNICODE_EMOJIS = "📨🌼🎬⌛🧆🦯🤩👤🥈🏑🌊🤲👦🛝🍏🥫🐙👰🇫🤏🚋🏽🐾🌄🔛🐸🤣🐎💿👃🔘🍋🚈👘🚹"

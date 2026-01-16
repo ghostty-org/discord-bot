@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING, final, override
 from githubkit.exception import RequestFailed
 
 from .discussions import get_discussion
-from app.common.cache import TTRCache
 from app.components.github_integration.models import Entity, Issue, PullRequest
 from app.config import gh
+from toolbox.cache import TTRCache
 
 if TYPE_CHECKING:
-    from app.utils import GH
+    from toolbox.misc import GH
 
 type EntitySignature = tuple[str, str, int]
 

@@ -30,7 +30,7 @@ jobs:
         run: uv sync
       - name: taplo (TOML formatting)
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
-        run: uv run taplo fmt --check --diff pyproject.toml
+        run: uv run taplo fmt --check --diff pyproject.toml packages/*/pyproject.toml
       - name: ruff format
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run ruff format --diff
@@ -42,4 +42,4 @@ jobs:
         run: uv run pytest -vv
       - name: basedpyright
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
-        run: uv run basedpyright app tests
+        run: uv run basedpyright app tests packages

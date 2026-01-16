@@ -9,7 +9,7 @@ from tests.hooks.utils import spawn_bot_message, spawn_user_message
 if TYPE_CHECKING:
     from unittest.mock import Mock
 
-    from app.common.linker import MessageLinker
+    from toolbox.linker import MessageLinker
 
 
 async def test_original_delete(linker: MessageLinker) -> None:

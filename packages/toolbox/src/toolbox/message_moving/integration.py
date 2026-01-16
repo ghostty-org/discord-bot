@@ -14,10 +14,10 @@ from .conversion import (
 )
 from .moved_message import MovedMessage
 from .subtext import SplitSubtext, Subtext
-from app.utils import (
+from toolbox.messages import MessageData
+from toolbox.misc import (
     BOT_COMMAND_MESSAGE_TYPES,
     REGULAR_MESSAGE_TYPES,
-    MessageData,
     format_or_file,
 )
 

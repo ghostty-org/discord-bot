@@ -8,7 +8,7 @@ from githubkit import TokenAuthStrategy
 from githubkit.exception import RequestFailed
 
 from app.config import config, gh
-from app.utils import async_process_check_output, dynamic_timestamp
+from toolbox.misc import async_process_check_output, dynamic_timestamp
 
 if TYPE_CHECKING:
     from discord.ext import tasks

@@ -10,7 +10,7 @@ import discord as dc
 from monalisten import events
 
 from app.components.github_integration.models import GitHubUser
-from app.utils import truncate
+from toolbox.misc import truncate
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import RepositoryWebhooks, SimpleUser

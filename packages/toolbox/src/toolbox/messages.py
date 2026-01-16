@@ -8,6 +8,13 @@ from typing import Self
 import discord as dc
 from loguru import logger
 
+__all__ = (
+    "MAX_ATTACHMENT_SIZE",
+    "ExtensibleMessage",
+    "MessageData",
+    "get_files",
+)
+
 MAX_ATTACHMENT_SIZE = 67_108_864  # 64 MiB
 
 

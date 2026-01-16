@@ -7,11 +7,8 @@ import discord as dc
 import httpx
 
 from .subtext import Subtext
-from app.utils import (
-    SUPPORTED_IMAGE_FORMATS,
-    get_files,
-    truncate,
-)
+from toolbox.messages import get_files
+from toolbox.misc import SUPPORTED_IMAGE_FORMATS, truncate
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
 

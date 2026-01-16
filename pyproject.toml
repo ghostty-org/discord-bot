@@ -10,6 +10,7 @@ authors = [
   { name = "trag1c", email = "dev@jakubr.me" },
 ]
 dependencies = [
+  "toolbox",
   "discord-py>=2.6.3",
   "githubkit>=0.14.0",
   "pydantic>=2.11.7,<3",
@@ -32,6 +33,20 @@ dev = [
   "anyio>=4.12.0",
   "msgpack-types>=0.5",
 ]
+
+[tool.uv.sources]
+toolbox.workspace = true
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "app"
+module-root = ""
 
 [tool.basedpyright]
 enableBasedFeatures = true
@@ -67,7 +82,7 @@ logger-objects = ["loguru.logger"] # technically false but it works well enough
 mccabe.max-complexity = 20
 pylint.max-branches = 20
 pylint.max-returns = 15
-isort.known-local-folder = ["app"]
+isort.known-local-folder = ["app", "toolbox"]
 
 [tool.ruff.format]
 preview = true

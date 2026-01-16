@@ -13,21 +13,21 @@ from discord.ext import commands
 from githubkit.exception import RequestFailed
 from zig_codeblocks import highlight_zig_code
 
-from app.common.cache import TTRCache
-from app.common.linker import (
+from app.components.zig_codeblocks import THEME
+from toolbox.cache import TTRCache
+from toolbox.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
     remove_view_after_delay,
 )
-from app.components.zig_codeblocks import THEME
-from app.utils import suppress_embeds_after_delay
+from toolbox.misc import suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from app.bot import GhosttyBot
-    from app.utils import GH
+    from toolbox.misc import GH
 
 CODE_LINK_PATTERN = re.compile(
     r"https?://(?:www\.)?github\.com/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-\._]+)/blob/"

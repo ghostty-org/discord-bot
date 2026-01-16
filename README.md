@@ -178,8 +178,8 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
    ```console
    $ uv run ruff check
    $ uv run ruff format
-   $ uv run basedpyright app tests
-   $ uv run taplo fmt pyproject.toml
+   $ uv run basedpyright app tests packages
+   $ uv run taplo fmt pyproject.toml packages/*/pyproject.toml
    $ uv run pytest
    ```
    or, if you have [just] installed:
@@ -191,6 +191,14 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
 
 # Project structure
 
+Ghostty Bot's code is split into multiple packages:
+
+- The main package, containing the bot's features and integration code.
+- `toolbox`, containing common code, utilities, and code to move messages.
+
+All packages but the main one are in their own directory under `packages/`. The
+main package, under `app/`, is structured as follows:
+
 ```mermaid
 flowchart LR;
 
@@ -200,7 +208,6 @@ config --> main{{\_\_main__.py}}
 log{{log.py}} --> main
 bot --> main
 bot --> components
-utils([utils/]) --> components
 ```
 
 * `components/` is a place for all dedicated features ([cogs]), such as message
@@ -211,7 +218,6 @@ utils([utils/]) --> components
   and then loads extensions found in `components`.
 * `config.py` handles reading and parsing the environment variables and the
   local `.env` file, and creates the GitHub client.
-* `utils/` contains helper functions/classes not tied to any specific feature.
 * `log.py` setups up logging and optionally Sentry.
 * `__main__.py` initializes logging and starts the bot.
 

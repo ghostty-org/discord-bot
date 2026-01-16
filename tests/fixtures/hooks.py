@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, final
 
 import pytest
 
-from app.common.linker import ItemActions, MessageLinker, ProcessedMessage
+from toolbox.linker import ItemActions, MessageLinker, ProcessedMessage
 
 if TYPE_CHECKING:
     from collections.abc import Callable

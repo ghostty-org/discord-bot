@@ -5,7 +5,7 @@ import discord as dc
 import sentry_sdk
 from discord.ext import commands, tasks
 
-from app.utils import post_is_solved
+from toolbox.misc import post_is_solved
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

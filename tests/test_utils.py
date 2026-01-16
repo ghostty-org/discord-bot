@@ -10,7 +10,7 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from app.utils import (
+from toolbox.misc import (
     aenumerate,
     async_process_check_output,
     dynamic_timestamp,
@@ -28,7 +28,7 @@ from app.utils import (
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
 
-    from app.utils import Account
+    from toolbox.misc import Account
 
 
 @pytest.mark.parametrize(("type_", "result"), [(dc.Member, False), (dc.User, True)])
