@@ -24,8 +24,6 @@ from app.utils import (
     dynamic_timestamp,
     is_attachment_only,
     is_dm,
-    is_helper,
-    is_mod,
     safe_edit,
     truncate,
 )
@@ -755,7 +753,9 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not (is_mod(interaction.user) or is_helper(interaction.user)):
+        if not (
+            self.bot.is_mod(interaction.user) or self.bot.is_helper(interaction.user)
+        ):
             await interaction.response.send_message(
                 "You do not have permission to move messages.", ephemeral=True
             )
@@ -787,7 +787,9 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not (is_mod(interaction.user) or is_helper(interaction.user)):
+        if not (
+            self.bot.is_mod(interaction.user) or self.bot.is_helper(interaction.user)
+        ):
             await interaction.response.send_message(
                 "You do not have permission to use this action.", ephemeral=True
             )

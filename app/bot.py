@@ -15,7 +15,7 @@ from loguru import logger
 
 from app.errors import handle_error, interaction_error_handler
 from app.status import BotStatus
-from app.utils import REGULAR_MESSAGE_TYPES, is_mod, pretty_print_account, try_dm
+from app.utils import REGULAR_MESSAGE_TYPES, pretty_print_account, try_dm
 
 if TYPE_CHECKING:
     from app.config import Config, WebhookFeedType
@@ -163,9 +163,15 @@ class GhosttyBot(commands.Bot):
             channels[feed_type] = channel
         return channels
 
+    def is_mod(self, member: dc.Member) -> bool:
+        return member.get_role(self.config.mod_role_id) is not None
+
+    def is_helper(self, member: dc.Member) -> bool:
+        return member.get_role(self.config.helper_role_id) is not None
+
     def is_ghostty_mod(self, user: Account) -> bool:
         member = self.ghostty_guild.get_member(user.id)
-        return member is not None and is_mod(member)
+        return member is not None and self.is_mod(member)
 
     def _fails_message_filters(self, message: dc.Message) -> bool:
         # This can't be the MessageFilter cog type because that would cause an import

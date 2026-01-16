@@ -11,7 +11,6 @@ from discord.app_commands import Choice
 from loguru import logger
 
 from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData, get_files
-from app.config import config
 
 __all__ = (
     "GH",
@@ -25,8 +24,6 @@ __all__ = (
     "get_files",
     "is_attachment_only",
     "is_dm",
-    "is_helper",
-    "is_mod",
     "post_has_tag",
     "post_is_solved",
     "safe_edit",
@@ -81,14 +78,6 @@ def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
 
 def is_dm(account: Account) -> TypeIs[dc.User]:
     return not isinstance(account, dc.Member)
-
-
-def is_mod(member: dc.Member) -> bool:
-    return member.get_role(config.mod_role_id) is not None
-
-
-def is_helper(member: dc.Member) -> bool:
-    return member.get_role(config.helper_role_id) is not None
 
 
 async def try_dm(account: Account, content: str, **extras: Any) -> None:
