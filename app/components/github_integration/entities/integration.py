@@ -45,7 +45,7 @@ class GitHubEntities(commands.Cog):
         # Gather all currently actively mentioned entities
         for msg in self.linker.refs:
             with safe_edit:
-                entities = await extract_entities(msg)
+                entities = await extract_entities(self.bot.config, msg)
                 for entity in entities:
                     entity_to_message_map[entity].append(msg)
 

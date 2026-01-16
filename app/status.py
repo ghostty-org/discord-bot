@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING, Any, cast, final
 from githubkit import TokenAuthStrategy
 from githubkit.exception import RequestFailed
 
-from app.config import config, gh
+from app.config import gh
 from toolbox.discord import dynamic_timestamp
 from toolbox.misc import async_process_check_output
 
 if TYPE_CHECKING:
     from discord.ext import tasks
+
+    from app.config import Config
 
 STATUS_MESSAGE_TEMPLATE = """
 ### Commit
@@ -43,7 +45,9 @@ class BotStatus:
     # ready, assuming it's loaded.
     commit_data: str | None = None
 
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
+        self.config = config
+
         self.launch_time = dt.datetime.now(tz=dt.UTC)
         self._commit_hash = None
 
@@ -133,7 +137,7 @@ class BotStatus:
             "launch_time": dynamic_timestamp(self.launch_time, "R"),
             "last_login_time": dynamic_timestamp(self.last_login_time, "R"),
             "last_sitemap_refresh": dynamic_timestamp(self.last_sitemap_refresh, "R"),
-            "help_channel": f"<#{config.help_channel_id}>",
+            "help_channel": f"<#{self.config.help_channel_id}>",
             "scan": self._get_scan_data(),
             "gh": await self._get_github_data(),
         }

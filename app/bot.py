@@ -54,7 +54,7 @@ class GhosttyBot(commands.Bot):
         self.tree.on_error = interaction_error_handler
         self.config = config
         self.gh = gh
-        self.bot_status = BotStatus()
+        self.bot_status = BotStatus(self.config)
 
         self._ghostty_emojis: dict[EmojiName, dc.Emoji] = {}
         self.ghostty_emojis = MappingProxyType(self._ghostty_emojis)
