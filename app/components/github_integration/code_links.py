@@ -15,13 +15,13 @@ from zig_codeblocks import highlight_zig_code
 
 from app.components.zig_codeblocks import THEME
 from toolbox.cache import TTRCache
+from toolbox.discord import suppress_embeds_after_delay
 from toolbox.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
     remove_view_after_delay,
 )
-from toolbox.misc import suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator

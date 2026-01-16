@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING, NamedTuple, cast, final
 import discord as dc
 from discord.ext import commands
 
-from toolbox.misc import REGULAR_MESSAGE_TYPES, format_or_file, try_dm
+from toolbox.discord import format_or_file, try_dm
+from toolbox.messages import REGULAR_MESSAGE_TYPES
 
 if TYPE_CHECKING:
     from collections.abc import Callable

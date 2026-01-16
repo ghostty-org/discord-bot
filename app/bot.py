@@ -14,12 +14,14 @@ from discord.ext import commands
 from loguru import logger
 
 from app.status import BotStatus
+from toolbox.discord import pretty_print_account, try_dm
 from toolbox.errors import handle_error, interaction_error_handler
-from toolbox.misc import REGULAR_MESSAGE_TYPES, pretty_print_account, try_dm
+from toolbox.messages import REGULAR_MESSAGE_TYPES
 
 if TYPE_CHECKING:
     from app.config import Config, WebhookFeedType
-    from toolbox.misc import GH, Account
+    from toolbox.discord import Account
+    from toolbox.misc import GH
 
 EmojiName = Literal[
     "commit",

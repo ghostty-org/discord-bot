@@ -17,7 +17,7 @@ from app.components.github_integration.models import (
 )
 from app.config import gh
 from toolbox.cache import TTRCache
-from toolbox.misc import escape_special
+from toolbox.discord import escape_special
 
 if TYPE_CHECKING:
     import datetime as dt

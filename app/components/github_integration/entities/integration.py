@@ -11,8 +11,8 @@ from .cache import entity_cache
 from .fmt import entity_message, extract_entities
 from .resolution import ENTITY_REGEX
 from app.components.github_integration.models import Entity
+from toolbox.discord import is_dm, safe_edit, suppress_embeds_after_delay
 from toolbox.linker import ItemActions, MessageLinker, remove_view_after_delay
-from toolbox.misc import is_dm, safe_edit, suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot

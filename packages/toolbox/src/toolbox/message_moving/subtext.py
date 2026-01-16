@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, final
 
 import discord as dc
 
-from toolbox.misc import GuildTextChannel, dynamic_timestamp
+from toolbox.discord import GuildTextChannel, dynamic_timestamp
 
 if TYPE_CHECKING:
     from .moved_message import MovedMessage

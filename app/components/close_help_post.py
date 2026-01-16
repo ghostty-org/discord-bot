@@ -6,8 +6,8 @@ from discord import app_commands
 from discord.ext import commands
 
 import app.components.github_integration.entities.fmt as github_entities_fmt
+from toolbox.discord import generate_autocomplete, is_dm
 from toolbox.message_moving import MovedMessage
-from toolbox.misc import generate_autocomplete, is_dm
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot

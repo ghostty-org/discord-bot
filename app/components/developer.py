@@ -6,7 +6,7 @@ from discord.app_commands import Choice  # noqa: TC002
 from discord.ext import commands
 from loguru import logger
 
-from toolbox.misc import generate_autocomplete, pretty_print_account
+from toolbox.discord import generate_autocomplete, pretty_print_account
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot

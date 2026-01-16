@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 from .cache import entity_cache
 from .resolution import resolve_entity_signatures
 from app.components.github_integration.models import Discussion, Issue, PullRequest
+from toolbox.discord import dynamic_timestamp, escape_special
 from toolbox.linker import ProcessedMessage
-from toolbox.misc import dynamic_timestamp, escape_special, format_diff_note
+from toolbox.misc import format_diff_note
 
 if TYPE_CHECKING:
     import discord as dc

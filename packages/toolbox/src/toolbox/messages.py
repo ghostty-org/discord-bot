@@ -9,13 +9,41 @@ import discord as dc
 from loguru import logger
 
 __all__ = (
+    "BOT_COMMAND_MESSAGE_TYPES",
     "MAX_ATTACHMENT_SIZE",
+    "REGULAR_MESSAGE_TYPES",
     "ExtensibleMessage",
     "MessageData",
     "get_files",
+    "is_attachment_only",
 )
 
+# Regular types taken from the description of
+# https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
+REGULAR_MESSAGE_TYPES = frozenset({
+    dc.MessageType.default,
+    dc.MessageType.reply,
+})
+BOT_COMMAND_MESSAGE_TYPES = frozenset({
+    dc.MessageType.chat_input_command,
+    dc.MessageType.context_menu_command,
+})
+
 MAX_ATTACHMENT_SIZE = 67_108_864  # 64 MiB
+
+
+def is_attachment_only(
+    message: dc.Message, *, preprocessed_content: str | None = None
+) -> bool:
+    if preprocessed_content is None:
+        preprocessed_content = message.content
+    return bool(message.attachments) and not any((
+        message.components,
+        preprocessed_content,
+        message.embeds,
+        message.poll,
+        message.stickers,
+    ))
 
 
 class ExtensibleMessage(dc.Message):

@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, ClassVar, Self, final
 import discord as dc
 from loguru import logger
 
+from toolbox.discord import is_dm, pretty_print_account, safe_edit
 from toolbox.errors import SafeView
-from toolbox.misc import is_dm, pretty_print_account, safe_edit
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable

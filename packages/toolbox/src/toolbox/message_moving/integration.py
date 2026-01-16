@@ -14,11 +14,11 @@ from .conversion import (
 )
 from .moved_message import MovedMessage
 from .subtext import SplitSubtext, Subtext
-from toolbox.messages import MessageData
-from toolbox.misc import (
+from toolbox.discord import format_or_file
+from toolbox.messages import (
     BOT_COMMAND_MESSAGE_TYPES,
     REGULAR_MESSAGE_TYPES,
-    format_or_file,
+    MessageData,
 )
 
 
