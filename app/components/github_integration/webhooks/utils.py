@@ -15,7 +15,7 @@ from toolbox.misc import truncate
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import RepositoryWebhooks, SimpleUser
 
-    from app.bot import EmojiName, GhosttyBot
+    from app.bot import EmojiName, Emojis, GhosttyBot
     from app.config import WebhookFeedType
 
 CODEBLOCK = re.compile(r"`{3,}")
@@ -71,10 +71,10 @@ class Footer(NamedTuple):
     icon: EmojiName
     text: str
 
-    def dict(self, bot: GhosttyBot) -> dict[str, str | None]:
+    def dict(self, emojis: Emojis) -> dict[str, str | None]:
         return {
             "text": self.text,
-            "icon_url": getattr(bot.ghostty_emojis[self.icon], "url", None),
+            "icon_url": getattr(emojis[self.icon], "url", None),
         }
 
 
@@ -177,7 +177,7 @@ async def send_embed(  # noqa: PLR0913
     embed = (
         dc
         .Embed(color=color and EMBED_COLORS.get(color), **content.dict)
-        .set_footer(**footer.dict(bot))
+        .set_footer(**footer.dict(bot.ghostty_emojis))
         .set_author(**author.model_dump())
     )
     await bot.webhook_channels[feed_type].send(embed=embed)

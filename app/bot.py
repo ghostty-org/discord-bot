@@ -38,6 +38,8 @@ EmojiName = Literal[
     "pull_open",
 ]
 
+type Emojis = MappingProxyType[EmojiName, dc.Emoji]
+
 
 @final
 class GhosttyBot(commands.Bot):
@@ -57,7 +59,7 @@ class GhosttyBot(commands.Bot):
         self.bot_status = BotStatus()
 
         self._ghostty_emojis: dict[EmojiName, dc.Emoji] = {}
-        self.ghostty_emojis = MappingProxyType(self._ghostty_emojis)
+        self.ghostty_emojis: Emojis = MappingProxyType(self._ghostty_emojis)
 
     @override
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
