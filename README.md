@@ -296,10 +296,13 @@ bot --> components
   defined within the component.
 - `bot.py` contains custom attributes and behaviors for the overall Discord bot
   and then loads extensions found in `components`.
-- `config.py` handles reading and parsing the environment variables and the
-  local `.env` file, and creates the GitHub client.
+- `config.py` defines the bot's configuration, which is parsed from environment
+  variables and the local `.env` file.
 - `log.py` setups up logging and optionally Sentry.
-- `__main__.py` initializes logging and starts the bot.
+
+* `__main__.py` initializes logging, loads configuration, creates the GitHub
+
+- client, and starts the bot.
 
 # Features
 

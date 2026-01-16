@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
+
 from githubkit.exception import GraphQLFailed
 
 from app.components.github_integration.models import Discussion
-from app.config import gh
+
+if TYPE_CHECKING:
+    from toolbox.misc import GH
 
 DISCUSSION_QUERY = """
 query getDiscussion($number: Int!, $org: String!, $repo: String!) {
@@ -32,7 +36,7 @@ query getDiscussion($number: Int!, $org: String!, $repo: String!) {
 """
 
 
-async def get_discussion(org: str, name: str, number: int) -> Discussion | None:
+async def get_discussion(gh: GH, org: str, name: str, number: int) -> Discussion | None:
     try:
         resp = await gh.graphql.arequest(
             DISCUSSION_QUERY, variables={"number": number, "org": org, "repo": name}

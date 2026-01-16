@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, final, override
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
 
-from app.config import REPO_ALIASES, gh
+from .cache import entity_cache
+from app.config import REPO_ALIASES
 from toolbox.cache import TTRCache
 
 if TYPE_CHECKING:
@@ -45,7 +46,7 @@ def remove_codeblocks(content: str) -> str:
 
 
 async def find_repo_owner(name: str) -> str:
-    resp = await gh.rest.search.async_repos(
+    resp = await entity_cache.gh.rest.search.async_repos(
         q=name, sort="stars", order="desc", per_page=20
     )
     return next(

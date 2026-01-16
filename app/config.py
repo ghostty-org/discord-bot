@@ -3,7 +3,6 @@
 import sys
 from typing import TYPE_CHECKING, Literal
 
-from githubkit import GitHub
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -70,8 +69,3 @@ class Config(BaseSettings):
 
 if "pytest" in sys.modules:
     Config.model_config["env_file"] = ".env.example"
-
-
-# https://github.com/pydantic/pydantic-settings/issues/201
-config = Config()  # pyright: ignore[reportCallIssue]
-gh = GitHub(config.github_token.get_secret_value())
