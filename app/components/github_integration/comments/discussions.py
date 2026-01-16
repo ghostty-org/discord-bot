@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 import msgpack
 from githubkit.exception import GraphQLFailed
 
+from app.components.github_integration.entities.cache import entity_cache
 from app.components.github_integration.models import Comment, Discussion
-from app.config import gh
 
 if TYPE_CHECKING:
     from app.components.github_integration.models import EntityGist
@@ -55,7 +55,7 @@ async def get_discussion_comment(
     packed = msgpack.packb([0, 0, comment_id])
     node_id = "DC_" + urlsafe_b64encode(packed).decode()
     try:
-        resp = await gh.graphql.arequest(
+        resp = await entity_cache.gh.graphql.arequest(
             DISCUSSION_COMMENT_QUERY, variables={"id": node_id}
         )
     except GraphQLFailed:

@@ -67,6 +67,9 @@ bot = cast(
     ),
 )
 
+ENTITIES_SUBPKG_PATH = "app.components.github_integration.entities"
+REGISTERED_GHS_PATH = f"{ENTITIES_SUBPKG_PATH}.cache.entity_cache._registered_ghs"
+
 
 @pytest.mark.parametrize(
     ("entity_id", "kind"),
@@ -77,9 +80,7 @@ async def test_mention_entity(
     kind: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    entities_subpkg_path = "app.components.github_integration.entities"
-    monkeypatch.setattr(f"{entities_subpkg_path}.cache.entity_cache.gh", gh_env)
-    monkeypatch.setattr(f"{entities_subpkg_path}.discussions.gh", gh_env)
+    monkeypatch.setattr(REGISTERED_GHS_PATH, {object(): gh_env})
 
     msg_content = await Close.mention_entity(bot, entity_id)
 
@@ -91,9 +92,7 @@ async def test_mention_entity(
 async def test_mention_missing_entity(
     entity_id: int, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    entities_subpkg_path = "app.components.github_integration.entities"
-    monkeypatch.setattr(f"{entities_subpkg_path}.cache.entity_cache.gh", gh_env)
-    monkeypatch.setattr(f"{entities_subpkg_path}.discussions.gh", gh_env)
+    monkeypatch.setattr(REGISTERED_GHS_PATH, {object(): gh_env})
 
     msg_content = await Close.mention_entity(bot, entity_id)
 

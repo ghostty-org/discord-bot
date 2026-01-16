@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast, final, get_args, override
 import discord as dc
 import sentry_sdk
 from discord.ext import commands
+from githubkit import GitHub
 from loguru import logger
 
 from app.status import BotStatus
@@ -21,7 +22,6 @@ from toolbox.messages import REGULAR_MESSAGE_TYPES
 if TYPE_CHECKING:
     from app.config import Config, WebhookChannels, WebhookFeedType
     from toolbox.discord import Account
-    from toolbox.misc import GH
 
 EmojiName = Literal[
     "commit",
@@ -44,7 +44,7 @@ type Emojis = MappingProxyType[EmojiName, dc.Emoji]
 
 @final
 class GhosttyBot(commands.Bot):
-    def __init__(self, config: Config, gh: GH) -> None:
+    def __init__(self, config: Config) -> None:
         intents = dc.Intents.default()
         intents.members = True
         intents.message_content = True
@@ -56,8 +56,8 @@ class GhosttyBot(commands.Bot):
 
         self.tree.on_error = interaction_error_handler
         self.config = config
-        self.gh = gh
-        self.bot_status = BotStatus(self.config)
+        self.gh = GitHub(config.github_token.get_secret_value())
+        self.bot_status = BotStatus(self.gh, self.config)
 
         self._ghostty_emojis: dict[EmojiName, dc.Emoji] = {}
         self.ghostty_emojis: Emojis = MappingProxyType(self._ghostty_emojis)

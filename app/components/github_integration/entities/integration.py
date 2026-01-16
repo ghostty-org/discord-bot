@@ -28,6 +28,7 @@ class EntityActions(ItemActions):
 class GitHubEntities(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
+        entity_cache.register_gh(self, self.bot.gh)
         self.linker = MessageLinker()
         EntityActions.linker = self.linker
 
@@ -36,6 +37,7 @@ class GitHubEntities(commands.Cog):
     @override
     async def cog_unload(self) -> None:
         self.update_recent_mentions.cancel()
+        entity_cache.unregister_gh(self)
 
     @tasks.loop(hours=1)
     async def update_recent_mentions(self) -> None:

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, cast, final
 from githubkit import TokenAuthStrategy
 from githubkit.exception import RequestFailed
 
-from app.config import gh
 from toolbox.discord import dynamic_timestamp
 from toolbox.misc import async_process_check_output
 
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from discord.ext import tasks
 
     from app.config import Config
+    from toolbox.misc import GH
 
 STATUS_MESSAGE_TEMPLATE = """
 ### Commit
@@ -45,7 +45,8 @@ class BotStatus:
     # ready, assuming it's loaded.
     commit_data: str | None = None
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, gh: GH, config: Config) -> None:
+        self.gh = gh
         self.config = config
 
         self.launch_time = dt.datetime.now(tz=dt.UTC)
@@ -108,15 +109,14 @@ class BotStatus:
             closed=closed,
         )
 
-    @staticmethod
-    async def _get_github_data() -> SimpleNamespace:
-        match gh.auth:
+    async def _get_github_data(self) -> SimpleNamespace:
+        match self.gh.auth:
             case TokenAuthStrategy(token) if token.startswith(("gh", "github")):
                 correct_token = True
             case _:
                 correct_token = False
         try:
-            resp = await gh.rest.users.async_get_authenticated()
+            resp = await self.gh.rest.users.async_get_authenticated()
             api_ok = resp.status_code == 200
         except RequestFailed:
             api_ok = False
