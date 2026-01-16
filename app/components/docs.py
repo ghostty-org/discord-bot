@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 import datetime as dt
 import json
 from typing import TYPE_CHECKING, NotRequired, Self, TypedDict, cast, final, override
 
 import discord as dc
+from discord.app_commands import Choice  # noqa: TC002
 from discord.ext import commands
 from githubkit.exception import RequestFailed
 from loguru import logger
@@ -14,8 +13,6 @@ from app.utils import generate_autocomplete
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-    from discord.app_commands import Choice
 
     from app.bot import GhosttyBot
 

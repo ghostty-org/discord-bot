@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 authors = [
   { name = "Mitchell Hashimoto", email = "m@mitchellh.com" },
   { name = "trag1c", email = "dev@jakubr.me" },
@@ -64,7 +64,6 @@ ignore = [
   "TRY400",
 ]
 logger-objects = ["loguru.logger"] # technically false but it works well enough
-future-annotations = true
 mccabe.max-complexity = 20
 pylint.max-branches = 20
 pylint.max-returns = 15

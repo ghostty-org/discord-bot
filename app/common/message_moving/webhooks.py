@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 import asyncio
 import datetime as dt
+from functools import partial
 from typing import TYPE_CHECKING, Literal, overload
 
 import discord as dc
@@ -120,7 +119,7 @@ async def move_message(  # noqa: PLR0913
     content, file = format_or_file(
         format_interaction(message),
         template=f"{{}}\n{subtext}",
-        transform=lambda full_message: convert_nitro_emojis(bot, full_message),
+        transform=partial(convert_nitro_emojis, bot),
     )
     if file:
         msg_data.files.append(file)

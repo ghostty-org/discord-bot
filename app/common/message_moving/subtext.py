@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 import re
 from typing import TYPE_CHECKING, final

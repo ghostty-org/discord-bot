@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 import subprocess
 from contextlib import suppress
@@ -53,7 +51,7 @@ class BotStatus:
             self._commit_hash = (
                 await async_process_check_output("git", "rev-parse", "HEAD")
             ).strip()
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        except subprocess.CalledProcessError, FileNotFoundError:
             return
         if not self._commit_hash:
             return

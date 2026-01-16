@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, cast, final, override
 
@@ -215,7 +213,7 @@ class Close(commands.GroupCog, group_name="close"):
             # Both approaches are going to be tried... here be dragons.
             try:
                 returned_error = cast("str", e._errors["name"]["_errors"][0]["message"])  # pyright: ignore[reportOptionalSubscript, reportPrivateUsage] # noqa: SLF001
-            except (AttributeError, LookupError, TypeError):
+            except AttributeError, LookupError, TypeError:
                 returned_error = str(e)
 
             if "or fewer in length" not in returned_error.casefold():
