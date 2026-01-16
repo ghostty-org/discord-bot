@@ -8,7 +8,7 @@ import discord as dc
 from loguru import logger
 
 from app.errors import SafeView
-from app.utils import is_dm, is_mod, pretty_print_account, safe_edit
+from app.utils import is_dm, pretty_print_account, safe_edit
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -196,18 +196,11 @@ class ItemActions(SafeView):
 
     async def _reject_early(self, interaction: dc.Interaction, action: str) -> bool:
         assert not is_dm(interaction.user)
-        if interaction.user.id == self.message.author.id or is_mod(interaction.user):
-            logger.trace(
-                "{} run by {} who is the author or a mod",
-                action,
-                pretty_print_account(interaction.user),
-            )
+        user_str = pretty_print_account(interaction.user)
+        if interaction.user.id == self.message.author.id:
+            logger.trace("{} run by author {}", action, user_str)
             return False
-        logger.debug(
-            "{} run by {} who is not the author nor a mod",
-            action,
-            pretty_print_account(interaction.user),
-        )
+        logger.debug("{} run by non-author {}", action, user_str)
         await interaction.response.send_message(
             "Only the person who "
             + (self.action_singular if self.item_count == 1 else self.action_plural)
