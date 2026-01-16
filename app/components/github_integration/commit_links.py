@@ -102,9 +102,8 @@ class CommitLinks(commands.Cog):
 
         return heading + subtext
 
-    @staticmethod
     async def resolve_repo_signatures(
-        sigs: Iterable[tuple[str, str, str, str, str]],
+        self, sigs: Iterable[tuple[str, str, str, str, str]]
     ) -> AsyncGenerator[CommitKey]:
         valid_signatures = 0
         for site, owner, repo, sep, sha in sigs:
@@ -114,7 +113,9 @@ class CommitLinks(commands.Cog):
                 continue  # Separator was `@` despite this being a link or vice versa
             if site and not owner:
                 continue  # Not a valid GitHub link
-            if sig := await resolve_repo_signature(owner or None, repo or None):
+            if sig := await resolve_repo_signature(
+                self.bot.config, owner or None, repo or None
+            ):
                 yield CommitKey(*sig, sha)
                 valid_signatures += 1
                 if valid_signatures == 10:

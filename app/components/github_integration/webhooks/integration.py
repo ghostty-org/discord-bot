@@ -7,7 +7,6 @@ from loguru import logger
 from monalisten import Monalisten
 
 from app.components.github_integration.webhooks import commits, discussions, issues, prs
-from app.config import config
 from toolbox.errors import handle_error
 
 if TYPE_CHECKING:
@@ -40,9 +39,9 @@ class GitHubWebhooks(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
         self.monalisten_client = Monalisten(
-            config.github_webhook_url.get_secret_value(),
-            token=config.github_webhook_secret.get_secret_value()
-            if config.github_webhook_secret
+            self.bot.config.github_webhook_url.get_secret_value(),
+            token=self.bot.config.github_webhook_secret.get_secret_value()
+            if self.bot.config.github_webhook_secret
             else None,
         )
         self._monalisten_task: asyncio.Task[None] | None = None

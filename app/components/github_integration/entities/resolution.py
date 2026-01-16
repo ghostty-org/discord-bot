@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, final, override
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
 
-from app.config import REPO_ALIASES, config, gh
+from app.config import REPO_ALIASES, gh
 from toolbox.cache import TTRCache
 
 if TYPE_CHECKING:
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     import discord as dc
 
     from .cache import EntitySignature
+    from app.config import Config
 
 ENTITY_REGEX = re.compile(
     r"(?P<site>\bhttps?://(?:www\.)?github\.com/)?"
@@ -55,7 +56,7 @@ async def find_repo_owner(name: str) -> str:
 
 
 async def resolve_repo_signature(
-    owner: str | None, repo: str | None
+    config: Config, owner: str | None, repo: str | None
 ) -> tuple[str, str] | None:
     match owner, repo:
         case None, None:
@@ -77,7 +78,7 @@ async def resolve_repo_signature(
 
 
 async def resolve_entity_signatures(
-    message: dc.Message,
+    config: Config, message: dc.Message
 ) -> AsyncGenerator[EntitySignature]:
     valid_signatures = 0
     for match in ENTITY_REGEX.finditer(remove_codeblocks(message.content)):
@@ -100,7 +101,7 @@ async def resolve_entity_signatures(
                 # Ignore the xkcd prefix, as it is handled by xkcd_mentions.py
                 continue
 
-        if sig := await resolve_repo_signature(owner, repo):
+        if sig := await resolve_repo_signature(config, owner, repo):
             yield (*sig, number)
             valid_signatures += 1
             if valid_signatures == 10:

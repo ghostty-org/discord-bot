@@ -8,7 +8,6 @@ import httpx
 from discord.ext import commands
 from pydantic import BaseModel, Field
 
-from app.config import config
 from toolbox.cache import TTRCache
 from toolbox.discord import SUPPORTED_IMAGE_FORMATS
 from toolbox.linker import (
@@ -128,12 +127,11 @@ class XKCDMentions(commands.Cog):
                     text=f"Unable to fetch xkcd #{comic_id}"
                 )
 
-    @staticmethod
-    def has_mysterious_asterisk(message: dc.Message) -> bool:
+    def has_mysterious_asterisk(self, message: dc.Message) -> bool:
         channel = message.channel
         if isinstance(channel, dc.Thread) and channel.parent:
             channel = channel.parent
-        if channel.id in config.serious_channel_ids:
+        if channel.id in self.bot.config.serious_channel_ids:
             return False
 
         # Filter out symbols to catch things like `foo*, bar`. Don't remove backticks to

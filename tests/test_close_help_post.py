@@ -57,10 +57,13 @@ gh_env = kp.KitPoser({
 })
 
 
-emojis = cast(
+bot = cast(
     "Close",
     SimpleNamespace(
-        bot=SimpleNamespace(ghostty_emojis=dict.fromkeys(get_args(EmojiName), "❓"))
+        bot=SimpleNamespace(
+            ghostty_emojis=dict.fromkeys(get_args(EmojiName), "❓"),
+            config=SimpleNamespace(github_org="ghostty-org"),
+        )
     ),
 )
 
@@ -78,7 +81,7 @@ async def test_mention_entity(
     monkeypatch.setattr(f"{entities_subpkg_path}.cache.entity_cache.gh", gh_env)
     monkeypatch.setattr(f"{entities_subpkg_path}.discussions.gh", gh_env)
 
-    msg_content = await Close.mention_entity(emojis, entity_id)
+    msg_content = await Close.mention_entity(bot, entity_id)
 
     assert msg_content is not None
     assert f"{kind} [#{entity_id}]" in msg_content
@@ -92,6 +95,6 @@ async def test_mention_missing_entity(
     monkeypatch.setattr(f"{entities_subpkg_path}.cache.entity_cache.gh", gh_env)
     monkeypatch.setattr(f"{entities_subpkg_path}.discussions.gh", gh_env)
 
-    msg_content = await Close.mention_entity(emojis, entity_id)
+    msg_content = await Close.mention_entity(bot, entity_id)
 
     assert msg_content is None
