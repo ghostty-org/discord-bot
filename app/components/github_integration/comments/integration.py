@@ -46,7 +46,7 @@ class GitHubComments(commands.Cog):
         CommentActions.linker = self.linker
 
     def comment_to_embed(self, comment: Comment) -> dc.Embed:
-        emoji = get_entity_emoji(self.bot, comment.entity)
+        emoji = get_entity_emoji(self.bot.ghostty_emojis, comment.entity)
         title = f"{emoji} {comment.entity.title}"
         formatted_reactions = comment.reactions and [
             f"{REACTION_EMOJIS[reaction]} ×{count}"  # noqa: RUF001

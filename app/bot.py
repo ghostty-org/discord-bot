@@ -19,7 +19,7 @@ from toolbox.errors import handle_error, interaction_error_handler
 from toolbox.messages import REGULAR_MESSAGE_TYPES
 
 if TYPE_CHECKING:
-    from app.config import Config, WebhookFeedType
+    from app.config import Config, WebhookChannels, WebhookFeedType
     from toolbox.discord import Account
     from toolbox.misc import GH
 
@@ -37,6 +37,9 @@ EmojiName = Literal[
     "pull_merged",
     "pull_open",
 ]
+
+
+type Emojis = MappingProxyType[EmojiName, dc.Emoji]
 
 
 @final
@@ -57,7 +60,7 @@ class GhosttyBot(commands.Bot):
         self.bot_status = BotStatus(self.config)
 
         self._ghostty_emojis: dict[EmojiName, dc.Emoji] = {}
-        self.ghostty_emojis = MappingProxyType(self._ghostty_emojis)
+        self.ghostty_emojis: Emojis = MappingProxyType(self._ghostty_emojis)
 
     @override
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
@@ -150,7 +153,7 @@ class GhosttyBot(commands.Bot):
         return channel
 
     @dc.utils.cached_property
-    def webhook_channels(self) -> dict[WebhookFeedType, dc.TextChannel]:
+    def webhook_channels(self) -> WebhookChannels:
         channels: dict[WebhookFeedType, dc.TextChannel] = {}
         for feed_type, id_ in self.config.webhook_channel_ids.items():
             logger.debug("fetching {feed_type} webhook channel", feed_type)
