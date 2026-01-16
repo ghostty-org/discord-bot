@@ -61,6 +61,14 @@ def test_format_emoji_is_usable(is_usable: bool, output: str) -> None:
     assert _format_emoji(fake_emoji) == output
 
 
+@pytest.mark.parametrize(("guild", "result"), [(object(), True), (None, False)])
+def test_message_can_be_moved_message_guild(guild: object, result: bool) -> None:
+    fake_message = cast(
+        "dc.Message", SimpleNamespace(guild=guild, type=dc.MessageType.default)
+    )
+    assert message_can_be_moved(fake_message) == result
+
+
 @pytest.mark.parametrize(
     ("type_", "result"),
     [
@@ -76,8 +84,8 @@ def test_format_emoji_is_usable(is_usable: bool, output: str) -> None:
         (dc.MessageType.auto_moderation_action, False),
     ],
 )
-def test_message_can_be_moved(type_: dc.MessageType, result: bool) -> None:
-    fake_message = cast("dc.Message", SimpleNamespace(type=type_))
+def test_message_can_be_moved_message_type(type_: dc.MessageType, result: bool) -> None:
+    fake_message = cast("dc.Message", SimpleNamespace(guild=object(), type=type_))
     assert message_can_be_moved(fake_message) == result
 
 

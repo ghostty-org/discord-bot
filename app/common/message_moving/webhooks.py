@@ -1,7 +1,7 @@
 import asyncio
 import datetime as dt
 from functools import partial
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 import discord as dc
 
@@ -11,14 +11,22 @@ from .conversion import (
     format_interaction,
     get_reply_embed,
     get_sticker_embed,
-    message_can_be_moved,
 )
 from .moved_message import MovedMessage
 from .subtext import SplitSubtext, Subtext
-from app.utils import MessageData, format_or_file
+from app.utils import (
+    BOT_COMMAND_MESSAGE_TYPES,
+    REGULAR_MESSAGE_TYPES,
+    MessageData,
+    format_or_file,
+)
 
-if TYPE_CHECKING:
-    from app.bot import GhosttyBot
+
+def message_can_be_moved(message: dc.Message) -> bool:
+    return (
+        message.guild is not None
+        and message.type in REGULAR_MESSAGE_TYPES | BOT_COMMAND_MESSAGE_TYPES
+    )
 
 
 async def get_or_create_webhook(
@@ -37,7 +45,7 @@ async def get_or_create_webhook(
 
 @overload
 async def move_message(
-    bot: GhosttyBot,
+    client: dc.Client,
     webhook: dc.Webhook,
     message: dc.Message,
     executor: dc.Member | None = None,
@@ -50,7 +58,7 @@ async def move_message(
 
 @overload
 async def move_message(
-    bot: GhosttyBot,
+    client: dc.Client,
     webhook: dc.Webhook,
     message: dc.Message,
     executor: dc.Member | None = None,
@@ -62,7 +70,7 @@ async def move_message(
 
 
 async def move_message(  # noqa: PLR0913
-    bot: GhosttyBot,
+    client: dc.Client,
     webhook: dc.Webhook,
     message: dc.Message,
     executor: dc.Member | None = None,
@@ -73,9 +81,12 @@ async def move_message(  # noqa: PLR0913
 ) -> MovedMessage | dc.WebhookMessage:
     """
     WARNING: it is the caller's responsibility to check message_can_be_moved() and to
-    display an informative warning message.
+    display an informative error message.
     """
-    assert message_can_be_moved(message)
+    if not message_can_be_moved(message):
+        msg = "message_can_be_moved must be checked by caller"
+        raise AssertionError(msg)
+    assert message.guild is not None
 
     msg_data = await MessageData.scrape(message)
 
@@ -87,7 +98,9 @@ async def move_message(  # noqa: PLR0913
     if message.message_snapshots:
         # Only include the first message snapshot.
         snapshot = message.message_snapshots[0]
-        forward_embeds, forward_attachments = await format_forward(bot, snapshot)
+        forward_embeds, forward_attachments = await format_forward(
+            client, message.guild, snapshot
+        )
         embeds = [*forward_embeds, *embeds]
         msg_data.files.extend(forward_attachments)
     elif reply_embed := await get_reply_embed(message):
@@ -119,7 +132,7 @@ async def move_message(  # noqa: PLR0913
     content, file = format_or_file(
         format_interaction(message),
         template=f"{{}}\n{subtext}",
-        transform=partial(convert_nitro_emojis, bot),
+        transform=partial(convert_nitro_emojis, client, message.guild),
     )
     if file:
         msg_data.files.append(file)
