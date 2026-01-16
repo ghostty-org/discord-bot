@@ -31,7 +31,8 @@ def register_hooks(bot: GhosttyBot, monalisten_client: Monalisten) -> None:
             commit_title = "(no commit message found)"
 
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             EmbedContent(
                 f"commented on commit `{sha}`",

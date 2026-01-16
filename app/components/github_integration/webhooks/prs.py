@@ -58,7 +58,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
     async def _(event: events.PullRequestOpened) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "opened {}", pr.body),
             pr_footer(pr),
@@ -71,7 +72,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
         pr = event.pull_request
         action, color = ("merged", "purple") if pr.merged else ("closed", "red")
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, f"{action} {{}}"),
             pr_footer(pr, emoji="pull_" + action),
@@ -83,7 +85,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
     async def _(event: events.PullRequestReopened) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "reopened {}"),
             pr_footer(pr, emoji="pull_open"),
@@ -92,13 +95,16 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
 
     @webhook.event.pull_request.edited
     async def _(event: events.PullRequestEdited) -> None:
-        await send_edit_difference(bot, event, pr_embed_content, pr_footer)
+        await send_edit_difference(
+            bot.ghostty_emojis, bot.webhook_channels, event, pr_embed_content, pr_footer
+        )
 
     @webhook.event.pull_request.converted_to_draft
     async def _(event: events.PullRequestConvertedToDraft) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "converted {} to draft"),
             pr_footer(pr, emoji="pull_draft"),
@@ -109,7 +115,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
     async def _(event: events.PullRequestReadyForReview) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "marked {} as ready for review"),
             pr_footer(pr, emoji="pull_open"),
@@ -123,7 +130,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
         if reason := pr.active_lock_reason:
             template += f" as {reason}"
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, template),
             pr_footer(pr),
@@ -134,7 +142,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
     async def _(event: events.PullRequestUnlocked) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "unlocked {}"),
             pr_footer(pr),
@@ -146,7 +155,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
         pr = event.pull_request
         content = f"from {_format_reviewer(event)}"
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "requested review for {}", content),
             pr_footer(pr),
@@ -157,7 +167,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
         pr = event.pull_request
         content = f"from {_format_reviewer(event)}"
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(pr, "removed review request for {}", content),
             pr_footer(pr),
@@ -189,7 +200,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             "draft" if pr.draft else "merged" if pr.merged_at else pr.state
         )
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             EmbedContent(f"{title} PR #{pr.number}", review.html_url, review.body),
             pr_footer(pr, emoji=emoji),
@@ -209,7 +221,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             else GitHubUser.default()
         )
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             pr_embed_content(
                 pr, "dismissed a {} review", f"authored by {review_author.hyperlink}"
@@ -228,7 +241,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             content = f"```diff\n{hunk}\n```\n{content}"
 
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             EmbedContent(
                 f"left a review comment on PR #{pr.number}",

@@ -64,7 +64,9 @@ class GitHubEntities(commands.Cog):
             reply = self.linker.get(msg)
             assert reply is not None
 
-            new_output = await entity_message(self.bot, msg)
+            new_output = await entity_message(
+                self.bot.config, self.bot.ghostty_emojis, msg
+            )
 
             with safe_edit:
                 await reply.edit(
@@ -84,7 +86,7 @@ class GitHubEntities(commands.Cog):
         if is_dm(message.author):
             return
 
-        output = await entity_message(self.bot, message)
+        output = await entity_message(self.bot.config, self.bot.ghostty_emojis, message)
         if not output.item_count:
             return
 
@@ -116,7 +118,9 @@ class GitHubEntities(commands.Cog):
         await self.linker.edit(
             before,
             after,
-            message_processor=partial(entity_message, self.bot),
+            message_processor=partial(
+                entity_message, self.bot.config, self.bot.ghostty_emojis
+            ),
             interactor=self.reply_with_entities,
             view_type=EntityActions,
         )

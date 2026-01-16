@@ -73,9 +73,10 @@ class Close(commands.GroupCog, group_name="close"):
         interaction.extras["error_handled"] = True
 
     async def mention_entity(self, entity_id: int) -> str | None:
+        # Forging a message to use the entity mention logic
         output = await github_entities_fmt.entity_message(
-            self.bot,
-            # Forging a message to use the entity mention logic
+            self.bot.config,
+            self.bot.ghostty_emojis,
             cast("dc.Message", SimpleNamespace(content=f"#{entity_id}")),
         )
         return output.content or None

@@ -12,14 +12,14 @@ from toolbox.misc import format_diff_note
 if TYPE_CHECKING:
     import discord as dc
 
-    from app.bot import GhosttyBot
+    from app.bot import Emojis
     from app.components.github_integration.models import Entity
     from app.config import Config
 
 ENTITY_TEMPLATE = "**{entity.kind} [#{entity.number}](<{entity.html_url}>):** {title}"
 
 
-def get_entity_emoji(bot: GhosttyBot, entity: Entity) -> dc.Emoji:
+def get_entity_emoji(emojis: Emojis, entity: Entity) -> dc.Emoji:
     if isinstance(entity, Issue):
         state = "open"
         if entity.closed:
@@ -45,7 +45,7 @@ def get_entity_emoji(bot: GhosttyBot, entity: Entity) -> dc.Emoji:
         msg = f"Unknown entity type: {type(entity)}"
         raise TypeError(msg)
 
-    return bot.ghostty_emojis[emoji_name]
+    return emojis[emoji_name]
 
 
 def _format_entity_detail(entity: Entity) -> str:
@@ -74,7 +74,7 @@ def _format_entity_detail(entity: Entity) -> str:
     return f"-# {body}\n"
 
 
-def _format_mention(bot: GhosttyBot, entity: Entity) -> str:
+def _format_mention(emojis: Emojis, entity: Entity) -> str:
     headline = ENTITY_TEMPLATE.format(entity=entity, title=escape_special(entity.title))
 
     owner, name = entity.owner, entity.repo_name
@@ -86,7 +86,7 @@ def _format_mention(bot: GhosttyBot, entity: Entity) -> str:
     )
     entity_detail = _format_entity_detail(entity)
 
-    emoji = get_entity_emoji(bot, entity)
+    emoji = get_entity_emoji(emojis, entity)
     return f"{emoji} {headline}\n{subtext}{entity_detail}"
 
 
@@ -104,10 +104,12 @@ async def extract_entities(config: Config, message: dc.Message) -> list[Entity]:
     ]
 
 
-async def entity_message(bot: GhosttyBot, message: dc.Message) -> ProcessedMessage:
+async def entity_message(
+    config: Config, emojis: Emojis, message: dc.Message
+) -> ProcessedMessage:
     entities = [
-        _format_mention(bot, entity)
-        for entity in await extract_entities(bot.config, message)
+        _format_mention(emojis, entity)
+        for entity in await extract_entities(config, message)
     ]
 
     if len("\n".join(entities)) > 2000:

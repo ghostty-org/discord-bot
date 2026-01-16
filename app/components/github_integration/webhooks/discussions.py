@@ -57,7 +57,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionCreated) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "opened", discussion.body),
             discussion_footer(discussion, emoji="discussion"),
@@ -70,7 +71,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionClosed) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "closed"),
             discussion_footer(discussion, emoji="discussion_answered"),
@@ -82,7 +84,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionReopened) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "reopened"),
             discussion_footer(discussion),
@@ -99,7 +102,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
         else:
             body = None
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "chose an answer for", body),
             discussion_footer(discussion, emoji="discussion_answered"),
@@ -112,7 +116,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionUnanswered) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender or cast("SimpleUser", GitHubUser.default()),
             discussion_embed_content(discussion, "unmarked an answer for"),
             discussion_footer(discussion),
@@ -124,7 +129,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionLocked) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "locked"),
             discussion_footer(discussion),
@@ -136,7 +142,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionUnlocked) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "unlocked"),
             discussion_footer(discussion),
@@ -148,7 +155,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionPinned) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "pinned"),
             discussion_footer(discussion),
@@ -160,7 +168,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionUnpinned) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "unpinned"),
             discussion_footer(discussion),
@@ -172,7 +181,8 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionCommentCreated) -> None:
         discussion = event.discussion
         await send_embed(
-            bot,
+            bot.ghostty_emojis,
+            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "commented on", event.comment.body),
             discussion_footer(discussion),
