@@ -35,6 +35,12 @@ dev = [
 ]
 
 [tool.uv.sources]
+# NOTE: some other places to update when adding a new package:
+#   - `tool.ruff.lint.isort.known-local-folder` below
+#   - Recipe `check` of `justfile` (duplicate the `@just check-package` line;
+#     please try to check dependents last!)
+#   - `.github/workflows/ci.yml`
+#   - `README.md`, especially § Project structure
 toolbox.workspace = true
 
 [tool.uv.workspace]
@@ -99,4 +105,4 @@ runtime-evaluated-base-classes = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["FBT", "SLF001"]
+"*/tests/*" = ["FBT", "SLF001"]

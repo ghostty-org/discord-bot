@@ -2,13 +2,22 @@
 default:
     @just --list
 
+set windows-shell := ["cmd.exe", "/c"]
+
 # Run taplo, ruff, pytest, and basedpyright in check mode
 check:
     uv run ruff check
-    uv run basedpyright app tests packages
-    uv run pytest -p terminalprogress
-    uv run taplo fmt --check --diff pyproject.toml packages/*/pyproject.toml
+    @just check-package packages/toolbox
+    uv run basedpyright app tests
+    uv run pytest -p terminalprogress tests
+    uv run taplo fmt --check --diff pyproject.toml
     uv run ruff format --check
+
+[private]
+check-package pkg:
+    cd {{pkg}} && uv run basedpyright src tests
+    cd {{pkg}} && uv run pytest -p terminalprogress tests
+    cd {{pkg}} && uv run taplo fmt --check --diff pyproject.toml
 
 # Run taplo, ruff's formatter, and ruff's isort rules in fix mode
 format:

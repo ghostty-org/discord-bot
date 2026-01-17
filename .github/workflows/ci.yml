@@ -37,9 +37,15 @@ jobs:
       - name: ruff lint
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run ruff check --output-format github
-      - name: pytest
+      - name: "toolbox: basedpyright"
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
-        run: uv run pytest -vv
-      - name: basedpyright
+        run: cd packages/toolbox && uv run basedpyright src tests
+      - name: "toolbox: pytest"
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
-        run: uv run basedpyright app tests packages
+        run: cd packages/toolbox && uv run pytest -vv tests
+      - name: "app: basedpyright"
+        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
+        run: uv run basedpyright app tests
+      - name: "app: pytest"
+        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
+        run: uv run pytest -vv tests

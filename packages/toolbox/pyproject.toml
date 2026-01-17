@@ -7,8 +7,27 @@ authors = [{ name = "trag1c", email = "dev@jakubr.me" }]
 dependencies = ["discord-py>=2.6.3", "httpx>=0.28.1", "loguru>=0.7.0"]
 
 [dependency-groups]
-dev = ["githubkit>=0.14.0", "hypothesis>=6.148.9"]
+dev = [
+  "githubkit>=0.14.0",
+  "pytest>=9.0.2",
+  "hypothesis>=6.148.9",
+  "anyio>=4.12.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.9.17,<0.10"]
 build-backend = "uv_build"
+
+[tool.basedpyright]
+enableBasedFeatures = true
+reportAny = false
+reportExplicitAny = false
+reportImplicitStringConcatenation = false
+reportInvalidCast = false
+reportUnusedCallResult = false
+reportUnknownLambdaType = false
+
+[tool.pytest.ini_options]
+pythonpath = "."
+anyio_mode = "auto"
+filterwarnings = ["ignore::Warning"]
