@@ -4,7 +4,14 @@ import difflib
 import re
 from functools import partial
 from itertools import islice
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, TypedDict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NamedTuple,
+    Protocol,
+    TypedDict,
+)
 
 import discord as dc
 from monalisten import events
@@ -13,6 +20,8 @@ from app.components.github_integration.models import GitHubUser
 from toolbox.misc import truncate
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from githubkit.versions.latest.models import RepositoryWebhooks, SimpleUser
 
     from app.bot import EmojiName, Emojis
@@ -140,11 +149,11 @@ async def send_edit_difference(
 
     assert event.sender
     await send_embed(
-        emojis,
-        channels,
         event.sender,
         content_generator(event_object, "edited {}", None, description=content),
         footer_generator(event_object),
+        emojis=emojis,
+        channels=lambda: channels,
     )
 
 
@@ -159,12 +168,15 @@ def _shorten_same_repo_links(
 
 
 async def send_embed(  # noqa: PLR0913
-    emojis: Emojis,
-    channels: WebhookChannels,
     actor: SimpleUser,
     content: EmbedContent,
     footer: Footer,
     *,
+    emojis: Emojis,
+    # This function is frequently partially applied, and webhook channels usually aren't
+    # available yet when partial() is called, so take a function that returns
+    # a (probably memoized) result as an argument instead.
+    channels: Callable[[], WebhookChannels],
     color: EmbedColor | None = None,
     feed_type: WebhookFeedType = "main",
     origin_repo: RepositoryWebhooks | None = None,
@@ -183,4 +195,4 @@ async def send_embed(  # noqa: PLR0913
         .set_footer(**footer.dict(emojis))
         .set_author(**author.model_dump())
     )
-    await channels[feed_type].send(embed=embed)
+    await channels()[feed_type].send(embed=embed)
