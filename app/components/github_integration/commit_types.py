@@ -8,7 +8,7 @@ from app.components.github_integration.models import GitHubUser
 if TYPE_CHECKING:
     import datetime as dt
 
-    from githubkit import GitHub, TokenAuthStrategy
+    from app.utils import GH
 
 
 class CommitKey(NamedTuple):
@@ -32,8 +32,8 @@ class CommitSummary(NamedTuple):
 
 @final
 class CommitCache:
-    def __init__(self, gh: GitHub[TokenAuthStrategy]) -> None:
-        self._gh: GitHub[TokenAuthStrategy] = gh
+    def __init__(self, gh: GH) -> None:
+        self._gh: GH = gh
         self._cache: dict[CommitKey, CommitSummary] = {}
 
     def _filter_prefix(self, prefix: str) -> list[CommitKey]:

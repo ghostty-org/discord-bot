@@ -26,9 +26,8 @@ from app.utils import suppress_embeds_after_delay
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    from githubkit import GitHub, TokenAuthStrategy
-
     from app.bot import GhosttyBot
+    from app.utils import GH
 
 CODE_LINK_PATTERN = re.compile(
     r"https?://(?:www\.)?github\.com/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-\._]+)/blob/"
@@ -60,9 +59,9 @@ class Snippet(NamedTuple):
 
 @final
 class ContentCache(TTRCache[SnippetPath, str]):
-    def __init__(self, gh: GitHub[TokenAuthStrategy], **ttr: float) -> None:
+    def __init__(self, gh: GH, **ttr: float) -> None:
         super().__init__(**ttr)
-        self.gh: GitHub[TokenAuthStrategy] = gh
+        self.gh: GH = gh
 
     @override
     async def fetch(self, key: SnippetPath) -> None:

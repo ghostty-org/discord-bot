@@ -8,16 +8,16 @@ from app.components.github_integration.models import Entity, Issue, PullRequest
 from app.config import gh
 
 if TYPE_CHECKING:
-    from githubkit import GitHub, TokenAuthStrategy
+    from app.utils import GH
 
 type EntitySignature = tuple[str, str, int]
 
 
 @final
 class EntityCache(TTRCache[EntitySignature, Entity]):
-    def __init__(self, gh: GitHub[TokenAuthStrategy], **ttr: float) -> None:
+    def __init__(self, gh: GH, **ttr: float) -> None:
         super().__init__(**ttr)
-        self.gh: GitHub[TokenAuthStrategy] = gh
+        self.gh: GH = gh
 
     @override
     async def fetch(self, key: EntitySignature) -> None:
