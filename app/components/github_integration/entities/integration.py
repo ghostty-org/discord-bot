@@ -28,7 +28,7 @@ class EntityActions(ItemActions):
 class GitHubEntities(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        entity_cache.register_gh(self, self.bot.gh)
+        self.gh = self.bot.gh
         self.linker = MessageLinker()
         EntityActions.linker = self.linker
 
@@ -37,7 +37,6 @@ class GitHubEntities(commands.Cog):
     @override
     async def cog_unload(self) -> None:
         self.update_recent_mentions.cancel()
-        entity_cache.unregister_gh(self)
 
     @tasks.loop(hours=1)
     async def update_recent_mentions(self) -> None:
@@ -47,15 +46,15 @@ class GitHubEntities(commands.Cog):
         # Gather all currently actively mentioned entities
         for msg in self.linker.refs:
             with safe_edit:
-                entities = await extract_entities(self.bot.config, msg)
+                entities = await extract_entities(self.gh, self.bot.config, msg)
                 for entity in entities:
                     entity_to_message_map[entity].append(msg)
 
         # Check which entities changed
         for entity in tuple(entity_to_message_map):
             key = (entity.owner, entity.repo_name, entity.number)
-            await entity_cache.fetch(key)
-            refreshed_entity = await entity_cache.get(key)
+            await entity_cache.efetch(key, self.gh)
+            refreshed_entity = await entity_cache.eget(key, self.gh)
             if entity == refreshed_entity:
                 entity_to_message_map.pop(entity)
 
@@ -67,7 +66,7 @@ class GitHubEntities(commands.Cog):
             assert reply is not None
 
             new_output = await entity_message(
-                self.bot.config, self.bot.ghostty_emojis, msg
+                self.gh, self.bot.config, self.bot.ghostty_emojis, msg
             )
 
             with safe_edit:
@@ -88,7 +87,9 @@ class GitHubEntities(commands.Cog):
         if is_dm(message.author):
             return
 
-        output = await entity_message(self.bot.config, self.bot.ghostty_emojis, message)
+        output = await entity_message(
+            self.gh, self.bot.config, self.bot.ghostty_emojis, message
+        )
         if not output.item_count:
             return
 
@@ -121,7 +122,7 @@ class GitHubEntities(commands.Cog):
             before,
             after,
             message_processor=partial(
-                entity_message, self.bot.config, self.bot.ghostty_emojis
+                entity_message, self.gh, self.bot.config, self.bot.ghostty_emojis
             ),
             interactor=self.reply_with_entities,
             view_type=EntityActions,

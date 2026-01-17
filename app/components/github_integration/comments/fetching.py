@@ -15,8 +15,9 @@ from app.components.github_integration.models import (
     GitHubUser,
     Reactions,
 )
-from toolbox.cache import TTRCache
+from toolbox.cache import ExtensibleTTRCache
 from toolbox.discord import escape_special
+from toolbox.misc import GH
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
         PullRequestReviewComment,
     )
     from pydantic import BaseModel
+
 
 COMMENT_PATTERN = re.compile(
     r"https?://(?:www\.)?github\.com/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-\._]+)/"
@@ -282,9 +284,10 @@ def _format_commit_id(
 
 
 @final
-class CommentCache(TTRCache[tuple[EntityGist, str, int], Comment]):
+class CommentCache(ExtensibleTTRCache[tuple[EntityGist, str, int], Comment, GH]):
     @override
-    async def fetch(self, key: tuple[EntityGist, str, int]) -> None:
+    async def efetch(self, key: tuple[EntityGist, str, int], extra: GH) -> None:
+        gh = extra
         entity_gist, event_type, event_no = key
         coro = {
             "discussioncomment-": get_discussion_comment,
@@ -298,7 +301,7 @@ class CommentCache(TTRCache[tuple[EntityGist, str, int], Comment]):
         if coro is None:
             return
         with suppress(RequestFailed):
-            if result := await coro(entity_gist, event_no):
+            if result := await coro(gh, entity_gist, event_no):
                 self[key] = result
 
 
@@ -322,12 +325,12 @@ def _make_reactions(rollup: ReactionRollup | Missing[ReactionRollup]) -> Reactio
 
 
 async def _get_issue_comment(
-    entity_gist: EntityGist, comment_id: int
+    gh: GH, entity_gist: EntityGist, comment_id: int
 ) -> Comment | None:
     owner, repo, _ = entity_gist
     comment_resp, entity = await asyncio.gather(
-        entity_cache.gh.rest.issues.async_get_comment(owner, repo, comment_id),
-        entity_cache.get(entity_gist),
+        gh.rest.issues.async_get_comment(owner, repo, comment_id),
+        entity_cache.eget(entity_gist, gh),
     )
     comment = comment_resp.parsed_data
     return entity and Comment(
@@ -341,11 +344,13 @@ async def _get_issue_comment(
     )
 
 
-async def _get_pr_review(entity_gist: EntityGist, comment_id: int) -> Comment | None:
+async def _get_pr_review(
+    gh: GH, entity_gist: EntityGist, comment_id: int
+) -> Comment | None:
     comment = (
-        await entity_cache.gh.rest.pulls.async_get_review(*entity_gist, comment_id)
+        await gh.rest.pulls.async_get_review(*entity_gist, comment_id)
     ).parsed_data
-    entity = await entity_cache.get(entity_gist)
+    entity = await entity_cache.eget(entity_gist, gh)
     return entity and Comment(
         author=_make_author(comment.user),
         body=comment.body,
@@ -362,15 +367,13 @@ async def _get_pr_review(entity_gist: EntityGist, comment_id: int) -> Comment | 
 
 
 async def _get_pr_review_comment(
-    entity_gist: EntityGist, comment_id: int
+    gh: GH, entity_gist: EntityGist, comment_id: int
 ) -> Comment | None:
     owner, repo, _ = entity_gist
     comment = (
-        await entity_cache.gh.rest.pulls.async_get_review_comment(
-            owner, repo, comment_id
-        )
+        await gh.rest.pulls.async_get_review_comment(owner, repo, comment_id)
     ).parsed_data
-    entity = await entity_cache.get(entity_gist)
+    entity = await entity_cache.eget(entity_gist, gh)
     return entity and Comment(
         author=_make_author(comment.user),
         body=_prettify_suggestions(comment),
@@ -416,12 +419,12 @@ def _make_crlf_codeblock(lang: str, body: str) -> str:
     return f"```{lang}\n{body}\n```".replace("\n", "\r\n")
 
 
-async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None:
+async def _get_event(
+    gh: GH, entity_gist: EntityGist, comment_id: int
+) -> Comment | None:
     owner, repo, entity_no = entity_gist
-    event = (
-        await entity_cache.gh.rest.issues.async_get_event(owner, repo, comment_id)
-    ).parsed_data
-    entity = await entity_cache.get(entity_gist)
+    event = (await gh.rest.issues.async_get_event(owner, repo, comment_id)).parsed_data
+    entity = await entity_cache.eget(entity_gist, gh)
     if not entity:
         return None
     # Special-cased to handle requests for both users and teams. There are example links
@@ -450,7 +453,7 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None
     elif event.event == "review_dismissed":
         dismissed_review = cast("IssueEventDismissedReview", event.dismissed_review)
         review = (
-            await entity_cache.gh.rest.pulls.async_get_review(
+            await gh.rest.pulls.async_get_review(
                 owner, repo, entity_no, dismissed_review.review_id
             )
         ).parsed_data
@@ -484,8 +487,10 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None
     )
 
 
-async def _get_entity_starter(entity_gist: EntityGist, _: int) -> Comment | None:
-    entity = await entity_cache.get(entity_gist)
+async def _get_entity_starter(
+    gh: GH, entity_gist: EntityGist, _: int
+) -> Comment | None:
+    entity = await entity_cache.eget(entity_gist, gh)
     return entity and Comment(
         author=entity.user,
         body=entity.body or "",
@@ -497,12 +502,12 @@ async def _get_entity_starter(entity_gist: EntityGist, _: int) -> Comment | None
     )
 
 
-async def get_comments(content: str) -> AsyncGenerator[Comment]:
+async def get_comments(gh: GH, content: str) -> AsyncGenerator[Comment]:
     found_comments = set[Comment]()
     for match in COMMENT_PATTERN.finditer(content):
         owner, repo, _, number, event, event_no = map(str, match.groups())
         entity_gist = EntityGist(owner, repo, int(number))
-        comment = await comment_cache.get((entity_gist, event, int(event_no)))
+        comment = await comment_cache.eget((entity_gist, event, int(event_no)), gh)
         if comment and comment not in found_comments:
             found_comments.add(comment)
             yield comment
