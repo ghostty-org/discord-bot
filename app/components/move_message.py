@@ -753,9 +753,7 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not (
-            self.bot.is_mod(interaction.user) or self.bot.is_helper(interaction.user)
-        ):
+        if not self.bot.is_privileged(interaction.user):
             await interaction.response.send_message(
                 "You do not have permission to move messages.", ephemeral=True
             )
@@ -787,9 +785,7 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not (
-            self.bot.is_mod(interaction.user) or self.bot.is_helper(interaction.user)
-        ):
+        if not self.bot.is_privileged(interaction.user):
             await interaction.response.send_message(
                 "You do not have permission to use this action.", ephemeral=True
             )

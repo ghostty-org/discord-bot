@@ -163,15 +163,17 @@ class GhosttyBot(commands.Bot):
             channels[feed_type] = channel
         return channels
 
-    def is_mod(self, member: dc.Member) -> bool:
-        return member.get_role(self.config.mod_role_id) is not None
-
-    def is_helper(self, member: dc.Member) -> bool:
-        return member.get_role(self.config.helper_role_id) is not None
+    def is_privileged(self, member: dc.Member) -> bool:
+        return not (
+            member.get_role(self.config.mod_role_id) is None
+            and member.get_role(self.config.helper_role_id) is None
+        )
 
     def is_ghostty_mod(self, user: Account) -> bool:
         member = self.ghostty_guild.get_member(user.id)
-        return member is not None and self.is_mod(member)
+        return (
+            member is not None and member.get_role(self.config.mod_role_id) is not None
+        )
 
     def _fails_message_filters(self, message: dc.Message) -> bool:
         # This can't be the MessageFilter cog type because that would cause an import
