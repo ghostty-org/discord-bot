@@ -10,7 +10,6 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from app.config import config
 from app.utils import (
     aenumerate,
     async_process_check_output,
@@ -19,8 +18,6 @@ from app.utils import (
     format_or_file,
     is_attachment_only,
     is_dm,
-    is_helper,
-    is_mod,
     post_has_tag,
     post_is_solved,
     pretty_print_account,
@@ -37,32 +34,6 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize(("type_", "result"), [(dc.Member, False), (dc.User, True)])
 def test_is_dm(type_: type[Account], result: bool) -> None:
     assert is_dm(Mock(type_)) == result
-
-
-def test_is_mod() -> None:
-    fake_member = SimpleNamespace(
-        get_role=lambda role: role if role == config.mod_role_id else None
-    )
-    assert is_mod(cast("dc.Member", fake_member))
-
-
-@given(st.integers().filter(lambda id_: id_ != config.mod_role_id))
-def test_is_not_mod(id_: int) -> None:
-    fake_member = SimpleNamespace(get_role=lambda role: role if role == id_ else None)
-    assert not is_mod(cast("dc.Member", fake_member))
-
-
-def test_is_helper() -> None:
-    fake_member = SimpleNamespace(
-        get_role=lambda role: role if role == config.helper_role_id else None
-    )
-    assert is_helper(cast("dc.Member", fake_member))
-
-
-@given(st.integers().filter(lambda id_: id_ != config.helper_role_id))
-def test_is_not_helper(id_: int) -> None:
-    fake_member = SimpleNamespace(get_role=lambda role: role if role == id_ else None)
-    assert not is_helper(cast("dc.Member", fake_member))
 
 
 @pytest.mark.parametrize(

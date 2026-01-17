@@ -7,7 +7,7 @@ from discord.ext import commands
 
 import app.components.github_integration.entities.fmt as github_entities_fmt
 from app.common.message_moving import MovedMessage
-from app.utils import generate_autocomplete, is_dm, is_helper, is_mod
+from app.utils import generate_autocomplete, is_dm
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
@@ -42,8 +42,8 @@ class Close(commands.GroupCog, group_name="close"):
             # Can only close posts in #help
             return False
 
-        # Allow mods and helpers to close posts, as well as the author of the post.
-        if is_mod(user) or is_helper(user) or user.id == post.owner_id:
+        # Allow privileged users to close posts, as well as the author of the post.
+        if self.bot.is_privileged(user) or user.id == post.owner_id:
             return True
 
         # When "Turn into #help post" is used, the owner ID is the ID of the webhook
