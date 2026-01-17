@@ -1,13 +1,11 @@
+from functools import partial
 from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from app.components.github_integration.commit_types import CommitCache, CommitKey
-from app.components.github_integration.webhooks.utils import (
-    EmbedContent,
-    Footer,
-    send_embed,
-)
+from app.components.github_integration.webhooks.utils import EmbedContent, Footer
+from app.components.github_integration.webhooks.utils import send_embed as _send_embed
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
@@ -17,6 +15,10 @@ if TYPE_CHECKING:
 
 def register_hooks(bot: GhosttyBot, monalisten_client: Monalisten) -> None:
     cache = CommitCache(bot.gh)
+
+    send_embed = partial(
+        _send_embed, emojis=bot.ghostty_emojis, channels=lambda: bot.webhook_channels
+    )
 
     @monalisten_client.event.commit_comment
     async def _(event: events.CommitComment) -> None:
@@ -31,8 +33,6 @@ def register_hooks(bot: GhosttyBot, monalisten_client: Monalisten) -> None:
             commit_title = "(no commit message found)"
 
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             EmbedContent(
                 f"commented on commit `{sha}`",

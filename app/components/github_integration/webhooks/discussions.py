@@ -1,14 +1,15 @@
+from functools import partial
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 from app.components.github_integration.models import GitHubUser
-from app.components.github_integration.webhooks.utils import (
-    EmbedContent,
-    Footer,
-    send_embed,
-)
+from app.components.github_integration.webhooks.utils import EmbedContent, Footer
+from app.components.github_integration.webhooks.utils import send_embed as _send_embed
 
 if TYPE_CHECKING:
-    from githubkit.versions.latest.models import DiscussionPropCategory, SimpleUser
+    from githubkit.versions.latest.models import (
+        DiscussionPropCategory,
+        SimpleUser,
+    )
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
@@ -53,12 +54,14 @@ def discussion_embed_content(
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
+    send_embed = partial(
+        _send_embed, emojis=bot.ghostty_emojis, channels=lambda: bot.webhook_channels
+    )
+
     @webhook.event.discussion.created
     async def _(event: events.DiscussionCreated) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "opened", discussion.body),
             discussion_footer(discussion, emoji="discussion"),
@@ -71,8 +74,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionClosed) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "closed"),
             discussion_footer(discussion, emoji="discussion_answered"),
@@ -84,8 +85,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionReopened) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "reopened"),
             discussion_footer(discussion),
@@ -102,8 +101,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
         else:
             body = None
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "chose an answer for", body),
             discussion_footer(discussion, emoji="discussion_answered"),
@@ -116,8 +113,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionUnanswered) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender or cast("SimpleUser", GitHubUser.default()),
             discussion_embed_content(discussion, "unmarked an answer for"),
             discussion_footer(discussion),
@@ -129,8 +124,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionLocked) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "locked"),
             discussion_footer(discussion),
@@ -142,8 +135,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionUnlocked) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "unlocked"),
             discussion_footer(discussion),
@@ -155,8 +146,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionPinned) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "pinned"),
             discussion_footer(discussion),
@@ -168,8 +157,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionUnpinned) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "unpinned"),
             discussion_footer(discussion),
@@ -181,8 +168,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.DiscussionCommentCreated) -> None:
         discussion = event.discussion
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             discussion_embed_content(discussion, "commented on", event.comment.body),
             discussion_footer(discussion),

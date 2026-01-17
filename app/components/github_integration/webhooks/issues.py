@@ -1,4 +1,5 @@
 import re
+from functools import partial
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from loguru import logger
@@ -7,8 +8,8 @@ from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,
     send_edit_difference,
-    send_embed,
 )
+from app.components.github_integration.webhooks.utils import send_embed as _send_embed
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
@@ -61,13 +62,15 @@ def issue_embed_content(
 
 
 def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
+    send_embed = partial(
+        _send_embed, emojis=bot.ghostty_emojis, channels=lambda: bot.webhook_channels
+    )
+
     @webhook.event.issues.opened
     async def _(event: events.IssuesOpened) -> None:
         issue = event.issue
         body = remove_discussion_div(issue.body)
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, "opened {}", body),
             issue_footer(issue, emoji="issue_open"),
@@ -89,8 +92,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
 
         state_reason = cast("str", issue.state_reason).replace("_", " ")
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, f"closed {{}} as {state_reason}"),
             issue_footer(issue, emoji="issue_closed_" + emoji_kind),
@@ -101,8 +102,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.IssuesReopened) -> None:
         issue = event.issue
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, "reopened {}"),
             issue_footer(issue, emoji="issue_open"),
@@ -124,8 +123,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
         issue = event.issue
         reason = f" as {r}" if (r := issue.active_lock_reason) else ""
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, f"locked {{}}{reason}"),
             issue_footer(issue),
@@ -136,8 +133,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.IssuesUnlocked) -> None:
         issue = event.issue
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, "unlocked {}"),
             issue_footer(issue),
@@ -148,8 +143,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.IssuesPinned) -> None:
         issue = event.issue
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, "pinned {}"),
             issue_footer(issue),
@@ -160,8 +153,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def _(event: events.IssuesUnpinned) -> None:
         issue = event.issue
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             issue_embed_content(issue, "unpinned {}"),
             issue_footer(issue),
@@ -186,8 +177,6 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             emoji = get_issue_emoji(cast("IssueLike", issue))
 
         await send_embed(
-            bot.ghostty_emojis,
-            bot.webhook_channels,
             event.sender,
             EmbedContent(title, event.comment.html_url, event.comment.body),
             Footer(emoji, f"{entity}: {issue.title}"),
