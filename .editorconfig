@@ -1,0 +1,16 @@
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+spelling_language = en-US
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[{*.py,justfile}]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,toml}]
+indent_style = space
+indent_size = 2
