@@ -14,6 +14,7 @@ from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData, g
 from app.config import config
 
 __all__ = (
+    "GH",
     "MAX_ATTACHMENT_SIZE",
     "Account",
     "ExtensibleMessage",
@@ -38,6 +39,8 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncGenerator, AsyncIterable, Callable, Iterable
 
+    from githubkit import GitHub, TokenAuthStrategy
+
 _INVITE_LINK_REGEX = re.compile(r"\b(?:https?://)?(discord\.gg/[^\s]+)\b")
 _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 
@@ -55,6 +58,8 @@ BOT_COMMAND_MESSAGE_TYPES = frozenset({
     dc.MessageType.chat_input_command,
     dc.MessageType.context_menu_command,
 })
+
+type GH = GitHub[TokenAuthStrategy]
 
 type Account = dc.User | dc.Member
 # Not a PEP 695 type alias because of runtime isinstance() checks

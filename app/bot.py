@@ -18,10 +18,8 @@ from app.status import BotStatus
 from app.utils import REGULAR_MESSAGE_TYPES, is_mod, pretty_print_account, try_dm
 
 if TYPE_CHECKING:
-    from githubkit import GitHub, TokenAuthStrategy
-
     from app.config import Config, WebhookFeedType
-    from app.utils import Account
+    from app.utils import GH, Account
 
 EmojiName = Literal[
     "commit",
@@ -41,7 +39,7 @@ EmojiName = Literal[
 
 @final
 class GhosttyBot(commands.Bot):
-    def __init__(self, config: Config, gh: GitHub[TokenAuthStrategy]) -> None:
+    def __init__(self, config: Config, gh: GH) -> None:
         intents = dc.Intents.default()
         intents.members = True
         intents.message_content = True
