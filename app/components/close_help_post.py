@@ -6,9 +6,6 @@ from discord import app_commands
 from discord.ext import commands
 
 import app.components.github_integration.entities.fmt as github_entities_fmt
-from app.components.github_integration.entities.cache import (
-    entity_cache as github_entity_cache,
-)
 from toolbox.discord import generate_autocomplete, is_dm
 from toolbox.message_moving import MovedMessage
 
@@ -32,11 +29,6 @@ class Close(commands.GroupCog, group_name="close"):
     def __init__(self, bot: GhosttyBot) -> None:
         self.description = "Mark current post as resolved."
         self.bot = bot
-        github_entity_cache.register_gh(self, self.bot.gh)
-
-    @override
-    async def cog_unload(self) -> None:
-        github_entity_cache.unregister_gh(self)
 
     @override
     # This code does work, and the docs also state "this function **can** be
@@ -83,6 +75,7 @@ class Close(commands.GroupCog, group_name="close"):
     async def mention_entity(self, entity_id: int) -> str | None:
         # Forging a message to use the entity mention logic
         output = await github_entities_fmt.entity_message(
+            self.bot.gh,
             self.bot.config,
             self.bot.ghostty_emojis,
             cast("dc.Message", SimpleNamespace(content=f"#{entity_id}")),

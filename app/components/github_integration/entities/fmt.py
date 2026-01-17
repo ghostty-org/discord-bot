@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.bot import Emojis
     from app.components.github_integration.models import Entity
     from app.config import Config
+    from toolbox.misc import GH
 
 ENTITY_TEMPLATE = "**{entity.kind} [#{entity.number}](<{entity.html_url}>):** {title}"
 
@@ -90,12 +91,12 @@ def _format_mention(emojis: Emojis, entity: Entity) -> str:
     return f"{emoji} {headline}\n{subtext}{entity_detail}"
 
 
-async def extract_entities(config: Config, message: dc.Message) -> list[Entity]:
+async def extract_entities(gh: GH, config: Config, message: dc.Message) -> list[Entity]:
     matches = list(
-        dict.fromkeys([r async for r in resolve_entity_signatures(config, message)])
+        dict.fromkeys([r async for r in resolve_entity_signatures(gh, config, message)])
     )
     cache_hits = await asyncio.gather(
-        *(entity_cache.get(m) for m in matches), return_exceptions=True
+        *(entity_cache.eget(m, gh) for m in matches), return_exceptions=True
     )
     return [
         entity
@@ -105,11 +106,11 @@ async def extract_entities(config: Config, message: dc.Message) -> list[Entity]:
 
 
 async def entity_message(
-    config: Config, emojis: Emojis, message: dc.Message
+    gh: GH, config: Config, emojis: Emojis, message: dc.Message
 ) -> ProcessedMessage:
     entities = [
         _format_mention(emojis, entity)
-        for entity in await extract_entities(config, message)
+        for entity in await extract_entities(gh, config, message)
     ]
 
     if len("\n".join(entities)) > 2000:

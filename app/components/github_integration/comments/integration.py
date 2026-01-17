@@ -1,11 +1,10 @@
 import asyncio
-from typing import TYPE_CHECKING, final, override
+from typing import TYPE_CHECKING, final
 
 import discord as dc
 from discord.ext import commands
 
 from .fetching import get_comments
-from app.components.github_integration.entities.cache import entity_cache
 from app.components.github_integration.entities.fmt import get_entity_emoji
 from toolbox.discord import suppress_embeds_after_delay
 from toolbox.linker import (
@@ -43,13 +42,9 @@ class CommentActions(ItemActions):
 class GitHubComments(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        entity_cache.register_gh(self, self.bot.gh)
+        self.gh = self.bot.gh
         self.linker = MessageLinker()
         CommentActions.linker = self.linker
-
-    @override
-    async def cog_unload(self) -> None:
-        entity_cache.unregister_gh(self)
 
     def comment_to_embed(self, comment: Comment) -> dc.Embed:
         emoji = get_entity_emoji(self.bot.ghostty_emojis, comment.entity)
@@ -85,7 +80,7 @@ class GitHubComments(commands.Cog):
     async def reply_with_comments(self, message: dc.Message) -> None:
         embeds = [
             self.comment_to_embed(comment)
-            async for comment in get_comments(message.content)
+            async for comment in get_comments(self.gh, message.content)
         ]
         if not embeds:
             return
@@ -108,7 +103,9 @@ class GitHubComments(commands.Cog):
             group.create_task(remove_view_after_delay(sent_message))
 
     async def process(self, msg: dc.Message) -> ProcessedMessage:
-        comments = [self.comment_to_embed(i) async for i in get_comments(msg.content)]
+        comments = [
+            self.comment_to_embed(i) async for i in get_comments(self.gh, msg.content)
+        ]
         return ProcessedMessage(embeds=comments, item_count=len(comments))
 
     @commands.Cog.listener()

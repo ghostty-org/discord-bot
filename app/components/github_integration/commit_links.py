@@ -51,9 +51,10 @@ class CommitActions(ItemActions):
 class CommitLinks(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
+        self.gh = self.bot.gh
         self.linker = MessageLinker()
         CommitActions.linker = MessageLinker()
-        self.cache = CommitCache(self.bot.gh)
+        self.cache = CommitCache(self.gh)
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -114,7 +115,7 @@ class CommitLinks(commands.Cog):
             if site and not owner:
                 continue  # Not a valid GitHub link
             if sig := await resolve_repo_signature(
-                self.bot.config, owner or None, repo or None
+                self.gh, self.bot.config, owner or None, repo or None
             ):
                 yield CommitKey(*sig, sha)
                 valid_signatures += 1

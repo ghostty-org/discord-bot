@@ -86,9 +86,10 @@ class CodeLinkActions(ItemActions):
 class CodeLinks(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
+        self.gh = self.bot.gh
         self.linker = MessageLinker()
         CodeLinkActions.linker = self.linker
-        self.cache = ContentCache(self.bot.gh, minutes=30)
+        self.cache = ContentCache(self.gh, minutes=30)
 
     async def get_snippets(self, content: str) -> AsyncGenerator[Snippet]:
         for match in CODE_LINK_PATTERN.finditer(content):

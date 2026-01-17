@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, final, override
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
 
-from .cache import entity_cache
 from app.config import REPO_ALIASES
-from toolbox.cache import TTRCache
+from toolbox.cache import ExtensibleTTRCache
+from toolbox.misc import GH
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -29,11 +29,12 @@ ENTITY_REGEX = re.compile(
 
 
 @final
-class OwnerCache(TTRCache[str, str]):
+class OwnerCache(ExtensibleTTRCache[str, str, GH]):
     @override
-    async def fetch(self, key: str) -> None:
+    async def efetch(self, key: str, extra: GH) -> None:
+        gh = extra
         with suppress(RequestFailed, RuntimeError):
-            self[key] = await find_repo_owner(key)
+            self[key] = await find_repo_owner(gh, key)
 
 
 owner_cache = OwnerCache(hours=1)
@@ -45,8 +46,8 @@ def remove_codeblocks(content: str) -> str:
     )
 
 
-async def find_repo_owner(name: str) -> str:
-    resp = await entity_cache.gh.rest.search.async_repos(
+async def find_repo_owner(gh: GH, name: str) -> str:
+    resp = await gh.rest.search.async_repos(
         q=name, sort="stars", order="desc", per_page=20
     )
     return next(
@@ -57,7 +58,7 @@ async def find_repo_owner(name: str) -> str:
 
 
 async def resolve_repo_signature(
-    config: Config, owner: str | None, repo: str | None
+    gh: GH, config: Config, owner: str | None, repo: str | None
 ) -> tuple[str, str] | None:
     match owner, repo:
         case None, None:
@@ -68,7 +69,7 @@ async def resolve_repo_signature(
             return config.github_org, REPO_ALIASES[repo]
         case None, repo:
             # Only a name provided
-            if repo_owner := await owner_cache.get(repo):
+            if repo_owner := await owner_cache.eget(repo, gh):
                 return repo_owner, repo
             return None
         case owner, None:
@@ -79,7 +80,7 @@ async def resolve_repo_signature(
 
 
 async def resolve_entity_signatures(
-    config: Config, message: dc.Message
+    gh: GH, config: Config, message: dc.Message
 ) -> AsyncGenerator[EntitySignature]:
     valid_signatures = 0
     for match in ENTITY_REGEX.finditer(remove_codeblocks(message.content)):
@@ -102,7 +103,7 @@ async def resolve_entity_signatures(
                 # Ignore the xkcd prefix, as it is handled by xkcd_mentions.py
                 continue
 
-        if sig := await resolve_repo_signature(config, owner, repo):
+        if sig := await resolve_repo_signature(gh, config, owner, repo):
             yield (*sig, number)
             valid_signatures += 1
             if valid_signatures == 10:
