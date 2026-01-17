@@ -4,11 +4,11 @@ default:
 
 # Run taplo, ruff, pytest, and basedpyright in check mode
 check:
+    uv run ruff check
+    uv run basedpyright app tests
+    uv run pytest -p terminalprogress
     uv run taplo fmt --check --diff pyproject.toml
     uv run ruff format --check
-    uv run ruff check
-    uv run pytest -p terminalprogress
-    uv run basedpyright app tests
 
 # Run taplo, ruff's formatter, and ruff's isort rules in fix mode
 format:
