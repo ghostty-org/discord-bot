@@ -770,6 +770,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "anyio" },
+    { name = "basedpyright" },
     { name = "githubkit" },
     { name = "hypothesis" },
     { name = "pytest" },
@@ -785,6 +786,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "anyio", specifier = ">=4.12.0" },
+    { name = "basedpyright", specifier = ">=1.36.2" },
     { name = "githubkit", specifier = ">=0.14.0" },
     { name = "hypothesis", specifier = ">=6.148.9" },
     { name = "pytest", specifier = ">=9.0.2" },

@@ -9,6 +9,7 @@ dependencies = ["discord-py>=2.6.3", "httpx>=0.28.1", "loguru>=0.7.0"]
 [dependency-groups]
 dev = [
   "githubkit>=0.14.0",
+  "basedpyright>=1.36.2",
   "pytest>=9.0.2",
   "hypothesis>=6.148.9",
   "anyio>=4.12.0",
