@@ -12,6 +12,7 @@ check:
     uv run pytest -p terminalprogress tests
     uv run taplo fmt --check --diff pyproject.toml
     uv run ruff format --check
+    uv run mdformat --number --wrap 80 --check README.md
 
 [private]
 check-package pkg:
@@ -24,6 +25,7 @@ format:
     uv run taplo fmt pyproject.toml packages/*/pyproject.toml
     uv run ruff format
     uv run ruff check --select I,RUF022,RUF023 --fix
+    uv run mdformat --number --wrap 80 README.md
 
 # Run taplo and ruff in fix mode
 fix: format
