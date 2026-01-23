@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, final
 import discord as dc
 from discord.ext import commands
 
-from app.common.linker import (
+from toolbox.discord import suppress_embeds_after_delay
+from toolbox.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
     remove_view_after_delay,
 )
-from app.utils import suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from collections.abc import Callable

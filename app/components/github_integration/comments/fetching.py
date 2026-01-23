@@ -8,7 +8,6 @@ from githubkit.versions.latest.models import IssuePropPullRequest, ReactionRollu
 from zig_codeblocks import extract_codeblocks
 
 from .discussions import get_discussion_comment
-from app.common.cache import TTRCache
 from app.components.github_integration.entities.cache import entity_cache
 from app.components.github_integration.models import (
     Comment,
@@ -17,7 +16,8 @@ from app.components.github_integration.models import (
     Reactions,
 )
 from app.config import gh
-from app.utils import escape_special
+from toolbox.cache import TTRCache
+from toolbox.discord import escape_special
 
 if TYPE_CHECKING:
     import datetime as dt

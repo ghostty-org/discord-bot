@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, final
 
 import discord as dc
 
-from app.utils import GuildTextChannel, dynamic_timestamp
+from toolbox.discord import GuildTextChannel, dynamic_timestamp
 
 if TYPE_CHECKING:
     from .moved_message import MovedMessage
-    from app.utils import MessageData
+    from toolbox.messages import MessageData
 
 _REACTION_REGEX = re.compile(r"([^\s×]+) ×(\d+)", re.ASCII)  # noqa: RUF001
 

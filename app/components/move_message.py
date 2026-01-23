@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING, Self, cast, final, override
 import discord as dc
 from discord.ext import commands
 
-from app.common.message_moving import (
+from toolbox.discord import GuildTextChannel, dynamic_timestamp, is_dm, safe_edit
+from toolbox.errors import SafeModal, SafeView
+from toolbox.message_moving import (
     MovedMessage,
     MovedMessageLookupFailed,
     SplitSubtext,
@@ -16,21 +18,12 @@ from app.common.message_moving import (
     message_can_be_moved,
     move_message,
 )
-from app.errors import SafeModal, SafeView
-from app.utils import (
-    MAX_ATTACHMENT_SIZE,
-    GuildTextChannel,
-    MessageData,
-    dynamic_timestamp,
-    is_attachment_only,
-    is_dm,
-    safe_edit,
-    truncate,
-)
+from toolbox.messages import MAX_ATTACHMENT_SIZE, MessageData, is_attachment_only
+from toolbox.misc import truncate
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
-    from app.utils import Account
+    from toolbox.discord import Account
 
 
 # From https://discord.com/developers/docs/topics/opcodes-and-status-codes#json-json-error-codes.
@@ -440,7 +433,9 @@ class EditMessage(SafeModal, title="Edit Message"):
     @override
     async def on_submit(self, interaction: dc.Interaction) -> None:
         content = f"{self.new_text.value}\n{self._split_subtext.subtext}"
-        converted_content = convert_nitro_emojis(self.bot, content)
+        converted_content = convert_nitro_emojis(
+            self.bot, self.bot.ghostty_guild, content
+        )
         await self._message.edit(
             content=converted_content if len(converted_content) <= 2000 else content,
             allowed_mentions=dc.AllowedMentions.none(),
@@ -654,10 +649,10 @@ class MoveMessage(commands.Cog):
         new_content: str,
     ) -> None:
         channel = moved_message.channel
-        if (
-            len(converted_content := convert_nitro_emojis(self.bot, new_content))
-            <= 2000
-        ):
+        converted_content = convert_nitro_emojis(
+            self.bot, self.bot.ghostty_guild, new_content
+        )
+        if len(converted_content) <= 2000:
             new_content = converted_content
         # Suppress NotFound in case the user attempts to commit an edit to a message
         # that was deleted in the meantime.

@@ -8,7 +8,7 @@ from app.components.github_integration.models import GitHubUser
 if TYPE_CHECKING:
     import datetime as dt
 
-    from app.utils import GH
+    from toolbox.misc import GH
 
 
 class CommitKey(NamedTuple):

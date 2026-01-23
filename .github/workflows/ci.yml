@@ -12,8 +12,10 @@ env:
   UV_LOCKED: 1
   PY_COLORS: 1
 
+permissions:
+  contents: read
 jobs:
-  ci:
+  app:
     if: github.repository == 'ghostty-org/discord-bot'
     runs-on: namespace-profile-ghostty-sm
     steps:
@@ -28,18 +30,45 @@ jobs:
       - name: Environment
         id: sync
         run: uv sync
+
       - name: taplo (TOML formatting)
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
-        run: uv run taplo fmt --check --diff pyproject.toml
+        run: uv run taplo fmt --check --diff pyproject.toml packages/*/pyproject.toml
       - name: ruff format
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run ruff format --diff
       - name: ruff lint
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run ruff check --output-format github
-      - name: pytest
-        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
-        run: uv run pytest -vv
       - name: basedpyright
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run basedpyright app tests
+      - name: pytest
+        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
+        run: uv run pytest -vv tests
+
+  toolbox:
+    if: github.repository == 'ghostty-org/discord-bot'
+    runs-on: namespace-profile-ghostty-sm
+    defaults:
+      run:
+        working-directory: ./packages/toolbox
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup uv
+        uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b  # v7.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+      - name: Environment
+        id: sync
+        run: uv sync
+
+      - name: basedpyright
+        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
+        run: uv run basedpyright src tests
+      - name: pytest
+        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
+        run: uv run pytest -vv tests

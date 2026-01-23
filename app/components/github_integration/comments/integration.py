@@ -5,14 +5,14 @@ import discord as dc
 from discord.ext import commands
 
 from .fetching import get_comments
-from app.common.linker import (
+from app.components.github_integration.entities.fmt import get_entity_emoji
+from toolbox.discord import suppress_embeds_after_delay
+from toolbox.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
     remove_view_after_delay,
 )
-from app.components.github_integration.entities.fmt import get_entity_emoji
-from app.utils import suppress_embeds_after_delay
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot

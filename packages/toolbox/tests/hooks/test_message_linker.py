@@ -8,7 +8,7 @@ from tests.hooks.utils import spawn_user_message
 if TYPE_CHECKING:
     import discord as dc
 
-    from app.common.linker import MessageLinker
+    from toolbox.linker import MessageLinker
 
 
 def test_double_link_fails(linker: MessageLinker) -> None:

@@ -11,7 +11,7 @@ from pydantic import (
     field_validator,
 )
 
-from app.utils import truncate
+from toolbox.misc import truncate
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import IssuePropLabelsItemsOneof1

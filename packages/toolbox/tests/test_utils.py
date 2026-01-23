@@ -10,25 +10,27 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from app.utils import (
-    aenumerate,
-    async_process_check_output,
+from toolbox.discord import (
     dynamic_timestamp,
-    format_diff_note,
     format_or_file,
-    is_attachment_only,
     is_dm,
     post_has_tag,
     post_is_solved,
     pretty_print_account,
     suppress_embeds_after_delay,
+)
+from toolbox.messages import is_attachment_only
+from toolbox.misc import (
+    aenumerate,
+    async_process_check_output,
+    format_diff_note,
     truncate,
 )
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
 
-    from app.utils import Account
+    from toolbox.discord import Account
 
 
 @pytest.mark.parametrize(("type_", "result"), [(dc.Member, False), (dc.User, True)])

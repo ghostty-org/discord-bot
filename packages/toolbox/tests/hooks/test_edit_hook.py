@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     from tests.fixtures.hooks import EditHook
 
-    from app.common.linker import MessageLinker
+    from toolbox.linker import MessageLinker
 
 
 async def test_same_content(linker: MessageLinker, edit_hook: EditHook) -> None:

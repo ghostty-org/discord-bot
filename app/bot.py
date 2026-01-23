@@ -13,13 +13,15 @@ import sentry_sdk
 from discord.ext import commands
 from loguru import logger
 
-from app.errors import handle_error, interaction_error_handler
 from app.status import BotStatus
-from app.utils import REGULAR_MESSAGE_TYPES, pretty_print_account, try_dm
+from toolbox.discord import pretty_print_account, try_dm
+from toolbox.errors import handle_error, interaction_error_handler
+from toolbox.messages import REGULAR_MESSAGE_TYPES
 
 if TYPE_CHECKING:
     from app.config import Config, WebhookFeedType
-    from app.utils import GH, Account
+    from toolbox.discord import Account
+    from toolbox.misc import GH
 
 EmojiName = Literal[
     "commit",

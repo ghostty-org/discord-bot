@@ -8,7 +8,7 @@ from monalisten import Monalisten
 
 from app.components.github_integration.webhooks import commits, discussions, issues, prs
 from app.config import config
-from app.errors import handle_error
+from toolbox.errors import handle_error
 
 if TYPE_CHECKING:
     from monalisten import AuthIssue, Error

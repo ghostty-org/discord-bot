@@ -1,28 +1,17 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import discord as dc
 import httpx
 
 from .subtext import Subtext
-from app.utils import (
-    BOT_COMMAND_MESSAGE_TYPES,
-    REGULAR_MESSAGE_TYPES,
-    SUPPORTED_IMAGE_FORMATS,
-    get_files,
-    truncate,
-)
-
-if TYPE_CHECKING:
-    from app.bot import GhosttyBot
+from toolbox.discord import SUPPORTED_IMAGE_FORMATS
+from toolbox.messages import get_files
+from toolbox.misc import truncate
 
 _EMOJI_REGEX = re.compile(r"<(a?):(\w+):(\d+)>", re.ASCII)
-
-
-def message_can_be_moved(message: dc.Message) -> bool:
-    return message.type in REGULAR_MESSAGE_TYPES | BOT_COMMAND_MESSAGE_TYPES
 
 
 async def _get_original_message(message: dc.Message) -> dc.Message | None:
@@ -46,7 +35,9 @@ def _unattachable_embed(unattachable_elem: str, **kwargs: Any) -> dc.Embed:
     return dc.Embed(**kwargs).set_footer(text=f"Unable to attach {unattachable_elem}.")
 
 
-def convert_nitro_emojis(bot: GhosttyBot, content: str, *, force: bool = False) -> str:
+def convert_nitro_emojis(
+    client: dc.Client, guild: dc.Guild, content: str, *, force: bool = False
+) -> str:
     """
     Convert custom emojis to concealed hyperlinks.  Set `force` to True to convert
     emojis in the current guild too.
@@ -54,8 +45,8 @@ def convert_nitro_emojis(bot: GhosttyBot, content: str, *, force: bool = False) 
 
     def replace_nitro_emoji(match: re.Match[str]) -> str:
         animated, name, id_ = match.groups()
-        emoji = bot.get_emoji(int(id_))
-        if not force and emoji and emoji.guild_id == bot.ghostty_guild.id:
+        emoji = client.get_emoji(int(id_))
+        if not force and emoji and emoji.guild_id == guild.id:
             return match[0]
 
         ext = "gif" if animated else "webp"
@@ -125,9 +116,9 @@ def format_context_menu_command(reply: dc.Message) -> dc.Embed:
 
 
 async def format_forward(
-    bot: GhosttyBot, forward: dc.MessageSnapshot
+    client: dc.Client, guild: dc.Guild, forward: dc.MessageSnapshot
 ) -> tuple[list[dc.Embed], list[dc.File]]:
-    content = convert_nitro_emojis(bot, forward.content)
+    content = convert_nitro_emojis(client, guild, forward.content)
     if len(content) > 4096:
         content = forward.content
 

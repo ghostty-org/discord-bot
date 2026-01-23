@@ -4,7 +4,7 @@ import discord as dc
 from discord.ext import commands
 from loguru import logger
 
-from app.utils import is_dm, pretty_print_account, try_dm
+from toolbox.discord import is_dm, pretty_print_account, try_dm
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot

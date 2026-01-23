@@ -8,8 +8,8 @@ from discord.ext import commands
 from githubkit.exception import RequestFailed
 from loguru import logger
 
-from app.common.message_moving import get_or_create_webhook
-from app.utils import generate_autocomplete
+from toolbox.discord import generate_autocomplete
+from toolbox.message_moving import get_or_create_webhook
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, final, override
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
 
-from app.common.cache import TTRCache
 from app.config import REPO_ALIASES, config, gh
+from toolbox.cache import TTRCache
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator

@@ -174,22 +174,70 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
    ```console
    $ uv run -m app
    ```
-3. After you've made your changes, run the required checks:
-   ```console
-   $ uv run ruff check
-   $ uv run ruff format
-   $ uv run basedpyright app tests
-   $ uv run taplo fmt pyproject.toml
-   $ uv run pytest
-   ```
-   or, if you have [just] installed:
-   ```console
-   $ just format
+3. After you've made your changes, run the required checks with [just]:
+   ```check
    $ just check
    ```
+   These checks are enforced by CI, so make sure to fix any issues shown. You
+   can format all code as required by running `just format`, and fixable issues
+   (including formatting issues) can have their fixes applied with `just fix`.
+
+   <details>
+   <summary>
+   If you do not want to use just, you will have to run the checks manually,
+   which is significantly more complicated.
+   </summary>
+
+   1. There are a large number of checks to run. CI ensures that everything is
+      formatted uniformly, so first run the formatters:
+      ```console
+      $ uv run taplo fmt pyproject.toml packages/*/pyproject.toml
+      $ uv run ruff format
+      ```
+      These must be run from the **project root**.
+
+   2. Ghostty Bot is split into many packages. Ruff performs many checks on all
+      packages at the same time. Run it from the **project root**:
+      ```console
+      $ uv run ruff check
+      ```
+
+   3. The other checks do not work on all packages at the same time. Run these
+      for **every directory under `packages`**:
+      ```console
+      $ cd packages/<package name>
+      $ uv run basedpyright src tests
+      $ uv run pytest tests
+      ```
+      For example:
+      ```console
+      $ cd packages/toolbox
+      $ uv run basedpyright src tests
+      $ uv run pytest tests
+      ```
+      Do not skip the checks for subpackages you did not modify, as subpackages
+      may depend on each other.
+
+   4. The same checks must be run for the application itself, as changes to the
+      subpackages may have broken the bot. Run these from the **project root**.
+      ```console
+      $ uv run basedpyright app tests
+      $ uv run pytest tests
+      ```
+      Note that the `basedpyright` command uses **`app`, not `src`**.
+
+   </details>
 
 
 # Project structure
+
+Ghostty Bot's code is split into multiple packages:
+
+- The main package, containing the bot's features and integration code.
+- `toolbox`, containing common code, utilities, and code to move messages.
+
+All packages but the main one are in their own directory under `packages/`. The
+main package, under `app/`, is structured as follows:
 
 ```mermaid
 flowchart LR;
@@ -200,7 +248,6 @@ config --> main{{\_\_main__.py}}
 log{{log.py}} --> main
 bot --> main
 bot --> components
-utils([utils/]) --> components
 ```
 
 * `components/` is a place for all dedicated features ([cogs]), such as message
@@ -211,7 +258,6 @@ utils([utils/]) --> components
   and then loads extensions found in `components`.
 * `config.py` handles reading and parsing the environment variables and the
   local `.env` file, and creates the GitHub client.
-* `utils/` contains helper functions/classes not tied to any specific feature.
 * `log.py` setups up logging and optionally Sentry.
 * `__main__.py` initializes logging and starts the bot.
 

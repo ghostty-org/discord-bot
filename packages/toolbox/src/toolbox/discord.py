@@ -1,6 +1,5 @@
 import asyncio
 import re
-import subprocess
 from contextlib import suppress
 from io import BytesIO
 from textwrap import shorten
@@ -10,33 +9,27 @@ import discord as dc
 from discord.app_commands import Choice
 from loguru import logger
 
-from .message_data import MAX_ATTACHMENT_SIZE, ExtensibleMessage, MessageData, get_files
+if TYPE_CHECKING:
+    import datetime as dt
+    from collections.abc import Callable, Iterable
 
 __all__ = (
-    "GH",
-    "MAX_ATTACHMENT_SIZE",
+    "SUPPORTED_IMAGE_FORMATS",
     "Account",
-    "ExtensibleMessage",
-    "MessageData",
-    "aenumerate",
+    "GuildTextChannel",
     "dynamic_timestamp",
     "escape_special",
-    "get_files",
-    "is_attachment_only",
+    "format_or_file",
+    "generate_autocomplete",
     "is_dm",
     "post_has_tag",
     "post_is_solved",
+    "pretty_print_account",
     "safe_edit",
     "suppress_embeds_after_delay",
-    "truncate",
     "try_dm",
 )
 
-if TYPE_CHECKING:
-    import datetime as dt
-    from collections.abc import AsyncGenerator, AsyncIterable, Callable, Iterable
-
-    from githubkit import GitHub, TokenAuthStrategy
 
 _INVITE_LINK_REGEX = re.compile(r"\b(?:https?://)?(discord\.gg/[^\s]+)\b")
 _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
@@ -45,30 +38,11 @@ _ORDERED_LIST_REGEX = re.compile(r"^(\d+)\. (.*)")
 # (including the leading dot).
 SUPPORTED_IMAGE_FORMATS = frozenset({".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"})
 
-# Regular types taken from the description of
-# https://discordpy.readthedocs.io/en/stable/api.html#discord.Message.system_content.
-REGULAR_MESSAGE_TYPES = frozenset({
-    dc.MessageType.default,
-    dc.MessageType.reply,
-})
-BOT_COMMAND_MESSAGE_TYPES = frozenset({
-    dc.MessageType.chat_input_command,
-    dc.MessageType.context_menu_command,
-})
-
-type GH = GitHub[TokenAuthStrategy]
-
 type Account = dc.User | dc.Member
 # Not a PEP 695 type alias because of runtime isinstance() checks
 GuildTextChannel = dc.TextChannel | dc.Thread
 
 safe_edit = suppress(dc.NotFound, dc.HTTPException)
-
-
-def truncate(s: str, length: int, *, suffix: str = "…") -> str:
-    if len(s) <= length:
-        return s
-    return s[: length - len(suffix)] + suffix
 
 
 def dynamic_timestamp(dt: dt.datetime, fmt: str | None = None) -> str:
@@ -103,15 +77,6 @@ def post_is_solved(post: dc.Thread) -> bool:
     )
 
 
-async def aenumerate[T](
-    it: AsyncIterable[T], start: int = 0
-) -> AsyncGenerator[tuple[int, T]]:
-    i = start
-    async for x in it:
-        yield i, x
-        i += 1
-
-
 def escape_special(content: str) -> str:
     """
     Escape all text that Discord considers to be special.
@@ -132,32 +97,12 @@ def escape_special(content: str) -> str:
     )
 
 
-def is_attachment_only(
-    message: dc.Message, *, preprocessed_content: str | None = None
-) -> bool:
-    if preprocessed_content is None:
-        preprocessed_content = message.content
-    return bool(message.attachments) and not any((
-        message.components,
-        preprocessed_content,
-        message.embeds,
-        message.poll,
-        message.stickers,
-    ))
-
-
 async def suppress_embeds_after_delay(message: dc.Message, delay: float = 5.0) -> None:
     logger.trace("waiting {}s to suppress embeds of {}", delay, message)
     await asyncio.sleep(delay)
     with safe_edit:
         logger.debug("suppressing embeds of {}", message)
         await message.edit(suppress=True)
-
-
-def format_diff_note(additions: int, deletions: int, changed_files: int) -> str | None:
-    if not (changed_files and (additions or deletions)):
-        return None  # Diff size unavailable
-    return f"diff size: `+{additions}` `-{deletions}` ({changed_files} files changed)"
 
 
 def format_or_file(
@@ -178,24 +123,6 @@ def format_or_file(
             BytesIO(message.encode()), filename="content.md"
         )
     return full_message, None
-
-
-async def async_process_check_output(program: str, *args: str, **kwargs: Any) -> str:
-    if "stdout" in kwargs:
-        msg = "stdout argument not allowed, it will be overridden."
-        raise ValueError(msg)
-    proc = await asyncio.create_subprocess_exec(
-        program, *args, stdout=subprocess.PIPE, **kwargs
-    )
-    assert proc.stdout is not None  # set to PIPE above
-    if rc := await proc.wait():
-        raise subprocess.CalledProcessError(
-            returncode=rc,
-            cmd=[program, *args],
-            output=await proc.stdout.read(),
-            stderr=proc.stderr and await proc.stderr.read(),
-        )
-    return (await proc.stdout.read()).decode()
 
 
 def pretty_print_account(user: Account) -> str:

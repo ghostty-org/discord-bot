@@ -4,7 +4,7 @@ from typing import Self, final
 
 import discord as dc
 
-from app.utils import ExtensibleMessage
+from toolbox.messages import ExtensibleMessage
 
 _SNOWFLAKE_REGEX = re.compile(r"<(\D{0,2})(\d+)>", re.ASCII)
 

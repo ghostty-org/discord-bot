@@ -146,7 +146,7 @@ def check_dir_for_vs16(path: Path) -> None:
         raise AssertionError(msg)
 
 
-@pytest.mark.parametrize("folder", ["app", "tests"])
+@pytest.mark.parametrize("folder", ["app", "tests", "packages"])
 def test_self_unwanted_vs16(folder: str) -> None:
     root = Path(__file__).parents[1]
     check_dir_for_vs16(root / folder)

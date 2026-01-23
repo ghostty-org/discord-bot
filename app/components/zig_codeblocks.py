@@ -15,13 +15,13 @@ from zig_codeblocks import (
     process_markdown,
 )
 
-from app.common.linker import (
+from toolbox.linker import (
     ItemActions,
     MessageLinker,
     ProcessedMessage,
     remove_view_after_delay,
 )
-from app.common.message_moving import get_or_create_webhook, move_message
+from toolbox.message_moving import get_or_create_webhook, move_message
 
 if TYPE_CHECKING:
     from collections.abc import Collection
