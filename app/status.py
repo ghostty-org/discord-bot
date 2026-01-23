@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING, Any, cast, final
 from githubkit import TokenAuthStrategy
 from githubkit.exception import RequestFailed
 
-from app.config import config, gh
 from toolbox.discord import dynamic_timestamp
 from toolbox.misc import async_process_check_output
 
 if TYPE_CHECKING:
     from discord.ext import tasks
+
+    from app.config import Config
+    from toolbox.misc import GH
 
 STATUS_MESSAGE_TEMPLATE = """
 ### Commit
@@ -43,7 +45,10 @@ class BotStatus:
     # ready, assuming it's loaded.
     commit_data: str | None = None
 
-    def __init__(self) -> None:
+    def __init__(self, gh: GH, config: Config) -> None:
+        self.gh = gh
+        self.config = config
+
         self.launch_time = dt.datetime.now(tz=dt.UTC)
         self._commit_hash = None
 
@@ -104,15 +109,14 @@ class BotStatus:
             closed=closed,
         )
 
-    @staticmethod
-    async def _get_github_data() -> SimpleNamespace:
-        match gh.auth:
+    async def _get_github_data(self) -> SimpleNamespace:
+        match self.gh.auth:
             case TokenAuthStrategy(token) if token.startswith(("gh", "github")):
                 correct_token = True
             case _:
                 correct_token = False
         try:
-            resp = await gh.rest.users.async_get_authenticated()
+            resp = await self.gh.rest.users.async_get_authenticated()
             api_ok = resp.status_code == 200
         except RequestFailed:
             api_ok = False
@@ -133,7 +137,7 @@ class BotStatus:
             "launch_time": dynamic_timestamp(self.launch_time, "R"),
             "last_login_time": dynamic_timestamp(self.last_login_time, "R"),
             "last_sitemap_refresh": dynamic_timestamp(self.last_sitemap_refresh, "R"),
-            "help_channel": f"<#{config.help_channel_id}>",
+            "help_channel": f"<#{self.config.help_channel_id}>",
             "scan": self._get_scan_data(),
             "gh": await self._get_github_data(),
         }

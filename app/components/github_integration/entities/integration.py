@@ -28,6 +28,7 @@ class EntityActions(ItemActions):
 class GitHubEntities(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
+        self.gh = self.bot.gh
         self.linker = MessageLinker()
         EntityActions.linker = self.linker
 
@@ -45,15 +46,15 @@ class GitHubEntities(commands.Cog):
         # Gather all currently actively mentioned entities
         for msg in self.linker.refs:
             with safe_edit:
-                entities = await extract_entities(msg)
+                entities = await extract_entities(self.gh, self.bot.config, msg)
                 for entity in entities:
                     entity_to_message_map[entity].append(msg)
 
         # Check which entities changed
         for entity in tuple(entity_to_message_map):
             key = (entity.owner, entity.repo_name, entity.number)
-            await entity_cache.fetch(key)
-            refreshed_entity = await entity_cache.get(key)
+            await entity_cache.efetch(key, self.gh)
+            refreshed_entity = await entity_cache.eget(key, self.gh)
             if entity == refreshed_entity:
                 entity_to_message_map.pop(entity)
 
@@ -64,7 +65,9 @@ class GitHubEntities(commands.Cog):
             reply = self.linker.get(msg)
             assert reply is not None
 
-            new_output = await entity_message(self.bot, msg)
+            new_output = await entity_message(
+                self.gh, self.bot.config, self.bot.ghostty_emojis, msg
+            )
 
             with safe_edit:
                 await reply.edit(
@@ -84,7 +87,9 @@ class GitHubEntities(commands.Cog):
         if is_dm(message.author):
             return
 
-        output = await entity_message(self.bot, message)
+        output = await entity_message(
+            self.gh, self.bot.config, self.bot.ghostty_emojis, message
+        )
         if not output.item_count:
             return
 
@@ -116,7 +121,9 @@ class GitHubEntities(commands.Cog):
         await self.linker.edit(
             before,
             after,
-            message_processor=partial(entity_message, self.bot),
+            message_processor=partial(
+                entity_message, self.gh, self.bot.config, self.bot.ghostty_emojis
+            ),
             interactor=self.reply_with_entities,
             view_type=EntityActions,
         )

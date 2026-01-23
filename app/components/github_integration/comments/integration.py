@@ -42,11 +42,12 @@ class CommentActions(ItemActions):
 class GitHubComments(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
+        self.gh = self.bot.gh
         self.linker = MessageLinker()
         CommentActions.linker = self.linker
 
     def comment_to_embed(self, comment: Comment) -> dc.Embed:
-        emoji = get_entity_emoji(self.bot, comment.entity)
+        emoji = get_entity_emoji(self.bot.ghostty_emojis, comment.entity)
         title = f"{emoji} {comment.entity.title}"
         formatted_reactions = comment.reactions and [
             f"{REACTION_EMOJIS[reaction]} ×{count}"  # noqa: RUF001
@@ -79,7 +80,7 @@ class GitHubComments(commands.Cog):
     async def reply_with_comments(self, message: dc.Message) -> None:
         embeds = [
             self.comment_to_embed(comment)
-            async for comment in get_comments(message.content)
+            async for comment in get_comments(self.gh, message.content)
         ]
         if not embeds:
             return
@@ -102,7 +103,9 @@ class GitHubComments(commands.Cog):
             group.create_task(remove_view_after_delay(sent_message))
 
     async def process(self, msg: dc.Message) -> ProcessedMessage:
-        comments = [self.comment_to_embed(i) async for i in get_comments(msg.content)]
+        comments = [
+            self.comment_to_embed(i) async for i in get_comments(self.gh, msg.content)
+        ]
         return ProcessedMessage(embeds=comments, item_count=len(comments))
 
     @commands.Cog.listener()

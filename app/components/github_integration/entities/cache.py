@@ -1,36 +1,30 @@
-from typing import TYPE_CHECKING, final, override
+from typing import final, override
 
 from githubkit.exception import RequestFailed
 
 from .discussions import get_discussion
 from app.components.github_integration.models import Entity, Issue, PullRequest
-from app.config import gh
-from toolbox.cache import TTRCache
-
-if TYPE_CHECKING:
-    from toolbox.misc import GH
+from toolbox.cache import ExtensibleTTRCache
+from toolbox.misc import GH
 
 type EntitySignature = tuple[str, str, int]
 
 
 @final
-class EntityCache(TTRCache[EntitySignature, Entity]):
-    def __init__(self, gh: GH, **ttr: float) -> None:
-        super().__init__(**ttr)
-        self.gh: GH = gh
-
+class EntityCache(ExtensibleTTRCache[EntitySignature, Entity, GH]):
     @override
-    async def fetch(self, key: EntitySignature) -> None:
+    async def efetch(self, key: EntitySignature, extra: GH) -> None:
+        gh = extra
         try:
-            entity = (await self.gh.rest.issues.async_get(*key)).parsed_data
+            entity = (await gh.rest.issues.async_get(*key)).parsed_data
             model = Issue
             if entity.pull_request:
-                entity = (await self.gh.rest.pulls.async_get(*key)).parsed_data
+                entity = (await gh.rest.pulls.async_get(*key)).parsed_data
                 model = PullRequest
             self[key] = model.model_validate(entity, from_attributes=True)
         except RequestFailed:
-            if discussion := await get_discussion(*key):
+            if discussion := await get_discussion(gh, *key):
                 self[key] = discussion
 
 
-entity_cache = EntityCache(gh, minutes=30)
+entity_cache = EntityCache(minutes=30)

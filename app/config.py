@@ -1,13 +1,16 @@
 # pyright: reportUnannotatedClassAttribute=false
 
 import sys
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from githubkit import GitHub
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+if TYPE_CHECKING:
+    import discord as dc
+
 type WebhookFeedType = Literal["main", "discussions"]
+type WebhookChannels = dict[WebhookFeedType, dc.TextChannel]
 
 # This maps valid special ghostty-org repo prefixes to appropriate repo names. Since the
 # actual repo names are also valid prefixes, they can be viewed as self-mapping aliases.
@@ -60,8 +63,3 @@ class Config(BaseSettings):
 
 if "pytest" in sys.modules:
     Config.model_config["env_file"] = ".env.example"
-
-
-# https://github.com/pydantic/pydantic-settings/issues/201
-config = Config()  # pyright: ignore[reportCallIssue]
-gh = GitHub(config.github_token.get_secret_value())

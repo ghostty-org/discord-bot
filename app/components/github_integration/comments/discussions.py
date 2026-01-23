@@ -5,10 +5,10 @@ import msgpack
 from githubkit.exception import GraphQLFailed
 
 from app.components.github_integration.models import Comment, Discussion
-from app.config import gh
 
 if TYPE_CHECKING:
     from app.components.github_integration.models import EntityGist
+    from toolbox.misc import GH
 
 DISCUSSION_COMMENT_QUERY = """
 query getDiscussionComment($id: ID!) {
@@ -50,7 +50,7 @@ query getDiscussionComment($id: ID!) {
 
 
 async def get_discussion_comment(
-    entity_gist: EntityGist, comment_id: int
+    gh: GH, entity_gist: EntityGist, comment_id: int
 ) -> Comment | None:
     packed = msgpack.packb([0, 0, comment_id])
     node_id = "DC_" + urlsafe_b64encode(packed).decode()
