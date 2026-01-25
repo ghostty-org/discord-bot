@@ -43,17 +43,21 @@ class _InterceptHandler(logging.Handler):
 def setup(config: Config) -> None:
     logging.basicConfig(handlers=[_InterceptHandler()], level=0, force=True)
 
+    default_filter = {
+        # httpx logs are quite noisy: it logs every single REST request under INFO.
+        "httpx": "WARNING",
+    }
+    # Log level such as `info,httpx=INFO,discord=warning`.
+    log_level = (os.getenv("LOGURU_LEVEL") or os.getenv("LOG_LEVEL") or "").split(",")
+    level = next((lvl for lvl in log_level if lvl and "=" not in lvl), "INFO")
+    levels = (level.split("=", 1) for level in log_level if "=" in level)
+    filters: dict[str | None, str | int | bool] = {f: lvl.upper() for f, lvl in levels}
+
     logger.remove()
-    logger.add(
-        sys.stderr,
-        # While $LOGURU_LEVEL is checked at import time, it doesn't override this value,
-        # so manually handle it.
-        level=os.getenv("LOGURU_LEVEL") or os.getenv("LOG_LEVEL") or "INFO",
-        filter={
-            # httpx logs are quite noisy: it logs every single REST request under INFO.
-            "httpx": "WARNING",
-        },
-    )
+    logger.add(sys.stderr, level=level.upper(), filter=default_filter | filters)
+    if filters:
+        filters_str = " ".join(f"{f}={lvl}" for f, lvl in filters.items())
+        logger.info("using log filters {}", filters_str)
 
     if config.sentry_dsn is not None:
         logger.info("initializing sentry")
