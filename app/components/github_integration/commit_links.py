@@ -35,7 +35,8 @@ COMMIT_SHA_PATTERN = re.compile(
         r"(?P<repo>\b[a-z0-9\-\._]+)"
         r"(?P<sep>@|/commit/|/blob/)"
     r")?"
-    r"(?P<sha>[a-f0-9]{7,40})\b",
+    # Ignore SHAs preceded by sequences like <@ or <#, as those are probably snowflakes.
+    r"(?<!<[^a-f0-9\s])(?P<sha>[a-f0-9]{7,40})\b",
     re.IGNORECASE,
 )  # fmt: skip
 
