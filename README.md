@@ -380,6 +380,9 @@ Message edits and deletion are also handled, and a "❌ Delete" button is provid
 for one hour. A "❄️ Freeze" button is also provided to stop reacting to message
 edits and deletions.
 
+Ghostty Bot also helpfully replies to mysterious asterisks with missing
+footnotes with their true destination, https://xkcd.com/2708.
+
 <img src="https://github.com/user-attachments/assets/ff1cf1c8-2927-4156-87af-aa5671252ee7" alt="XKCD mentions example" width="75%">
 
 ## Zig code blocks

@@ -127,8 +127,31 @@ class XKCDMentions(commands.Cog):
                     text=f"Unable to fetch xkcd #{comic_id}"
                 )
 
+    @staticmethod
+    def has_mysterious_asterisk(content: str) -> bool:
+        # Filter out symbols to catch things like `foo*, bar`. Don't remove backticks to
+        # avoid catching code blocks such as "`foo*`".
+        words = "".join(
+            c for c in content if c in ("*", "`") or c.isalnum() or c.isspace()
+        ).split()
+        # Ignore the last word to avoid catching postfix asterisk corrections such as
+        # `fairy floss*`. This won't skip things like `fairy floss* sorry I forgot I'm
+        # Australian`, but those are very unlikely.
+        has_asterisk = any(w.endswith("*") for w in words[:-1])
+        # NOTE: this also filters out any Markdown syntax such as `*foo*` or `**bar**`.
+        # Other cases like `foo* bar*` that make ` bar` italics in CommonMark don't
+        # actually do so in Discord Markdown, so those are fine to count.
+        has_footnote = any(w.startswith("*") for w in words)
+        # A "mysterious asterisk", as defined by xkcd 2708, is an asterisk without
+        # a matching footnote.
+        return has_asterisk and not has_footnote
+
     async def process(self, message: dc.Message) -> ProcessedMessage:
         matches = dict.fromkeys(m[1] for m in XKCD_REGEX.finditer(message.content))
+        if not matches and self.has_mysterious_asterisk(message.content):
+            # Respond to mysterious asterisks with their destination.
+            # https://github.com/ghostty-org/discord-bot/issues/447
+            matches = ["2708"]
         xkcds = await asyncio.gather(*(self.cache.get(int(m)) for m in matches))
         embeds = list(map(self.get_embed, xkcds))
         if len(embeds) > 10:
