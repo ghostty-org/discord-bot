@@ -3,11 +3,10 @@
 The [Ghostty Discord][discord-invite] Bot, humorlessly named "Ghostty Bot."
 
 It originally powered the invite system during Ghostty's private beta period,
-successfully inviting ~5,000 people.
-It now serves as the community's helper bot, making development discussion and
-community moderation more efficient.
+successfully inviting ~5,000 people. It now serves as the community's helper
+bot, making development discussion and community moderation more efficient.
 
----
+______________________________________________________________________
 
 - [Bot setup](#bot-setup)
   - [1. Preparing a Discord application](#1-preparing-a-discord-application)
@@ -33,10 +32,9 @@ community moderation more efficient.
   - [Message filters](#message-filters)
   - [Moving messages](#moving-messages)
 
-
 # Bot setup
 
-> [!warning]
+> [!WARNING]
 > The bot is tailor-made for the Ghostty community and will most definitely be
 > unsuitable for other servers. If you're looking to use similar features, you
 > should consider looking for a more general-purpose bot, or forking this
@@ -53,54 +51,55 @@ community moderation more efficient.
 2. Click on the "New Application" button.
 3. Pick a name for your bot.
 
-
 ### 1.2. Getting a Discord token
 
 On your newly created bot's dashboard:
+
 1. Go to "Bot" on the sidebar.
 2. Click on the "Reset Token" button.
 3. Save the newly generated token for later.
 4. Under "Privileged Gateway Intents", enable:
-   * Server Members Intent
-   * Message Content Intent
+   - Server Members Intent
+   - Message Content Intent
 
 ### 1.3. Inviting the bot to your server
+
 1. Go to "OAuth2" on the sidebar.
 2. Under "OAuth2 URL Generator", select the `bot` scope.
 3. Under "Bot Permissions" that appears, choose the following permissions:
-   * Attach Files
-   * Manage Messages
-   * Manage Roles
-   * Manage Threads
-   * Manage Webhooks
-   * Send Messages
-   * Use External Apps\
-   (your URL should contain a `1125917892061184` bitfield for `permissions`)
+   - Attach Files
+   - Manage Messages
+   - Manage Roles
+   - Manage Threads
+   - Manage Webhooks
+   - Send Messages
+   - Use External Apps\
+     (your URL should contain a `1125917892061184` bitfield for `permissions`)
 4. Use the generated URL at the bottom of the page to invite the bot to your
    server.
-
 
 ## 2. Getting a GitHub token
 
 A GitHub token is necessary for the bot's Entity Mentions feature.
 
 You can get one in two ways:
-* On GitHub, go to Settings > Developer settings > Personal access tokens >
+
+- On GitHub, go to Settings > Developer settings > Personal access tokens >
   Tokens (classic) > Generate new token, or use this link:
   [Generate new token][gh-new-token]. As the bot only accesses public
   repositories, it doesn't require any scopes.
-* If you have the `gh` CLI installed and authenticated, run `gh auth token`.
-
+- If you have the `gh` CLI installed and authenticated, run `gh auth token`.
 
 ## 3. Creating a GitHub webhook
 
-> [!tip]
+> [!TIP]
 > This can be skipped if you're not going to interact with the bot's webhook
 > feature.
 
 The bot has a webhook feed feature which lets it stream customized GitHub repo
 activity to Discord channels. In order to set up a webhook stream from your
 repo:
+
 1. Go to https://smee.io/ (any webhook relay service should work, but smee.io is
    field-tested) and choose "Start a new channel".
 2. Copy the URL of your channel.
@@ -113,71 +112,80 @@ repo:
    triggers for events specified by hooks in the code.
 
 More resources:
-* *What are webhooks?* — [GitHub Docs][gh-webhook-docs]
-* *Why is a secret recommended?* — [Monalisten Docs][monalisten-docs-warning]
 
+- *What are webhooks?* — [GitHub Docs][gh-webhook-docs]
+- *Why is a secret recommended?* — [Monalisten Docs][monalisten-docs-warning]
 
 ## 4. Preparing a Discord server
 
 The following **text** channels will be necessary:
-* `#media`
-* `#showcase`
-* `#webhook`
-* `#botlog-everything`
+
+- `#media`
+- `#showcase`
+- `#webhook`
+- `#botlog-everything`
 
 Additionally, a **forum** channel named `#help` is needed. It must have the
 following tags:
-* Moved to GitHub
-* Solved
-* Stale
-* Duplicate
+
+- Moved to GitHub
+- Solved
+- Stale
+- Duplicate
 
 The following roles will be necessary (both requiring the Manage Messages
 permission):
-* `mod`
-* `helper`
 
+- `mod`
+- `helper`
 
 ## 5. Preparing the `.env` file
 
-Create a `.env` file in the root of the project based on `.env.example`.
-Below are explanations for each variable:
-* `BOT_ACCEPT_INVITE_URL`: a URL to visit to accept the Ghostty invite
-* Channel/role IDs from [step 4](#4-preparing-a-discord-server):
-  * `BOT_GUILD_ID`: the id of the server you prepared (optional; useful when your bot is in multiple servers).
-  * `BOT_HELP_CHANNEL_ID`
-  * `BOT_HELP_CHANNEL_TAG_IDS`: a comma-separated list of `tag_name:tag_id`
-    pairs. The tag names are `moved`, `solved`, `stale` and `duplicate`.
-  * `BOT_MEDIA_CHANNEL_ID`
-  * `BOT_SHOWCASE_CHANNEL_ID`
-  * `BOT_LOG_CHANNEL_ID`
-  * `BOT_WEBHOOK_CHANNEL_IDS`: a comma-separated list of `feed_type:channel_id`
-    pairs. The feed type names are `main` and `discussions`.
-  * `BOT_MOD_ROLE_ID`
-  * `BOT_HELPER_ROLE_ID`
-* `BOT_TOKEN`: the Discord bot token from
-  [step 1](#1-creating-a-discord-application).
-* `BOT_GITHUB_ORG`: the GitHub organization name.
-* `BOT_GITHUB_TOKEN`: the GitHub token from [step 2](#2-getting-a-github-token).
-* `BOT_SENTRY_DSN`: the Sentry DSN (optional).
-* Webhook environment variables from [step 3](#3-creating-a-github-webhook) (if
-  you skipped that section, you can use the dummy values from `.env.example`):
-  * `BOT_GITHUB_WEBHOOK_URL`: the URL to receive events from.
-  * `BOT_GITHUB_WEBHOOK_SECRET`: a token for validating events (optional).
+Create a `.env` file in the root of the project based on `.env.example`. Below
+are explanations for each variable:
 
+- `BOT_ACCEPT_INVITE_URL`: a URL to visit to accept the Ghostty invite
+- Channel/role IDs from [step 4](#4-preparing-a-discord-server):
+  - `BOT_GUILD_ID`: the id of the server you prepared (optional; useful when
+    your bot is in multiple servers).
+  - `BOT_HELP_CHANNEL_ID`
+  - `BOT_HELP_CHANNEL_TAG_IDS`: a comma-separated list of `tag_name:tag_id`
+    pairs. The tag names are `moved`, `solved`, `stale` and `duplicate`.
+  - `BOT_MEDIA_CHANNEL_ID`
+  - `BOT_SHOWCASE_CHANNEL_ID`
+  - `BOT_LOG_CHANNEL_ID`
+  - `BOT_WEBHOOK_CHANNEL_IDS`: a comma-separated list of `feed_type:channel_id`
+    pairs. The feed type names are `main` and `discussions`.
+  - `BOT_MOD_ROLE_ID`
+  - `BOT_HELPER_ROLE_ID`
+- `BOT_TOKEN`: the Discord bot token from
+  [step 1](#1-creating-a-discord-application).
+- `BOT_GITHUB_ORG`: the GitHub organization name.
+- `BOT_GITHUB_TOKEN`: the GitHub token from [step 2](#2-getting-a-github-token).
+- `BOT_SENTRY_DSN`: the Sentry DSN (optional).
+- Webhook environment variables from [step 3](#3-creating-a-github-webhook) (if
+  you skipped that section, you can use the dummy values from `.env.example`):
+  - `BOT_GITHUB_WEBHOOK_URL`: the URL to receive events from.
+  - `BOT_GITHUB_WEBHOOK_SECRET`: a token for validating events (optional).
 
 ## 6. Running the bot
 
 This bot runs on Python 3.14+ and is managed with [uv]. To get started:
+
 1. Install [uv].
+
 2. Run the bot:
+
    ```console
    $ uv run -m app
    ```
+
 3. After you've made your changes, run the required checks with [just]:
+
    ```check
    $ just check
    ```
+
    These checks are enforced by CI, so make sure to fix any issues shown. You
    can format all code as required by running `just format`, and fixable issues
    (including formatting issues) can have their fixes applied with `just fix`.
@@ -190,44 +198,52 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
 
    1. There are a large number of checks to run. CI ensures that everything is
       formatted uniformly, so first run the formatters:
+
       ```console
       $ uv run taplo fmt pyproject.toml packages/*/pyproject.toml
       $ uv run ruff format
       ```
+
       These must be run from the **project root**.
 
    2. Ghostty Bot is split into many packages. Ruff performs many checks on all
       packages at the same time. Run it from the **project root**:
+
       ```console
       $ uv run ruff check
       ```
 
    3. The other checks do not work on all packages at the same time. Run these
       for **every directory under `packages`**:
+
       ```console
       $ cd packages/<package name>
       $ uv run basedpyright src tests
       $ uv run pytest tests
       ```
+
       For example:
+
       ```console
       $ cd packages/toolbox
       $ uv run basedpyright src tests
       $ uv run pytest tests
       ```
+
       Do not skip the checks for subpackages you did not modify, as subpackages
       may depend on each other.
 
    4. The same checks must be run for the application itself, as changes to the
       subpackages may have broken the bot. Run these from the **project root**.
+
       ```console
       $ uv run basedpyright app tests
       $ uv run pytest tests
       ```
+
       Note that the `basedpyright` command uses **`app`, not `src`**.
 
    </details>
-
 
 # Project structure
 
@@ -250,17 +266,16 @@ bot --> main
 bot --> components
 ```
 
-* `components/` is a place for all dedicated features ([cogs]), such as message
+- `components/` is a place for all dedicated features ([cogs]), such as message
   filters or entity mentions. Most new features should become modules belonging
   to this package. Events (e.g. `on_ready`, `on_message`, `on_error`) should be
   defined within the component.
-* `bot.py` contains custom attributes and behaviors for the overall Discord bot
+- `bot.py` contains custom attributes and behaviors for the overall Discord bot
   and then loads extensions found in `components`.
-* `config.py` handles reading and parsing the environment variables and the
+- `config.py` handles reading and parsing the environment variables and the
   local `.env` file, and creates the GitHub client.
-* `log.py` setups up logging and optionally Sentry.
-* `__main__.py` initializes logging and starts the bot.
-
+- `log.py` setups up logging and optionally Sentry.
+- `__main__.py` initializes logging and starts the bot.
 
 # Features
 
@@ -277,7 +292,6 @@ message option:
 If a message is provided, a webhook will be used to send the message under the
 interactor's server profile.
 
-
 ## `/close`
 
 A command group to mark help channel posts as resolved, with various options for
@@ -291,18 +305,16 @@ different resolution scenarios:
 | `/close moved`     | Moved to GitHub | GitHub entity number                      | Links to the GitHub entity                         |
 | `/close duplicate` | Duplicate       | Help post ID/link or GitHub entity number | Links to original post or GitHub entity            |
 
-
 ## `#help` channel moderation
 
 Similar to [`/close`](#close), posts in the `#help` channel are automatically
 closed after one day of inactivity when they have been marked as solved using
-the post tags.  Information about a `#help` channel scan is also published in
-the bot log channel.
+the post tags. Information about a `#help` channel scan is also published in the
+bot log channel.
 
 Bumps to old solved posts (older than one month) are also handled by warning the
 user and locking the thread, to prevent often unrelated help requests in posts
 that are no longer relevant.
-
 
 ## Entity mentions
 
@@ -312,14 +324,16 @@ deletions for 24 hours, while also providing a "❌ Delete" button for 30 second
 in case of false positives. A "❄️ Freeze" button is also provided to stop
 reacting to message edits and deletions. Mentioning entities in other
 ghostty-org repos is supported with prefixes:
-* `web` or `website` for [ghostty-org/website][website-repo], e.g. `web#78`
-* `bot`, `bobr`, or `discord-bot` for [ghostty-org/discord-bot][bot-repo], e.g. `bot#98`
-* `main` or `ghostty` for [ghostty-org/ghostty][main-repo] (default), e.g. `main#2137` or
-  just `#2137`
+
+- `web` or `website` for [ghostty-org/website][website-repo], e.g. `web#78`
+- `bot`, `bobr`, or `discord-bot` for [ghostty-org/discord-bot][bot-repo], e.g.
+  `bot#98`
+- `main` or `ghostty` for [ghostty-org/ghostty][main-repo] (default), e.g.
+  `main#2137` or just `#2137`
 
 On top of that, any GitHub repository can be mentioned, either with
-`owner/repo#1` (e.g. `astral-sh/uv#8020`), or `repo#1`, where the bot will
-try finding the most popular repo with that name (e.g. `rust#105586`).
+`owner/repo#1` (e.g. `astral-sh/uv#8020`), or `repo#1`, where the bot will try
+finding the most popular repo with that name (e.g. `rust#105586`).
 
 A full GitHub URL (such as `https://github.com/ghostty-org/ghostty/pull/4876`)
 will also be responded to in a similar fashion, and the original GitHub embed
@@ -332,7 +346,6 @@ subsequent lookups).
 
 <img src="https://github.com/user-attachments/assets/ce0df1f6-baac-43d7-9bee-1f2bdfda2ac4" alt="Entity mentions example" width="75%">
 
-
 ### Code links
 
 Ghostty Bot responds to GitHub code range links with code blocks containing the
@@ -340,11 +353,10 @@ linked code. Same edit/delete hook and TTR cache rules apply.
 
 <img src="https://github.com/user-attachments/assets/336b4a18-52c5-4ae6-9035-2a1f72856dfe" alt="Code links example" width="85%">
 
-
 ### Entity comments
 
-Comments on issues, PRs, and discussions are displayed by the bot when linked.
-A subset of GitHub events (e.g. "requested review", "closed the issue", "added
+Comments on issues, PRs, and discussions are displayed by the bot when linked. A
+subset of GitHub events (e.g. "requested review", "closed the issue", "added
 label") is also supported. Same edit/delete hook and TTR cache rules apply.
 
 <img src="https://github.com/user-attachments/assets/217ef598-5fcb-4854-b2d6-a2b7d67435e8" alt="Entity comments example" width="65%">
@@ -360,55 +372,54 @@ syntax similar to entity mentions; e.g. `python/cpython@2a6888e` or
 
 <img src="https://github.com/user-attachments/assets/c979dee7-ee0f-4ebf-82b3-f5d7e4ddbad9" alt="Commit mentions example" width="75%">
 
-
 ## XKCD mentions
 
 Similar to the above feature, entity mentions with a prefix of `xkcd`, such as
 `xkcd#1172`, will be replied to with an embed containing the XKCD's contents.
-Message edits and deletion are also handled, and a "❌ Delete" button is
-provided for one hour. A "❄️ Freeze" button is also provided to stop reacting to
-message edits and deletions.
+Message edits and deletion are also handled, and a "❌ Delete" button is provided
+for one hour. A "❄️ Freeze" button is also provided to stop reacting to message
+edits and deletions.
 
 <img src="https://github.com/user-attachments/assets/ff1cf1c8-2927-4156-87af-aa5671252ee7" alt="XKCD mentions example" width="75%">
-
 
 ## Zig code blocks
 
 Ghostty Bot looks for any code blocks with the language set to `zig` and
 responds with custom `ansi` code blocks that contain correctly
-syntax-highlighted Zig code (since Discord doesn't support Zig).
-Replies include a dismiss button, plus:
-* a **Freeze** button: stops the bot from reacting to edits/deletion of the
+syntax-highlighted Zig code (since Discord doesn't support Zig). Replies include
+a dismiss button, plus:
+
+- a **Freeze** button: stops the bot from reacting to edits/deletion of the
   original message (useful if the author wants to remove their unhighlighted
   code block but keep the bot's reply),
-* a **Replace my message** button (for shorter messages only): deletes both the
-  original and the bot's reply, then resends the original message via webhook
-  as the original author, but with proper syntax highlighting.
+- a **Replace my message** button (for shorter messages only): deletes both the
+  original and the bot's reply, then resends the original message via webhook as
+  the original author, but with proper syntax highlighting.
 
 The bot can also highlight Zig code in `.zig` attachments.
 
 <img src="https://github.com/user-attachments/assets/a634482d-00fc-410f-a59d-ef4120ec66db" alt="Zig code blocks example" width="75%">
 
-<sub>This feature relies on [trag1c/zig-codeblocks][zig-codeblocks-repo]! ^^</sub>
-
+<sub>This feature relies on [trag1c/zig-codeblocks][zig-codeblocks-repo]!
+^^</sub>
 
 ## Message filters
 
 This feature takes care of keeping the `#showcase` and `#media` channels clean.
 The bot will delete any message:
-* without an attachment in `#showcase`
-* without a link in `#media`
+
+- without an attachment in `#showcase`
+- without a link in `#media`
 
 It will also DM users about the deletion and provide an explanation to make it
 less confusing:
 
 <img src="https://github.com/user-attachments/assets/2064111f-6e64-477c-b564-4034c5245adc" alt="Message filter notification" width="80%">
 
-
 ## Moving messages
 
-Used for moving messages to more fitting channels (e.g. off-topic questions
-in `#development` to `#tech`).
+Used for moving messages to more fitting channels (e.g. off-topic questions in
+`#development` to `#tech`).
 
 <img src="https://github.com/user-attachments/assets/e2e77e43-6200-4ab3-87ea-33e269e5a5cd" alt="Move message example" width="70%">
 
@@ -419,16 +430,17 @@ related feature:
 
 The author of a message can also modify moved messages using an entry in the
 context menu, which gives them the following:
-* a **Delete** button: removes the moved message, without any further
+
+- a **Delete** button: removes the moved message, without any further
   confirmation.
-* an **Edit via modal** button: displays a text box to them that is pre-filled
+- an **Edit via modal** button: displays a text box to them that is pre-filled
   with the existing message content, allowing them to modify it almost like with
   the normal Discord edit option.
-* an **Edit in thread** button: creates a new private thread in the current
+- an **Edit in thread** button: creates a new private thread in the current
   channel, adds them to it, then provides them with instructions on how to
   continue. In channels that don't support private threads, this button isn't
   shown.
-* a **Help** button: displays information about both editing options to them.
+- a **Help** button: displays information about both editing options to them.
 
 If the message has one attachment, a "Remove attachment" button is also shown,
 which removes the attachment without any further confirmation; if the message
@@ -439,14 +451,14 @@ to be removed.
 https://github.com/user-attachments/assets/8c8ed1cf-db00-414f-937f-43e565ae9d15
 
 [bot-repo]: https://github.com/ghostty-org/discord-bot
+[cogs]: https://discordpy.readthedocs.io/en/stable/ext/commands/cogs.html
 [discord-docs]: https://discord.com/developers/applications
 [discord-invite]: https://discord.gg/ghostty
 [gh-new-token]: https://github.com/settings/tokens/new
 [gh-webhook-docs]: https://docs.github.com/en/webhooks/about-webhooks
-[monalisten-docs-warning]: https://github.com/trag1c/monalisten#foreword-on-how-this-works
 [just]: https://just.systems/
 [main-repo]: https://github.com/ghostty-org/ghostty
+[monalisten-docs-warning]: https://github.com/trag1c/monalisten#foreword-on-how-this-works
 [uv]: https://docs.astral.sh/uv/
 [website-repo]: https://github.com/ghostty-org/website
 [zig-codeblocks-repo]: https://github.com/trag1c/zig-codeblocks
-[cogs]: https://discordpy.readthedocs.io/en/stable/ext/commands/cogs.html

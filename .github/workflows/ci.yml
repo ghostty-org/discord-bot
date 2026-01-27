@@ -34,9 +34,12 @@ jobs:
       - name: taplo (TOML formatting)
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run taplo fmt --check --diff pyproject.toml packages/*/pyproject.toml
-      - name: ruff format
+      - name: ruff format (Python formatting)
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run ruff format --diff
+      - name: mdformat (Markdown formatting)
+        if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
+        run: uv run mdformat --number --wrap 80 --check README.md
       - name: ruff lint
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run ruff check --output-format github
