@@ -8,6 +8,7 @@ import httpx
 from discord.ext import commands
 from pydantic import BaseModel, Field
 
+from app.config import config
 from toolbox.cache import TTRCache
 from toolbox.discord import SUPPORTED_IMAGE_FORMATS
 from toolbox.linker import (
@@ -128,11 +129,17 @@ class XKCDMentions(commands.Cog):
                 )
 
     @staticmethod
-    def has_mysterious_asterisk(content: str) -> bool:
+    def has_mysterious_asterisk(message: dc.Message) -> bool:
+        channel = message.channel
+        if isinstance(channel, dc.Thread) and channel.parent:
+            channel = channel.parent
+        if channel.id in config.serious_channel_ids:
+            return False
+
         # Filter out symbols to catch things like `foo*, bar`. Don't remove backticks to
         # avoid catching code blocks such as "`foo*`".
         words = "".join(
-            c for c in content if c in ("*", "`") or c.isalnum() or c.isspace()
+            c for c in message.content if c in ("*", "`") or c.isalnum() or c.isspace()
         ).split()
         # Ignore the last word to avoid catching postfix asterisk corrections such as
         # `fairy floss*`. This won't skip things like `fairy floss* sorry I forgot I'm
@@ -148,7 +155,7 @@ class XKCDMentions(commands.Cog):
 
     async def process(self, message: dc.Message) -> ProcessedMessage:
         matches = dict.fromkeys(m[1] for m in XKCD_REGEX.finditer(message.content))
-        if not matches and self.has_mysterious_asterisk(message.content):
+        if not matches and self.has_mysterious_asterisk(message):
             # Respond to mysterious asterisks with their destination.
             # https://github.com/ghostty-org/discord-bot/issues/447
             matches = ["2708"]

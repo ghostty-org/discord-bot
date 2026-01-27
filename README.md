@@ -17,6 +17,7 @@ ______________________________________________________________________
   - [3. Creating a GitHub webhook](#3-creating-a-github-webhook)
   - [4. Preparing a Discord server](#4-preparing-a-discord-server)
   - [5. Preparing the `.env` file](#5-preparing-the-env-file)
+    - [5.1. Serious channels](#51-serious-channels)
   - [6. Running the bot](#6-running-the-bot)
 - [Project structure](#project-structure)
 - [Features](#features)
@@ -123,6 +124,7 @@ The following **text** channels will be necessary:
 - `#media`
 - `#showcase`
 - `#webhook`
+- `#discussion-feed`
 - `#botlog-everything`
 
 Additionally, a **forum** channel named `#help` is needed. It must have the
@@ -156,6 +158,8 @@ are explanations for each variable:
   - `BOT_LOG_CHANNEL_ID`
   - `BOT_WEBHOOK_CHANNEL_IDS`: a comma-separated list of `feed_type:channel_id`
     pairs. The feed type names are `main` and `discussions`.
+  - `BOT_SERIOUS_CHANNEL_IDS`: a comma-separated list of channel ids to disable
+    "fun" features in. See the guidelines below on which channels to include.
   - `BOT_MOD_ROLE_ID`
   - `BOT_HELPER_ROLE_ID`
 - `BOT_TOKEN`: the Discord bot token from
@@ -167,6 +171,26 @@ are explanations for each variable:
   you skipped that section, you can use the dummy values from `.env.example`):
   - `BOT_GITHUB_WEBHOOK_URL`: the URL to receive events from.
   - `BOT_GITHUB_WEBHOOK_SECRET`: a token for validating events (optional).
+
+### 5.1 Serious channels
+
+Some Ghostty Bot features aren't suitable for all channels. Currently, that is:
+
+- Asterisks missing a corresponding footnote are replied to with
+  https://xkcd.com/2708.
+
+This list can be anything you like, but here's guidelines to help you pick
+serious channels:
+
+- All channels from [section 4](#4-preparing-a-discord-server) above **should**
+  be added to the serious channel list.
+- These fun features were primarily created for the off-topic category of the
+  Ghostty server; were you to have an equivalent of those in your server, you
+  **shouldn't** add them to the serious channel list.
+- If you have an equivalent of the on-topic channels like `#development`, they
+  **should** be added to the serious channel list. You should probably leave a
+  channel or two off the serious channel list, should you want to modify any of
+  the fun features above.
 
 ## 6. Running the bot
 
