@@ -44,10 +44,16 @@ class Config(BaseSettings):
     log_channel_id: int
     media_channel_id: int
     showcase_channel_id: int
+    serious_channel_ids: list[int]
     webhook_channel_ids: dict[WebhookFeedType, int]
 
     mod_role_id: int
     helper_role_id: int
+
+    @field_validator("serious_channel_ids", mode="before")
+    @classmethod
+    def parse_id_list(cls, value: str) -> list[int]:
+        return list(map(int, value.split(",")))
 
     @field_validator("help_channel_tag_ids", "webhook_channel_ids", mode="before")
     @classmethod
