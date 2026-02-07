@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 NUM_PAT = re.compile(r"\b\d+\b")
 
-linker = pytest.fixture(lambda: MessageLinker())
+linker = pytest.fixture(lambda: MessageLinker())  # noqa: PLW0108
 
 
 async def extract_numbers_then_hex(msg: dc.Message) -> ProcessedMessage:
