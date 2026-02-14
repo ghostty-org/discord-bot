@@ -39,8 +39,8 @@ class BotStatus:
     last_scan_results: tuple[dt.datetime, int, int] | None = None
     last_sitemap_refresh: dt.datetime | None = None
     commit_url: str | None = None
-    # app.components.github_integration.commits.Commits will set this when the bot is
-    # ready, assuming it's loaded.
+    # app.components.github_integration.commit_links.CommitLinks will set this when the
+    # bot is ready, assuming it's loaded.
     commit_data: str | None = None
 
     def __init__(self) -> None:
