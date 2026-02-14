@@ -41,9 +41,9 @@ class GitHubWebhooks(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
         self.monalisten_client = Monalisten(
-            config.github_webhook_url.get_secret_value(),
-            token=config.github_webhook_secret.get_secret_value()
-            if config.github_webhook_secret
+            config().github_webhook_url.get_secret_value(),
+            token=token.get_secret_value()
+            if (token := config().github_webhook_secret)
             else None,
         )
         self._monalisten_task: asyncio.Task[None] | None = None

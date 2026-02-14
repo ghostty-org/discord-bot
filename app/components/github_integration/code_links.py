@@ -14,6 +14,7 @@ from githubkit.exception import RequestFailed
 from zig_codeblocks import highlight_zig_code
 
 from app.components.zig_codeblocks import THEME
+from app.config import gh
 from toolbox.cache import TTRCache
 from toolbox.discord import suppress_embeds_after_delay
 from toolbox.linker import (
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from app.bot import GhosttyBot
-    from toolbox.misc import GH
 
 CODE_LINK_PATTERN = re.compile(
     r"https?://(?:www\.)?github\.com/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-\._]+)/blob/"
@@ -59,14 +59,10 @@ class Snippet(NamedTuple):
 
 @final
 class ContentCache(TTRCache[SnippetPath, str]):
-    def __init__(self, gh: GH, **ttr: float) -> None:
-        super().__init__(**ttr)
-        self.gh: GH = gh
-
     @override
     async def fetch(self, key: SnippetPath) -> None:
         with suppress(RequestFailed):
-            resp = await self.gh.rest.repos.async_get_content(
+            resp = await gh().rest.repos.async_get_content(
                 key.owner,
                 key.repo,
                 key.path,
@@ -88,7 +84,7 @@ class CodeLinks(commands.Cog):
         self.bot = bot
         self.linker = MessageLinker()
         CodeLinkActions.linker = self.linker
-        self.cache = ContentCache(self.bot.gh, minutes=30)
+        self.cache = ContentCache(minutes=30)
 
     async def get_snippets(self, content: str) -> AsyncGenerator[Snippet]:
         for match in CODE_LINK_PATTERN.finditer(content):
