@@ -5,17 +5,12 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterable
 
-    from githubkit import GitHub, TokenAuthStrategy
-
 __all__ = (
-    "GH",
     "aenumerate",
     "async_process_check_output",
     "format_diff_note",
     "truncate",
 )
-
-type GH = GitHub[TokenAuthStrategy]
 
 
 def truncate(s: str, length: int, *, suffix: str = "…") -> str:

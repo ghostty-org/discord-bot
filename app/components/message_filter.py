@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, NamedTuple, cast, final
 import discord as dc
 from discord.ext import commands
 
+from app.config import config
 from toolbox.discord import format_or_file, try_dm
 from toolbox.messages import REGULAR_MESSAGE_TYPES
 
@@ -43,13 +44,13 @@ class MessageFilter(commands.Cog):
         self.message_filters = (
             # Delete non-image messages in #showcase
             MessageFilterTuple(
-                self.bot.config.showcase_channel_id,
+                config.get().showcase_channel_id,
                 lambda msg: cast("dc.Message", msg).attachments,
                 ("any attachments", "a screenshot or a video"),
             ),
             # Delete non-link messages in #media
             MessageFilterTuple(
-                self.bot.config.media_channel_id,
+                config.get().media_channel_id,
                 lambda msg: _URL_REGEX.search(cast("dc.Message", msg).content),
                 ("a link", "a link"),
             ),
