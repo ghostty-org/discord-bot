@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, NamedTuple, final
 from githubkit.exception import RequestFailed
 
 from app.components.github_integration.models import GitHubUser
+from app.config import gh
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -71,3 +72,6 @@ class CommitCache:
         key_with_full_sha = copy.replace(key, sha=obj.sha)
         self._cache[key_with_full_sha] = commit_summary
         return commit_summary
+
+
+commit_cache = CommitCache(gh)

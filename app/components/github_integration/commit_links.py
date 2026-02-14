@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast, final
 import discord as dc
 from discord.ext import commands
 
-from app.components.github_integration.commit_types import CommitCache, CommitKey
+from app.components.github_integration.commit_types import CommitKey, commit_cache
 from app.components.github_integration.entities.resolution import resolve_repo_signature
 from toolbox.discord import (
     dynamic_timestamp,
@@ -53,7 +53,6 @@ class CommitLinks(commands.Cog):
         self.bot = bot
         self.linker = MessageLinker()
         CommitActions.linker = MessageLinker()
-        self.cache = CommitCache(self.bot.gh)
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -123,7 +122,7 @@ class CommitLinks(commands.Cog):
     async def process(self, message: dc.Message) -> ProcessedMessage:
         shas = dict.fromkeys(COMMIT_SHA_PATTERN.findall(message.content))
         shas = [r async for r in self.resolve_repo_signatures(shas)]
-        commit_summaries = await asyncio.gather(*(self.cache.get(c) for c in shas))
+        commit_summaries = await asyncio.gather(*(commit_cache.get(c) for c in shas))
         valid_shas = list(filter(None, commit_summaries))
         content = "\n\n".join(map(self._format, valid_shas))
         return ProcessedMessage(item_count=len(valid_shas), content=content)
