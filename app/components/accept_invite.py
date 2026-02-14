@@ -4,6 +4,7 @@ import discord as dc
 from discord.ext import commands
 from loguru import logger
 
+from app.config import config
 from toolbox.discord import is_dm, pretty_print_account, try_dm
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ class AcceptInvite(commands.Cog):
     async def accept_invite(self, interaction: dc.Interaction) -> None:
         assert not is_dm(interaction.user)
 
-        await try_dm(interaction.user, self.bot.config.accept_invite_url, silent=True)
+        await try_dm(interaction.user, config().accept_invite_url, silent=True)
         await try_dm(
             interaction.user,
             "Ghostty is already out! 👉 https://ghostty.org/",

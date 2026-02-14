@@ -133,7 +133,7 @@ class XKCDMentions(commands.Cog):
         channel = message.channel
         if isinstance(channel, dc.Thread) and channel.parent:
             channel = channel.parent
-        if channel.id in config.serious_channel_ids:
+        if channel.id in config().serious_channel_ids:
             return False
 
         # Filter out symbols to catch things like `foo*, bar`. Don't remove backticks to
