@@ -27,9 +27,9 @@ def get_entity_emoji(emojis: Emojis, entity: Entity) -> dc.Emoji:
         emoji_name = "issue_" + state
     elif isinstance(entity, PullRequest):
         emoji_name = "pull_" + (
-            "draft" if entity.draft
-            else "merged" if entity.merged
+            "merged" if entity.merged
             else "closed" if entity.closed
+            else "draft" if entity.draft
             else "open"
         )  # fmt: skip
     elif isinstance(entity, Discussion):
