@@ -212,7 +212,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
             bot,
             event.sender,
             pr_embed_content(
-                pr, "dismissed a {} review", f"authored by {review_author.hyperlink}"
+                pr, "dismissed a review of {}", f"authored by {review_author.hyperlink}"
             ),
             pr_footer(pr, emoji=emoji),
             color="orange",
