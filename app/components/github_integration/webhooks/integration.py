@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from monalisten import AuthIssue, Error
 
     from app.bot import GhosttyBot
-    from app.components.github_integration.webhooks.utils import VouchQueue
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 
 def register_internal_hooks(webhook: Monalisten) -> None:

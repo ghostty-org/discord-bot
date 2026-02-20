@@ -4,11 +4,13 @@ from loguru import logger
 
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.utils import (
-    VOUCH_KIND_COLORS,
     EmbedContent,
     Footer,
-    VouchQueueEntry,
     send_embed,
+)
+from app.components.github_integration.webhooks.vouch import (
+    VOUCH_KIND_COLORS,
+    VouchQueueEntry,
 )
 
 if TYPE_CHECKING:
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
-    from app.components.github_integration.webhooks.utils import VouchQueue
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 
 class DiscussionLike(Protocol):

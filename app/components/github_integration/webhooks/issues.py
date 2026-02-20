@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING, Any, Protocol, cast
 from loguru import logger
 
 from app.components.github_integration.webhooks.utils import (
-    VOUCH_KIND_COLORS,
     EmbedContent,
     Footer,
-    VouchQueueEntry,
     send_edit_difference,
     send_embed,
+)
+from app.components.github_integration.webhooks.vouch import (
+    VOUCH_KIND_COLORS,
+    VouchQueueEntry,
 )
 
 if TYPE_CHECKING:
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
-    from app.components.github_integration.webhooks.utils import VouchQueue
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 DISCUSSION_DIV_TAG = re.compile(
     r"\s*<div type='discussions-op-text'>((?:.|\s)*?)\s*</div>\s*", re.MULTILINE

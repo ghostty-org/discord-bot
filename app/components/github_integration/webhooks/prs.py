@@ -1,25 +1,27 @@
 from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
-from urllib.parse import urlparse
 
 from loguru import logger
 
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.utils import (
-    VOUCH_KIND_COLORS,
-    VOUCH_PAST_TENSE,
     EmbedContent,
     Footer,
     send_edit_difference,
     send_embed,
 )
-from toolbox.misc import URL_REGEX
+from app.components.github_integration.webhooks.vouch import (
+    VOUCH_KIND_COLORS,
+    VOUCH_PAST_TENSE,
+    extract_vouch_details,
+    is_vouch_pr,
+)
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
-    from app.components.github_integration.webhooks.utils import VouchQueue
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 HUNK_CODEBLOCK_OVERHEAD = len("```diff\n\n```\n")
 
@@ -56,26 +58,6 @@ def pr_embed_content(
     return EmbedContent(
         template.format(f"PR #{pr.number}"), pr.html_url, body, description
     )
-
-
-def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:
-    # Example PR description (wrapped):
-    # Triggered by [comment](https://github.com/ghostty-org/ghostty/issues/9999#issuecom
-    # ment-3210987654) from @barfoo.
-    #
-    # Vouch: @foobar
-    if body is None or not (match := URL_REGEX.search(body)):
-        return None
-    comment_url = match[0].rstrip(")")
-    parsed_comment = urlparse(comment_url)
-    entity_id = parsed_comment.path.split("/")[-1]
-    comment_id = parsed_comment.fragment.split("-")[-1]
-    _, _, vouchee = body.rpartition("@")
-    return comment_url, int(entity_id), int(comment_id), vouchee
-
-
-def is_vouch_pr(ev: events.PullRequestOpened | events.PullRequestClosed) -> bool:
-    return ev.sender.type == "User" and ev.pull_request.title == "Update VOUCHED list"
 
 
 def register_hooks(  # noqa: C901, PLR0915
