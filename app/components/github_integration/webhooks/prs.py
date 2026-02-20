@@ -1,6 +1,6 @@
-import re
 from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
+from urllib.parse import urlparse
 
 from loguru import logger
 
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from app.components.github_integration.webhooks.utils import VouchQueue
 
 HUNK_CODEBLOCK_OVERHEAD = len("```diff\n\n```\n")
-NUM_PATTERN = re.compile(r"[0-9]+")
 
 
 class PRLike(Protocol):
@@ -68,7 +67,9 @@ def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:
     if body is None or not (match := URL_REGEX.search(body)):
         return None
     comment_url = match[0].rstrip(")")
-    entity_id, comment_id, *_junk = NUM_PATTERN.findall(comment_url)
+    parsed_comment = urlparse(comment_url)
+    entity_id = parsed_comment.path.split("/")[-1]
+    comment_id = parsed_comment.fragment.split("-")[-1]
     _, _, vouchee = body.rpartition("@")
     return comment_url, int(entity_id), int(comment_id), vouchee
 
