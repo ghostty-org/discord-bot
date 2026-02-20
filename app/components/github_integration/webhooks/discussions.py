@@ -7,6 +7,7 @@ from app.components.github_integration.webhooks.utils import (
     VOUCH_KIND_COLORS,
     EmbedContent,
     Footer,
+    VouchQueueEntry,
     send_embed,
 )
 
@@ -185,7 +186,9 @@ def register_hooks(
                 event.sender.login,
                 discussion.number,
             )
-            vouch_queue[event.comment.id] = vouch_command, event.sender, footer
+            vouch_queue[event.comment.id] = VouchQueueEntry(
+                vouch_command, event.sender, footer
+            )
             return
 
         await send_embed(

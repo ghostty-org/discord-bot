@@ -32,7 +32,7 @@ GITHUB_DISCUSSION_URL = re.compile(
 )  # fmt: skip
 
 type VouchKind = Literal["vouch", "unvouch", "denounce"]
-type VouchQueue = dict[int, tuple[VouchKind, SimpleUser, Footer]]
+type VouchQueue = dict[int, VouchQueueEntry]
 type EmbedColor = Literal["green", "red", "purple", "gray", "orange", "blue"]
 
 VOUCH_PAST_TENSE: dict[VouchKind, str] = {
@@ -54,6 +54,12 @@ EMBED_COLORS: dict[EmbedColor, int] = {
     "orange": 0xEDB74A,
     "blue": 0x4C8CED,
 }
+
+
+class VouchQueueEntry(NamedTuple):
+    kind: VouchKind
+    actor: SimpleUser
+    footer: Footer
 
 
 class EmbedContentArgs(TypedDict, total=False):
