@@ -16,7 +16,8 @@ if TYPE_CHECKING:
 
     from app.bot import EmojiName, GhosttyBot
 
-HUNK_CODEBLOCK_OVERHEAD = len("```diff\n\n```\n")
+HUNK_TEMPLATE = "```diff\n{hunk}\n```\n\n{content}"
+HUNK_CODEBLOCK_OVERHEAD = len("```diff\n\n```\n\n")
 
 
 class PRLike(Protocol):
@@ -225,7 +226,7 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
         hunk = _reduce_diff_hunk(event.comment.diff_hunk)
         hunk_can_fit = 500 - len(content) - len(hunk) - HUNK_CODEBLOCK_OVERHEAD >= 0
         if hunk.strip() and hunk_can_fit:
-            content = f"```diff\n{hunk}\n```\n{content}"
+            content = HUNK_TEMPLATE.format(hunk=hunk, content=content)
 
         await send_embed(
             bot,
