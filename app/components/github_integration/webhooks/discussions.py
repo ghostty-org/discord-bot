@@ -1,7 +1,10 @@
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
+from loguru import logger
+
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.utils import (
+    VOUCH_KIND_COLORS,
     EmbedContent,
     Footer,
     send_embed,
@@ -12,6 +15,7 @@ if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
+    from app.components.github_integration.webhooks.utils import VouchQueue
 
 
 class DiscussionLike(Protocol):
@@ -52,7 +56,9 @@ def discussion_embed_content(
     )
 
 
-def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
+def register_hooks(
+    bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
+) -> None:
     @webhook.event.discussion.created
     async def _(event: events.DiscussionCreated) -> None:
         discussion = event.discussion
@@ -171,11 +177,22 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     @webhook.event.discussion_comment.created
     async def _(event: events.DiscussionCommentCreated) -> None:
         discussion = event.discussion
+        footer = discussion_footer(discussion)
+        vouch_command = event.comment.body.removeprefix("!").partition(" ")[0]
+        if vouch_command in VOUCH_KIND_COLORS:
+            logger.info(
+                "ignoring vouch system comment from @{} in #{}",
+                event.sender.login,
+                discussion.number,
+            )
+            vouch_queue[event.comment.id] = vouch_command, event.sender, footer
+            return
+
         await send_embed(
             bot,
             event.sender,
             discussion_embed_content(discussion, "commented on", event.comment.body),
-            discussion_footer(discussion),
+            footer,
             feed_type="discussions",
             origin_repo=event.repository,
         )

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from app.bot import GhosttyBot
 
-_URL_REGEX = re.compile(
+URL_REGEX = re.compile(
     r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b"
     r"(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
 )
@@ -50,7 +50,7 @@ class MessageFilter(commands.Cog):
             # Delete non-link messages in #media
             MessageFilterTuple(
                 self.bot.config.media_channel_id,
-                lambda msg: _URL_REGEX.search(cast("dc.Message", msg).content),
+                lambda msg: URL_REGEX.search(cast("dc.Message", msg).content),
                 ("a link", "a link"),
             ),
         )
