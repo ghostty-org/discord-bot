@@ -69,7 +69,7 @@ def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:
         return None
     comment_url = match[0].rstrip(")")
     entity_id, comment_id, *_junk = NUM_PATTERN.findall(comment_url)
-    vouchee = body[body.rfind("@") + 1 :]
+    _, _, vouchee = body.rpartition("@")
     return str(comment_url), int(entity_id), int(comment_id), str(vouchee)
 
 
