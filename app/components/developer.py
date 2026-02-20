@@ -6,6 +6,7 @@ from discord.app_commands import Choice  # noqa: TC002
 from discord.ext import commands
 from loguru import logger
 
+from app.config import config
 from toolbox.discord import generate_autocomplete, pretty_print_account
 
 if TYPE_CHECKING:
@@ -38,7 +39,7 @@ class Developer(commands.Cog):
         if message.content.strip() != "!sync":
             return
 
-        if not self.bot.is_ghostty_mod(message.author):
+        if not config().is_ghostty_mod(message.author):
             logger.debug(
                 "!sync called by {} who is not a mod",
                 pretty_print_account(message.author),
@@ -55,7 +56,7 @@ class Developer(commands.Cog):
     @dc.app_commands.default_permissions(ban_members=True)
     async def status(self, interaction: dc.Interaction) -> None:
         # The client-side check with `default_permissions` isn't guaranteed to work.
-        if not self.bot.is_ghostty_mod(interaction.user):
+        if not config().is_ghostty_mod(interaction.user):
             await interaction.response.send_message(
                 "Only mods can use this command.", ephemeral=True
             )
@@ -73,7 +74,7 @@ class Developer(commands.Cog):
         self, interaction: dc.Interaction, extension: str | None = None
     ) -> None:
         # The client-side check with `default_permissions` isn't guaranteed to work.
-        if not self.bot.is_ghostty_mod(interaction.user):
+        if not config().is_ghostty_mod(interaction.user):
             await interaction.response.send_message(
                 "Only mods can use this command.", ephemeral=True
             )
@@ -125,7 +126,7 @@ class Developer(commands.Cog):
     @dc.app_commands.autocomplete(extension=existing_extension_autocomplete)
     async def unload(self, interaction: dc.Interaction, extension: str) -> None:
         # The client-side check with `default_permissions` isn't guaranteed to work.
-        if not self.bot.is_ghostty_mod(interaction.user):
+        if not config().is_ghostty_mod(interaction.user):
             await interaction.response.send_message(
                 "Only mods can use this command.", ephemeral=True
             )
@@ -151,7 +152,7 @@ class Developer(commands.Cog):
     @dc.app_commands.default_permissions(ban_members=True)
     async def load(self, interaction: dc.Interaction, extension: str) -> None:
         # The client-side check with `default_permissions` isn't guaranteed to work.
-        if not self.bot.is_ghostty_mod(interaction.user):
+        if not config().is_ghostty_mod(interaction.user):
             await interaction.response.send_message(
                 "Only mods can use this command.", ephemeral=True
             )

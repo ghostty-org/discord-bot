@@ -5,6 +5,7 @@ import discord as dc
 import sentry_sdk
 from discord.ext import commands, tasks
 
+from app.config import config
 from toolbox.discord import post_is_solved
 
 if TYPE_CHECKING:
@@ -29,9 +30,9 @@ class AutoClose(commands.Cog):
         closed_posts: list[dc.Thread] = []
         failures: list[dc.Thread] = []
 
-        open_posts = len(self.bot.help_channel.threads)
+        open_posts = len(config().help_channel.threads)
         with sentry_sdk.start_transaction(op="bot.scan", name="all of help_channel"):
-            for post in self.bot.help_channel.threads:
+            for post in config().help_channel.threads:
                 with sentry_sdk.start_span(op="bot.scan", name="post"):
                     if post.archived or not post_is_solved(post):
                         continue
@@ -52,12 +53,12 @@ class AutoClose(commands.Cog):
             open_posts,
             len(closed_posts),
         )
-        msg = f"Scanned {open_posts:,} open posts in {self.bot.help_channel.mention}.\n"
+        msg = f"Scanned {open_posts:,} open posts in {config().help_channel.mention}.\n"
         if closed_posts:
             msg += f"Automatically closed {self._post_list(closed_posts)}"
         if failures:
             msg += f"Failed to check {self._post_list(failures)}"
-        await self.bot.log_channel.send(msg)
+        await config().log_channel.send(msg)
 
     @autoclose_solved_posts.before_loop
     async def before_autoclose_solved_posts(self) -> None:

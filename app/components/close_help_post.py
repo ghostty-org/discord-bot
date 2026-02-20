@@ -42,7 +42,7 @@ class Close(commands.GroupCog, group_name="close"):
             return False
 
         # Allow privileged users to close posts, as well as the author of the post.
-        if self.bot.is_privileged(user) or user.id == post.owner_id:
+        if config().is_privileged(user) or user.id == post.owner_id:
             return True
 
         # When "Turn into #help post" is used, the owner ID is the ID of the webhook
@@ -65,7 +65,7 @@ class Close(commands.GroupCog, group_name="close"):
             raise error
         # Triggers if self.interaction_check fails
         await interaction.response.send_message(
-            f"This command can only be used in {self.bot.help_channel.mention} posts, "
+            f"This command can only be used in {config().help_channel.mention} posts, "
             "by helpers or the post's author.",
             ephemeral=True,
         )

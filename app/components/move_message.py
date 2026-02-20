@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Self, cast, final, override
 import discord as dc
 from discord.ext import commands
 
+from app.config import config
 from toolbox.discord import GuildTextChannel, dynamic_timestamp, is_dm, safe_edit
 from toolbox.errors import SafeModal, SafeView
 from toolbox.message_moving import (
@@ -235,7 +236,7 @@ class HelpPostTitle(SafeModal, title="Turn into #help post"):
     async def on_submit(self, interaction: dc.Interaction) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        webhook = await get_or_create_webhook(self.bot.help_channel)
+        webhook = await get_or_create_webhook(config().help_channel)
         msg = await move_message(
             self.bot,
             webhook,
@@ -434,7 +435,7 @@ class EditMessage(SafeModal, title="Edit Message"):
     async def on_submit(self, interaction: dc.Interaction) -> None:
         content = f"{self.new_text.value}\n{self._split_subtext.subtext}"
         converted_content = convert_nitro_emojis(
-            self.bot, self.bot.ghostty_guild, content
+            self.bot, config().ghostty_guild, content
         )
         await self._message.edit(
             content=converted_content if len(converted_content) <= 2000 else content,
@@ -650,7 +651,7 @@ class MoveMessage(commands.Cog):
     ) -> None:
         channel = moved_message.channel
         converted_content = convert_nitro_emojis(
-            self.bot, self.bot.ghostty_guild, new_content
+            self.bot, config().ghostty_guild, new_content
         )
         if len(converted_content) <= 2000:
             new_content = converted_content
@@ -748,7 +749,7 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not self.bot.is_privileged(interaction.user):
+        if not config().is_privileged(interaction.user):
             await interaction.response.send_message(
                 "You do not have permission to move messages.", ephemeral=True
             )
@@ -780,7 +781,7 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not self.bot.is_privileged(interaction.user):
+        if not config().is_privileged(interaction.user):
             await interaction.response.send_message(
                 "You do not have permission to use this action.", ephemeral=True
             )
@@ -789,7 +790,7 @@ class MoveMessage(commands.Cog):
         if not message_can_be_moved(message):
             await interaction.response.send_message(
                 "System messages cannot be turned into "
-                f"{self.bot.help_channel.mention} posts.",
+                f"{config().help_channel.mention} posts.",
                 ephemeral=True,
                 view=DeleteInstead(message),
             )

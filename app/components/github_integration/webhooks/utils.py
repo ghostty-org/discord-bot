@@ -10,6 +10,7 @@ import discord as dc
 from monalisten import events
 
 from app.components.github_integration.models import GitHubUser
+from app.config import config
 from toolbox.misc import truncate
 
 if TYPE_CHECKING:
@@ -180,4 +181,4 @@ async def send_embed(  # noqa: PLR0913
         .set_footer(**footer.dict(bot.ghostty_emojis))
         .set_author(**author.model_dump())
     )
-    await bot.webhook_channels[feed_type].send(embed=embed)
+    await config().webhook_channels[feed_type].send(embed=embed)

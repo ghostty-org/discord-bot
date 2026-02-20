@@ -4,7 +4,6 @@ import importlib
 import importlib.util
 import pkgutil
 import sys
-from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, cast, final, get_args, override
@@ -12,16 +11,17 @@ from typing import TYPE_CHECKING, Any, Literal, cast, final, get_args, override
 import discord as dc
 import sentry_sdk
 from discord.ext import commands
+from githubkit import GitHub
 from loguru import logger
 
-from app.config import config
+from app import log
+from app.config import Config, config, config_var, gh_var
 from app.status import BotStatus
 from toolbox.discord import pretty_print_account, try_dm
 from toolbox.errors import handle_error, interaction_error_handler
 from toolbox.messages import REGULAR_MESSAGE_TYPES
 
 if TYPE_CHECKING:
-    from app.config import WebhookFeedType
     from toolbox.discord import Account
 
 EmojiName = Literal[
@@ -47,6 +47,12 @@ type Emojis = MappingProxyType[EmojiName, dc.Emoji | str]
 @final
 class GhosttyBot(commands.Bot):
     def __init__(self) -> None:
+        self._config_context_token = config_var.set(Config(".env", bot=self))
+        self._gh_context_token = gh_var.set(
+            GitHub(config().github_token.get_secret_value())
+        )
+        log.setup()
+
         intents = dc.Intents.default()
         intents.members = True
         intents.message_content = True
@@ -63,6 +69,11 @@ class GhosttyBot(commands.Bot):
         self._ghostty_emojis = dict.fromkeys(_EMOJI_NAMES, "❓")
         self.ghostty_emojis: Emojis = MappingProxyType(self._ghostty_emojis)
         self.emojis_loaded = asyncio.Event()
+
+    @override
+    async def close(self) -> None:
+        config_var.reset(self._config_context_token)
+        gh_var.reset(self._gh_context_token)
 
     @override
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
@@ -126,60 +137,6 @@ class GhosttyBot(commands.Bot):
         await self.load_emojis()
         logger.info("logged in as {}", self.user)
 
-    @cached_property
-    def ghostty_guild(self) -> dc.Guild:
-        logger.debug("fetching ghostty guild")
-        if (id_ := config().guild_id) and (guild := self.get_guild(id_)):
-            logger.trace("found ghostty guild")
-            return guild
-        logger.info(
-            "BOT_GUILD_ID unset or specified guild not found; using bot's first guild: "
-            "{} (ID: {})",
-            self.guilds[0].name,
-            self.guilds[0].id,
-        )
-        return self.guilds[0]
-
-    @cached_property
-    def log_channel(self) -> dc.TextChannel:
-        logger.debug("fetching log channel")
-        channel = self.get_channel(config().log_channel_id)
-        assert isinstance(channel, dc.TextChannel)
-        return channel
-
-    @cached_property
-    def help_channel(self) -> dc.ForumChannel:
-        logger.debug("fetching help channel")
-        channel = self.get_channel(config().help_channel_id)
-        assert isinstance(channel, dc.ForumChannel)
-        return channel
-
-    @cached_property
-    def webhook_channels(self) -> dict[WebhookFeedType, dc.TextChannel]:
-        channels: dict[WebhookFeedType, dc.TextChannel] = {}
-        for feed_type, id_ in config().webhook_channel_ids.items():
-            logger.debug("fetching {feed_type} webhook channel", feed_type)
-            channel = self.ghostty_guild.get_channel(id_)
-            if not isinstance(channel, dc.TextChannel):
-                msg = (
-                    "expected {} webhook channel to be a text channel"
-                    if channel
-                    else "failed to find {} webhook channel"
-                )
-                raise TypeError(msg.format(feed_type))
-            channels[feed_type] = channel
-        return channels
-
-    def is_privileged(self, member: dc.Member) -> bool:
-        return not (
-            member.get_role(config().mod_role_id) is None
-            and member.get_role(config().helper_role_id) is None
-        )
-
-    def is_ghostty_mod(self, user: Account) -> bool:
-        member = self.ghostty_guild.get_member(user.id)
-        return member is not None and member.get_role(config().mod_role_id) is not None
-
     def _fails_message_filters(self, message: dc.Message) -> bool:
         # This can't be the MessageFilter cog type because that would cause an import
         # cycle.
@@ -222,7 +179,7 @@ class GhosttyBot(commands.Bot):
     async def load_emojis(self) -> None:
         self.emojis_loaded.clear()
 
-        for emoji in self.ghostty_guild.emojis:
+        for emoji in config().ghostty_guild.emojis:
             if emoji.name in _EMOJI_NAMES:
                 self._ghostty_emojis[cast("EmojiName", emoji.name)] = emoji
 
@@ -231,7 +188,7 @@ class GhosttyBot(commands.Bot):
         }:
             emoji_list = ", ".join(missing_emojis)
             logger.error("failed to load emojis {}", emoji_list)
-            await self.log_channel.send(
+            await config().log_channel.send(
                 f"Failed to load the following emojis: {emoji_list}"
             )
 
