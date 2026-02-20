@@ -70,7 +70,7 @@ def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:
     comment_url = match[0].rstrip(")")
     entity_id, comment_id, *_junk = NUM_PATTERN.findall(comment_url)
     _, _, vouchee = body.rpartition("@")
-    return str(comment_url), int(entity_id), int(comment_id), str(vouchee)
+    return comment_url, int(entity_id), int(comment_id), vouchee
 
 
 def is_vouch_pr(ev: events.PullRequestOpened | events.PullRequestClosed) -> bool:
