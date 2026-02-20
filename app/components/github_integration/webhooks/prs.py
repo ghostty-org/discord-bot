@@ -12,7 +12,7 @@ from app.components.github_integration.webhooks.utils import (
     send_edit_difference,
     send_embed,
 )
-from app.components.message_filter import URL_REGEX
+from toolbox.misc import URL_REGEX
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
