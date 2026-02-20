@@ -1,4 +1,3 @@
-import re
 from typing import TYPE_CHECKING, NamedTuple, cast, final
 
 import discord as dc
@@ -6,16 +5,13 @@ from discord.ext import commands
 
 from toolbox.discord import format_or_file, try_dm
 from toolbox.messages import REGULAR_MESSAGE_TYPES
+from toolbox.misc import URL_REGEX
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from app.bot import GhosttyBot
 
-_URL_REGEX = re.compile(
-    r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b"
-    r"(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
-)
 _MESSAGE_DELETION_TEMPLATE = (
     "Hey! Your message in {} was deleted because it did not contain {}. "
     "Make sure to include {}, and respond in threads.\n"
@@ -50,7 +46,7 @@ class MessageFilter(commands.Cog):
             # Delete non-link messages in #media
             MessageFilterTuple(
                 self.bot.config.media_channel_id,
-                lambda msg: _URL_REGEX.search(cast("dc.Message", msg).content),
+                lambda msg: URL_REGEX.search(cast("dc.Message", msg).content),
                 ("a link", "a link"),
             ),
         )

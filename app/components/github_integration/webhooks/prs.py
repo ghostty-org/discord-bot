@@ -10,11 +10,18 @@ from app.components.github_integration.webhooks.utils import (
     send_edit_difference,
     send_embed,
 )
+from app.components.github_integration.webhooks.vouch import (
+    VOUCH_KIND_COLORS,
+    VOUCH_PAST_TENSE,
+    extract_vouch_details,
+    is_vouch_pr,
+)
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 HUNK_TEMPLATE = "```diff\n{hunk}\n```\n\n{content}"
 HUNK_CODEBLOCK_OVERHEAD = len("```diff\n\n```\n\n")
@@ -54,10 +61,20 @@ def pr_embed_content(
     )
 
 
-def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR0915
+def register_hooks(  # noqa: C901, PLR0915
+    bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
+) -> None:
     @webhook.event.pull_request.opened
     async def _(event: events.PullRequestOpened) -> None:
         pr = event.pull_request
+        if is_vouch_pr(event):
+            logger.info(
+                "ignoring vouch system PR #{} opened by @{}",
+                pr.number,
+                event.sender.login,
+            )
+            return
+
         await send_embed(
             bot,
             event.sender,
@@ -71,6 +88,27 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:  # noqa: PLR09
     async def _(event: events.PullRequestClosed) -> None:
         pr = event.pull_request
         action, color = ("merged", "purple") if pr.merged else ("closed", "red")
+        if action == "merged" and is_vouch_pr(event):
+            if not (vouch_details := extract_vouch_details(pr.body)):
+                logger.error("failed to extract vouch data from PR #{}", pr.number)
+                return
+
+            url, entity_id, comment_id, vouchee = vouch_details
+            if comment_id not in vouch_queue:
+                logger.error(
+                    "missing vouch queue entry for comment {} in #{}",
+                    comment_id,
+                    entity_id,
+                )
+                return
+
+            action, actor, footer = vouch_queue.pop(comment_id)
+            action_past = VOUCH_PAST_TENSE[action]
+            content = EmbedContent(f"{action_past} @{vouchee} in #{entity_id}", url)
+            color = VOUCH_KIND_COLORS[action]
+            await send_embed(bot, actor, content, footer, color=color)
+            return
+
         await send_embed(
             bot,
             event.sender,

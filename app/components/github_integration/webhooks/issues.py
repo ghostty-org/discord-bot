@@ -9,12 +9,17 @@ from app.components.github_integration.webhooks.utils import (
     send_edit_difference,
     send_embed,
 )
+from app.components.github_integration.webhooks.vouch import (
+    find_vouch_command,
+    register_vouch_command,
+)
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 DISCUSSION_DIV_TAG = re.compile(
     r"\s*<div type='discussions-op-text'>((?:.|\s)*?)\s*</div>\s*", re.MULTILINE
@@ -60,7 +65,9 @@ def issue_embed_content(
     )
 
 
-def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
+def register_hooks(
+    bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
+) -> None:
     @webhook.event.issues.opened
     async def _(event: events.IssuesOpened) -> None:
         issue = event.issue
@@ -172,10 +179,16 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
             title += entity.casefold()
             emoji = get_issue_emoji(cast("IssueLike", issue))
 
+        footer = Footer(emoji, f"{entity}: {issue.title}")
+
+        if vouch_command := find_vouch_command(event.comment.body):
+            register_vouch_command(vouch_queue, vouch_command, event, footer)
+            return
+
         await send_embed(
             bot,
             event.sender,
             EmbedContent(title, event.comment.html_url, event.comment.body),
-            Footer(emoji, f"{entity}: {issue.title}"),
+            footer,
             origin_repo=event.repository,
         )

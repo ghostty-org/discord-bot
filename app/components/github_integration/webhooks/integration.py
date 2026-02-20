@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from monalisten import AuthIssue, Error
 
     from app.bot import GhosttyBot
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 
 def register_internal_hooks(webhook: Monalisten) -> None:
@@ -46,13 +47,14 @@ class GitHubWebhooks(commands.Cog):
             else None,
         )
         self._monalisten_task: asyncio.Task[None] | None = None
+        self._vouch_queue: VouchQueue = {}
 
     @override
     async def cog_load(self) -> None:
         register_internal_hooks(self.monalisten_client)
-        discussions.register_hooks(self.bot, self.monalisten_client)
-        issues.register_hooks(self.bot, self.monalisten_client)
-        prs.register_hooks(self.bot, self.monalisten_client)
+        discussions.register_hooks(self.bot, self.monalisten_client, self._vouch_queue)
+        issues.register_hooks(self.bot, self.monalisten_client, self._vouch_queue)
+        prs.register_hooks(self.bot, self.monalisten_client, self._vouch_queue)
         commits.register_hooks(self.bot, self.monalisten_client)
 
         # Maintain strong reference to avoid task from being gc

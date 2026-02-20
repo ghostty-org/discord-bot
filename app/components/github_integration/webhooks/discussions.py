@@ -6,12 +6,17 @@ from app.components.github_integration.webhooks.utils import (
     Footer,
     send_embed,
 )
+from app.components.github_integration.webhooks.vouch import (
+    find_vouch_command,
+    register_vouch_command,
+)
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import DiscussionPropCategory, SimpleUser
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
+    from app.components.github_integration.webhooks.vouch import VouchQueue
 
 
 class DiscussionLike(Protocol):
@@ -52,7 +57,9 @@ def discussion_embed_content(
     )
 
 
-def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
+def register_hooks(
+    bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
+) -> None:
     @webhook.event.discussion.created
     async def _(event: events.DiscussionCreated) -> None:
         discussion = event.discussion
@@ -171,11 +178,16 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     @webhook.event.discussion_comment.created
     async def _(event: events.DiscussionCommentCreated) -> None:
         discussion = event.discussion
+        footer = discussion_footer(discussion)
+        if vouch_command := find_vouch_command(event.comment.body):
+            register_vouch_command(vouch_queue, vouch_command, event, footer)
+            return
+
         await send_embed(
             bot,
             event.sender,
             discussion_embed_content(discussion, "commented on", event.comment.body),
-            discussion_footer(discussion),
+            footer,
             feed_type="discussions",
             origin_repo=event.repository,
         )

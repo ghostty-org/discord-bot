@@ -1,4 +1,5 @@
 import asyncio
+import re
 import subprocess
 from typing import TYPE_CHECKING, Any
 
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     "GH",
+    "URL_REGEX",
     "aenumerate",
     "async_process_check_output",
     "format_diff_note",
@@ -16,6 +18,11 @@ __all__ = (
 )
 
 type GH = GitHub[TokenAuthStrategy]
+
+URL_REGEX = re.compile(
+    r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b"
+    r"(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
+)
 
 
 def truncate(s: str, length: int, *, suffix: str = "…") -> str:
