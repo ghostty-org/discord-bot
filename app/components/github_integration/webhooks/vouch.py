@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING, Literal, NamedTuple
 from urllib.parse import urlparse
 
+from loguru import logger
+from monalisten import events
+
 from toolbox.misc import URL_REGEX
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import SimpleUser
-    from monalisten import events
 
     from app.components.github_integration.webhooks.utils import EmbedColor, Footer
 
@@ -36,6 +38,23 @@ def find_vouch_command(body: str) -> VouchKind | None:
     if (command := body.partition(" ")[0].removeprefix("!")) in VOUCH_KIND_COLORS:
         return command
     return None
+
+
+def register_vouch_command(
+    vouch_queue: VouchQueue,
+    command: VouchKind,
+    event: events.IssueCommentCreated | events.DiscussionCommentCreated,
+    footer: Footer,
+) -> None:
+    number = (
+        event.issue.number
+        if isinstance(event, events.IssueCommentCreated)
+        else event.discussion.number
+    )
+    logger.info(
+        "ignoring vouch system comment from @{} in #{}", event.sender.login, number
+    )
+    vouch_queue[event.comment.id] = VouchQueueEntry(command, event.sender, footer)
 
 
 def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:

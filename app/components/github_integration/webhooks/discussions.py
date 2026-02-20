@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
-from loguru import logger
-
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.utils import (
     EmbedContent,
@@ -9,8 +7,8 @@ from app.components.github_integration.webhooks.utils import (
     send_embed,
 )
 from app.components.github_integration.webhooks.vouch import (
-    VouchQueueEntry,
     find_vouch_command,
+    register_vouch_command,
 )
 
 if TYPE_CHECKING:
@@ -182,14 +180,7 @@ def register_hooks(
         discussion = event.discussion
         footer = discussion_footer(discussion)
         if vouch_command := find_vouch_command(event.comment.body):
-            logger.info(
-                "ignoring vouch system comment from @{} in #{}",
-                event.sender.login,
-                discussion.number,
-            )
-            vouch_queue[event.comment.id] = VouchQueueEntry(
-                vouch_command, event.sender, footer
-            )
+            register_vouch_command(vouch_queue, vouch_command, event, footer)
             return
 
         await send_embed(
