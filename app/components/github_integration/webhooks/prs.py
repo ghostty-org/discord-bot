@@ -7,6 +7,7 @@ from loguru import logger
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.utils import (
     VOUCH_KIND_COLORS,
+    VOUCH_PAST_TENSE,
     EmbedContent,
     Footer,
     send_edit_difference,
@@ -118,7 +119,7 @@ def register_hooks(  # noqa: C901, PLR0915
                 return
 
             action, actor, footer = vouch_queue.pop(comment_id)
-            action_past = action.removesuffix("e") + "ed"
+            action_past = VOUCH_PAST_TENSE[action]
             content = EmbedContent(f"{action_past} @{vouchee} in #{entity_id}", url)
             color = VOUCH_KIND_COLORS[action]
             await send_embed(bot, actor, content, footer, color=color)

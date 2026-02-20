@@ -35,6 +35,11 @@ type VouchKind = Literal["vouch", "unvouch", "denounce"]
 type VouchQueue = dict[int, tuple[VouchKind, SimpleUser, Footer]]
 type EmbedColor = Literal["green", "red", "purple", "gray", "orange", "blue"]
 
+VOUCH_PAST_TENSE: dict[VouchKind, str] = {
+    "vouch": "vouched",
+    "unvouch": "unvouched",
+    "denounce": "denounced",
+}
 VOUCH_KIND_COLORS: dict[VouchKind, EmbedColor] = {
     "vouch": "blue",
     "unvouch": "orange",
