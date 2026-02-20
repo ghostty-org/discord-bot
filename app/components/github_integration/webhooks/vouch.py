@@ -30,6 +30,14 @@ class VouchQueueEntry(NamedTuple):
     footer: Footer
 
 
+def find_vouch_command(body: str) -> VouchKind | None:
+    if not body.startswith("!"):
+        return None
+    if (command := body.partition(" ")[0].removeprefix("!")) in VOUCH_KIND_COLORS:
+        return command
+    return None
+
+
 def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:
     # Example PR description (wrapped):
     # Triggered by [comment](https://github.com/ghostty-org/ghostty/issues/9999#issuecom

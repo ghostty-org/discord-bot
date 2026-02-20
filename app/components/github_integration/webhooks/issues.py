@@ -10,8 +10,8 @@ from app.components.github_integration.webhooks.utils import (
     send_embed,
 )
 from app.components.github_integration.webhooks.vouch import (
-    VOUCH_KIND_COLORS,
     VouchQueueEntry,
+    find_vouch_command,
 )
 
 if TYPE_CHECKING:
@@ -181,8 +181,7 @@ def register_hooks(
 
         footer = Footer(emoji, f"{entity}: {issue.title}")
 
-        vouch_command = event.comment.body.removeprefix("!").partition(" ")[0]
-        if vouch_command in VOUCH_KIND_COLORS:
+        if vouch_command := find_vouch_command(event.comment.body):
             logger.info(
                 "ignoring vouch system comment from @{} in #{}",
                 event.sender.login,
