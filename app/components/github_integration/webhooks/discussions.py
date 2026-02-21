@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
+from loguru import logger
+
 from app.components.github_integration.models import GitHubUser
 from app.components.github_integration.webhooks.utils import (
     EmbedContent,
@@ -16,7 +18,14 @@ if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName, GhosttyBot
+    from app.components.github_integration.webhooks.utils import EmbedColor
     from app.components.github_integration.webhooks.vouch import VouchQueue
+
+DISCUSSION_STATE_COLORS: dict[str, EmbedColor] = {
+    "resolved": "purple",
+    "outdated": "gray",
+    "duplicate": "gray",
+}
 
 
 class DiscussionLike(Protocol):
@@ -48,10 +57,11 @@ def discussion_footer(
 
 
 def discussion_embed_content(
-    discussion: DiscussionLike, action: str, body: str | None = None
+    discussion: DiscussionLike, template: str, body: str | None = None
 ) -> EmbedContent:
     return EmbedContent(
-        f"{action} discussion #{discussion.number} in {discussion.category.name}",
+        template.format(f"discussion #{discussion.number}")
+        + f" in {discussion.category.name}",
         discussion.html_url,
         body,
     )
@@ -66,7 +76,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "opened", discussion.body),
+            discussion_embed_content(discussion, "opened {}", discussion.body),
             discussion_footer(discussion, emoji="discussion"),
             color="gray",
             feed_type="discussions",
@@ -76,12 +86,20 @@ def register_hooks(
     @webhook.event.discussion.closed
     async def _(event: events.DiscussionClosed) -> None:
         discussion = event.discussion
+        if not (
+            discussion.state_reason
+            and (color := DISCUSSION_STATE_COLORS.get(discussion.state_reason))
+        ):
+            logger.warning("unexpected state reason: {}", discussion.state_reason)
+            return
+
+        reason = discussion.state_reason.replace("_", " ")
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "closed"),
-            discussion_footer(discussion, emoji="discussion_answered"),
-            color="purple",
+            discussion_embed_content(discussion, f"closed {{}} as {reason}"),
+            discussion_footer(discussion, emoji=get_discussion_emoji(discussion)),
+            color=color,
             feed_type="discussions",
         )
 
@@ -91,7 +109,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "reopened"),
+            discussion_embed_content(discussion, "reopened {}"),
             discussion_footer(discussion),
             color="gray",
             feed_type="discussions",
@@ -108,7 +126,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "chose an answer for", body),
+            discussion_embed_content(discussion, "chose an answer for {}", body),
             discussion_footer(discussion, emoji="discussion_answered"),
             color="green",
             feed_type="discussions",
@@ -121,7 +139,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender or cast("SimpleUser", GitHubUser.default()),
-            discussion_embed_content(discussion, "unmarked an answer for"),
+            discussion_embed_content(discussion, "unmarked an answer for {}"),
             discussion_footer(discussion),
             color="red",
             feed_type="discussions",
@@ -133,7 +151,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "locked"),
+            discussion_embed_content(discussion, "locked {}"),
             discussion_footer(discussion),
             color="orange",
             feed_type="discussions",
@@ -145,7 +163,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "unlocked"),
+            discussion_embed_content(discussion, "unlocked {}"),
             discussion_footer(discussion),
             color="blue",
             feed_type="discussions",
@@ -157,7 +175,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "pinned"),
+            discussion_embed_content(discussion, "pinned {}"),
             discussion_footer(discussion),
             color="blue",
             feed_type="discussions",
@@ -169,7 +187,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "unpinned"),
+            discussion_embed_content(discussion, "unpinned {}"),
             discussion_footer(discussion),
             color="orange",
             feed_type="discussions",
@@ -186,7 +204,7 @@ def register_hooks(
         await send_embed(
             bot,
             event.sender,
-            discussion_embed_content(discussion, "commented on", event.comment.body),
+            discussion_embed_content(discussion, "commented on {}", event.comment.body),
             footer,
             feed_type="discussions",
             origin_repo=event.repository,

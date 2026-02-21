@@ -93,11 +93,11 @@ def register_hooks(
                 logger.warning("unexpected state reason: {}", issue.state_reason)
                 return
 
-        state_reason = cast("str", issue.state_reason).replace("_", " ")
+        reason = issue.state_reason.replace("_", " ")
         await send_embed(
             bot,
             event.sender,
-            issue_embed_content(issue, f"closed {{}} as {state_reason}"),
+            issue_embed_content(issue, f"closed {{}} as {reason}"),
             issue_footer(issue, emoji="issue_closed_" + emoji_kind),
             color=color,
         )
