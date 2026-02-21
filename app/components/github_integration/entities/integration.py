@@ -1,6 +1,5 @@
 import asyncio
 from collections import defaultdict
-from functools import partial
 from itertools import chain
 from typing import TYPE_CHECKING, final, override
 
@@ -64,7 +63,7 @@ class GitHubEntities(commands.Cog):
             reply = self.linker.get(msg)
             assert reply is not None
 
-            new_output = await entity_message(self.bot.ghostty_emojis, msg)
+            new_output = await entity_message(msg)
 
             with safe_edit:
                 await reply.edit(
@@ -84,7 +83,7 @@ class GitHubEntities(commands.Cog):
         if is_dm(message.author):
             return
 
-        output = await entity_message(self.bot.ghostty_emojis, message)
+        output = await entity_message(message)
         if not output.item_count:
             return
 
@@ -116,7 +115,7 @@ class GitHubEntities(commands.Cog):
         await self.linker.edit(
             before,
             after,
-            message_processor=partial(entity_message, self.bot.ghostty_emojis),
+            message_processor=entity_message,
             interactor=self.reply_with_entities,
             view_type=EntityActions,
         )

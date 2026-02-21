@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast, final
 import discord as dc
 from discord.ext import commands
 
+from app.bot import emojis
 from app.components.github_integration.commit_types import CommitKey, commit_cache
 from app.components.github_integration.entities.resolution import resolve_repo_signature
 from toolbox.discord import (
@@ -66,7 +67,7 @@ class CommitLinks(commands.Cog):
                 self.bot.bot_status.commit_data = links.content
 
     def _format(self, commit: CommitSummary) -> str:
-        emoji = self.bot.ghostty_emojis["commit"]
+        emoji = emojis()["commit"]
         title = commit.message.splitlines()[0]
         heading = f"{emoji} **Commit [`{commit.sha[:7]}`](<{commit.url}>):** {title}"
 

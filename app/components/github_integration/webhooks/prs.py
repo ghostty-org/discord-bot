@@ -23,7 +23,7 @@ from toolbox.misc import format_event_sender
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
-    from app.bot import EmojiName, GhosttyBot
+    from app.bot import EmojiName
     from app.components.github_integration.webhooks.vouch import VouchQueue
 
 HUNK_TEMPLATE = "```diff\n{hunk}\n```\n\n{content}"
@@ -64,9 +64,7 @@ def pr_embed_content(
     )
 
 
-def register_hooks(  # noqa: C901, PLR0915
-    bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
-) -> None:
+def register_hooks(webhook: Monalisten, vouch_queue: VouchQueue) -> None:  # noqa: C901, PLR0915
     @webhook.event.pull_request
     async def log_event(event: events.PullRequest) -> None:
         logger.info(
@@ -88,7 +86,6 @@ def register_hooks(  # noqa: C901, PLR0915
             return
 
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "opened {}", pr.body),
             pr_footer(pr),
@@ -118,11 +115,10 @@ def register_hooks(  # noqa: C901, PLR0915
             action_past = VOUCH_PAST_TENSE[action]
             content = EmbedContent(f"{action_past} @{vouchee} in #{entity_id}", url)
             color = VOUCH_KIND_COLORS[action]
-            await send_embed(bot, actor, content, footer, color=color)
+            await send_embed(actor, content, footer, color=color)
             return
 
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, f"{action} {{}}"),
             pr_footer(pr, emoji="pull_" + action),
@@ -134,7 +130,6 @@ def register_hooks(  # noqa: C901, PLR0915
     async def reopened(event: events.PullRequestReopened) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "reopened {}"),
             pr_footer(pr, emoji="pull_open"),
@@ -143,13 +138,12 @@ def register_hooks(  # noqa: C901, PLR0915
 
     @webhook.event.pull_request.edited
     async def edited(event: events.PullRequestEdited) -> None:
-        await send_edit_difference(bot, event, pr_embed_content, pr_footer)
+        await send_edit_difference(event, pr_embed_content, pr_footer)
 
     @webhook.event.pull_request.converted_to_draft
     async def converted_to_draft(event: events.PullRequestConvertedToDraft) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "converted {} to draft"),
             pr_footer(pr, emoji="pull_draft"),
@@ -160,7 +154,6 @@ def register_hooks(  # noqa: C901, PLR0915
     async def ready_for_review(event: events.PullRequestReadyForReview) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "marked {} as ready for review"),
             pr_footer(pr, emoji="pull_open"),
@@ -174,7 +167,6 @@ def register_hooks(  # noqa: C901, PLR0915
         if reason := pr.active_lock_reason:
             template += f" as {reason}"
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, template),
             pr_footer(pr),
@@ -185,7 +177,6 @@ def register_hooks(  # noqa: C901, PLR0915
     async def unlocked(event: events.PullRequestUnlocked) -> None:
         pr = event.pull_request
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "unlocked {}"),
             pr_footer(pr),
@@ -197,7 +188,6 @@ def register_hooks(  # noqa: C901, PLR0915
         pr = event.pull_request
         content = f"from {_format_reviewer(event)}"
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "requested review for {}", content),
             pr_footer(pr),
@@ -210,7 +200,6 @@ def register_hooks(  # noqa: C901, PLR0915
         pr = event.pull_request
         content = f"from {_format_reviewer(event)}"
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(pr, "removed review request for {}", content),
             pr_footer(pr),
@@ -242,7 +231,6 @@ def register_hooks(  # noqa: C901, PLR0915
             "draft" if pr.draft else "merged" if pr.merged_at else pr.state
         )
         await send_embed(
-            bot,
             event.sender,
             EmbedContent(f"{title} PR #{pr.number}", review.html_url, review.body),
             pr_footer(pr, emoji=emoji),
@@ -262,7 +250,6 @@ def register_hooks(  # noqa: C901, PLR0915
             else GitHubUser.default()
         )
         await send_embed(
-            bot,
             event.sender,
             pr_embed_content(
                 pr, "dismissed a review of {}", f"authored by {review_author.hyperlink}"
@@ -281,7 +268,6 @@ def register_hooks(  # noqa: C901, PLR0915
             content = HUNK_TEMPLATE.format(hunk=hunk, content=content)
 
         await send_embed(
-            bot,
             event.sender,
             EmbedContent(
                 f"left a review comment on PR #{pr.number}",

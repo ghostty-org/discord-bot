@@ -1,6 +1,6 @@
 import datetime as dt
 from types import SimpleNamespace
-from typing import Any, cast, get_args
+from typing import Any
 
 import pytest
 from githubkit.exception import RequestFailed
@@ -8,8 +8,7 @@ from githubkit.exception import RequestFailed
 from tests.utils import config
 from tests.utils import kitposer as kp
 
-from app.bot import EmojiName
-from app.components.close_help_post import Close
+from app.components.close_help_post import mention_entity
 from app.components.github_integration.entities.discussions import DISCUSSION_QUERY
 from app.components.github_integration.models import GitHubUser
 
@@ -58,21 +57,13 @@ gh_env = kp.KitPoser({
 })
 
 
-emojis = cast(
-    "Close",
-    SimpleNamespace(
-        bot=SimpleNamespace(ghostty_emojis=dict.fromkeys(get_args(EmojiName), "❓"))
-    ),
-)
-
-
 @pytest.mark.parametrize(
     ("entity_id", "kind"),
     [(189, "Issue"), (1234, "Pull Request"), (2354, "Discussion")],
 )
 async def test_mention_entity(entity_id: int, kind: str) -> None:
     with config(), gh_env:
-        msg_content = await Close.mention_entity(emojis, entity_id)
+        msg_content = await mention_entity(entity_id)
 
     assert msg_content is not None
     assert f"{kind} [#{entity_id}]" in msg_content
@@ -81,6 +72,6 @@ async def test_mention_entity(entity_id: int, kind: str) -> None:
 @pytest.mark.parametrize("entity_id", [-13, 1023, 8192])
 async def test_mention_missing_entity(entity_id: int) -> None:
     with config(), gh_env:
-        msg_content = await Close.mention_entity(emojis, entity_id)
+        msg_content = await mention_entity(entity_id)
 
     assert msg_content is None

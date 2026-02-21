@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, TypedDict
 import discord as dc
 from monalisten import events
 
+from app.bot import emojis
 from app.components.github_integration.models import GitHubUser
 from app.config import config
 from toolbox.misc import truncate
@@ -16,7 +17,7 @@ from toolbox.misc import truncate
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import RepositoryWebhooks, SimpleUser
 
-    from app.bot import EmojiName, Emojis, GhosttyBot
+    from app.bot import EmojiName
     from app.config import WebhookFeedType
 
 CODEBLOCK = re.compile(r"`{3,}")
@@ -72,10 +73,11 @@ class Footer(NamedTuple):
     icon: EmojiName
     text: str
 
-    def dict(self, emojis: Emojis) -> dict[str, str | None]:
+    @property
+    def dict(self) -> dict[str, str | None]:
         return {
             "text": self.text,
-            "icon_url": getattr(emojis[self.icon], "url", None),
+            "icon_url": getattr(emojis()[self.icon], "url", None),
         }
 
 
@@ -100,7 +102,6 @@ def _convert_codeblock(match: re.Match[str]) -> str:
 
 
 async def send_edit_difference(
-    bot: GhosttyBot,
     event: events.IssuesEdited | events.PullRequestEdited,
     content_generator: ContentGenerator,
     footer_generator: FooterGenerator,
@@ -140,7 +141,6 @@ async def send_edit_difference(
 
     assert event.sender
     await send_embed(
-        bot,
         event.sender,
         content_generator(event_object, "edited {}", None, description=content),
         footer_generator(event_object),
@@ -158,7 +158,6 @@ def _shorten_same_repo_links(
 
 
 async def send_embed(  # noqa: PLR0913
-    bot: GhosttyBot,
     actor: SimpleUser,
     content: EmbedContent,
     footer: Footer,
@@ -178,7 +177,7 @@ async def send_embed(  # noqa: PLR0913
     embed = (
         dc
         .Embed(color=color and EMBED_COLORS.get(color), **content.dict)
-        .set_footer(**footer.dict(bot.ghostty_emojis))
+        .set_footer(**footer.dict)
         .set_author(**author.model_dump())
     )
     await config().webhook_channels[feed_type].send(embed=embed)

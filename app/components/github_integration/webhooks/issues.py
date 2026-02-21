@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from githubkit.typing import Missing
     from monalisten import Monalisten, events
 
-    from app.bot import EmojiName, GhosttyBot
+    from app.bot import EmojiName
     from app.components.github_integration.webhooks.vouch import VouchQueue
 
 DISCUSSION_DIV_TAG = re.compile(
@@ -68,9 +68,7 @@ def issue_embed_content(
     )
 
 
-def register_hooks(
-    bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
-) -> None:
+def register_hooks(webhook: Monalisten, vouch_queue: VouchQueue) -> None:
     @webhook.event.issues
     async def log_event(event: events.Issues) -> None:
         logger.info(
@@ -85,7 +83,6 @@ def register_hooks(
         issue = event.issue
         body = remove_discussion_div(issue.body)
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, "opened {}", body),
             issue_footer(issue, emoji="issue_open"),
@@ -107,7 +104,6 @@ def register_hooks(
 
         reason = issue.state_reason.replace("_", " ")
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, f"closed {{}} as {reason}"),
             issue_footer(issue, emoji="issue_closed_" + emoji_kind),
@@ -118,7 +114,6 @@ def register_hooks(
     async def reopened(event: events.IssuesReopened) -> None:
         issue = event.issue
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, "reopened {}"),
             issue_footer(issue, emoji="issue_open"),
@@ -127,14 +122,13 @@ def register_hooks(
 
     @webhook.event.issues.edited
     async def edited(event: events.IssuesEdited) -> None:
-        await send_edit_difference(bot, event, issue_embed_content, issue_footer)
+        await send_edit_difference(event, issue_embed_content, issue_footer)
 
     @webhook.event.issues.locked
     async def locked(event: events.IssuesLocked) -> None:
         issue = event.issue
         reason = f" as {r}" if (r := issue.active_lock_reason) else ""
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, f"locked {{}}{reason}"),
             issue_footer(issue),
@@ -145,7 +139,6 @@ def register_hooks(
     async def unlocked(event: events.IssuesUnlocked) -> None:
         issue = event.issue
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, "unlocked {}"),
             issue_footer(issue),
@@ -156,7 +149,6 @@ def register_hooks(
     async def pinned(event: events.IssuesPinned) -> None:
         issue = event.issue
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, "pinned {}"),
             issue_footer(issue),
@@ -167,7 +159,6 @@ def register_hooks(
     async def unpinned(event: events.IssuesUnpinned) -> None:
         issue = event.issue
         await send_embed(
-            bot,
             event.sender,
             issue_embed_content(issue, "unpinned {}"),
             issue_footer(issue),
@@ -198,7 +189,6 @@ def register_hooks(
             return
 
         await send_embed(
-            bot,
             event.sender,
             EmbedContent(title, event.comment.html_url, event.comment.body),
             footer,

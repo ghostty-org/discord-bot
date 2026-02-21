@@ -24,6 +24,14 @@ POST_TITLE_TOO_LONG = (
 )
 
 
+async def mention_entity(entity_id: int) -> str | None:
+    output = await github_entities_fmt.entity_message(
+        # Forging a message to use the entity mention logic
+        cast("dc.Message", SimpleNamespace(content=f"#{entity_id}")),
+    )
+    return output.content or None
+
+
 @final
 @app_commands.guild_only()
 class Close(commands.GroupCog, group_name="close"):
@@ -71,14 +79,6 @@ class Close(commands.GroupCog, group_name="close"):
         )
         interaction.extras["error_handled"] = True
 
-    async def mention_entity(self, entity_id: int) -> str | None:
-        # Forging a message to use the entity mention logic
-        output = await github_entities_fmt.entity_message(
-            self.bot.ghostty_emojis,
-            cast("dc.Message", SimpleNamespace(content=f"#{entity_id}")),
-        )
-        return output.content or None
-
     @app_commands.command(name="solved", description="Mark post as solved.")
     @app_commands.describe(config_option="Config option name (optional)")
     async def solved(
@@ -114,7 +114,7 @@ class Close(commands.GroupCog, group_name="close"):
     @app_commands.command(name="moved", description="Mark post as moved to GitHub.")
     @app_commands.describe(entity_id="New GitHub entity number")
     async def moved(self, interaction: dc.Interaction, entity_id: int) -> None:
-        if not (additional_reply := await self.mention_entity(entity_id)):
+        if not (additional_reply := await mention_entity(entity_id)):
             await interaction.response.send_message(
                 f"Entity #{entity_id} does not exist.", ephemeral=True
             )
@@ -140,7 +140,7 @@ class Close(commands.GroupCog, group_name="close"):
         if len(str_id) < 10:
             # GitHub entity number
             title_prefix = f"[DUPLICATE: #{id_}]"
-            if not (additional_reply := await self.mention_entity(int(id_))):
+            if not (additional_reply := await mention_entity(int(id_))):
                 await interaction.response.send_message(
                     f"Entity #{id_} does not exist.", ephemeral=True
                 )

@@ -4,6 +4,7 @@ import importlib
 import importlib.util
 import pkgutil
 import sys
+from contextvars import ContextVar
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, cast, final, get_args, override
@@ -41,7 +42,10 @@ EmojiName = Literal[
 
 _EMOJI_NAMES = frozenset(get_args(EmojiName))
 
-type Emojis = MappingProxyType[EmojiName, dc.Emoji | str]
+emojis_var = ContextVar[MappingProxyType[EmojiName, dc.Emoji | str]](
+    "emojis", default=MappingProxyType(dict.fromkeys(_EMOJI_NAMES, "❓"))
+)
+emojis = emojis_var.get
 
 
 @final
@@ -65,15 +69,21 @@ class GhosttyBot(commands.Bot):
         self.tree.on_error = interaction_error_handler
         self.bot_status = BotStatus()
 
-        self._ghostty_emojis: dict[EmojiName, dc.Emoji | str]
-        self._ghostty_emojis = dict.fromkeys(_EMOJI_NAMES, "❓")
-        self.ghostty_emojis: Emojis = MappingProxyType(self._ghostty_emojis)
+        # Retain the default: this dict will later be mutated by load_emojis, and if
+        # a cog accesses emojis before load_emojis finishes it'll throw a KeyError.
+        self._emojis = dict(emojis_var.get())
+        # Contexts, within which ContextVars are stored, are thread-local; setting
+        # emojis_var in load_emojis doesn't work as they're set in a different Context,
+        # which asyncio never has a chance to copy into other coroutines' Contexts.
+        # Thus, set the variable here and mutate its value in load_emojis.
+        self._emojis_context_token = emojis_var.set(MappingProxyType(self._emojis))
         self.emojis_loaded = asyncio.Event()
 
     @override
     async def close(self) -> None:
         config_var.reset(self._config_context_token)
         gh_var.reset(self._gh_context_token)
+        emojis_var.reset(self._emojis_context_token)
 
     @override
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
@@ -181,10 +191,10 @@ class GhosttyBot(commands.Bot):
 
         for emoji in config().ghostty_guild.emojis:
             if emoji.name in _EMOJI_NAMES:
-                self._ghostty_emojis[cast("EmojiName", emoji.name)] = emoji
+                self._emojis[cast("EmojiName", emoji.name)] = emoji
 
         if missing_emojis := _EMOJI_NAMES - {
-            k for k, v in self._ghostty_emojis.items() if v != "❓"
+            k for k, v in self._emojis.items() if v != "❓"
         }:
             emoji_list = ", ".join(missing_emojis)
             logger.error("failed to load emojis {}", emoji_list)
