@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 ENTITY_TEMPLATE = "**{entity.kind} [#{entity.number}](<{entity.html_url}>):** {title}"
 
 
-def get_entity_emoji(emojis: Emojis, entity: Entity) -> dc.Emoji:
+def get_entity_emoji(emojis: Emojis, entity: Entity) -> dc.Emoji | str:
     if isinstance(entity, Issue):
         state = "open"
         if entity.closed:
