@@ -4,6 +4,7 @@ import importlib
 import importlib.util
 import pkgutil
 import sys
+from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, cast, final, get_args, override
@@ -123,7 +124,7 @@ class GhosttyBot(commands.Bot):
         await self.load_emojis()
         logger.info("logged in as {}", self.user)
 
-    @dc.utils.cached_property
+    @cached_property
     def ghostty_guild(self) -> dc.Guild:
         logger.debug("fetching ghostty guild")
         if self.config.guild_id and (guild := self.get_guild(self.config.guild_id)):
@@ -137,21 +138,21 @@ class GhosttyBot(commands.Bot):
         )
         return self.guilds[0]
 
-    @dc.utils.cached_property
+    @cached_property
     def log_channel(self) -> dc.TextChannel:
         logger.debug("fetching log channel")
         channel = self.get_channel(self.config.log_channel_id)
         assert isinstance(channel, dc.TextChannel)
         return channel
 
-    @dc.utils.cached_property
+    @cached_property
     def help_channel(self) -> dc.ForumChannel:
         logger.debug("fetching help channel")
         channel = self.get_channel(self.config.help_channel_id)
         assert isinstance(channel, dc.ForumChannel)
         return channel
 
-    @dc.utils.cached_property
+    @cached_property
     def webhook_channels(self) -> dict[WebhookFeedType, dc.TextChannel]:
         channels: dict[WebhookFeedType, dc.TextChannel] = {}
         for feed_type, id_ in self.config.webhook_channel_ids.items():
