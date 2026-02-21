@@ -29,6 +29,7 @@ ______________________________________________________________________
     - [Entity comments](#entity-comments)
     - [Commit mentions](#commit-mentions)
   - [XKCD mentions](#xkcd-mentions)
+  - [Embed fixups](#embed-fixups)
   - [Zig code blocks](#zig-code-blocks)
   - [Message filters](#message-filters)
   - [Moving messages](#moving-messages)
@@ -101,8 +102,8 @@ The bot has a webhook feed feature which lets it stream customized GitHub repo
 activity to Discord channels. In order to set up a webhook stream from your
 repo:
 
-1. Go to https://smee.io/ (any webhook relay service should work, but smee.io is
-   field-tested) and choose "Start a new channel".
+1. Go to <https://smee.io/> (any webhook relay service should work, but smee.io
+   is field-tested) and choose "Start a new channel".
 2. Copy the URL of your channel.
 3. Go to your GitHub repository, then Settings > Webhooks > Add webhook.
 4. In "Payload URL", paste in your channel's URL.
@@ -177,7 +178,7 @@ are explanations for each variable:
 Some Ghostty Bot features aren't suitable for all channels. Currently, that is:
 
 - Asterisks missing a corresponding footnote are replied to with
-  https://xkcd.com/2708.
+  <https://xkcd.com/2708>.
 
 This list can be anything you like, but here's guidelines to help you pick
 serious channels:
@@ -201,13 +202,13 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
 2. Run the bot:
 
    ```console
-   $ uv run -m app
+   uv run -m app
    ```
 
 3. After you've made your changes, run the required checks with [just]:
 
-   ```check
-   $ just check
+   ```console
+   just check
    ```
 
    These checks are enforced by CI, so make sure to fix any issues shown. You
@@ -224,8 +225,9 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
       formatted uniformly, so first run the formatters:
 
       ```console
-      $ uv run taplo fmt pyproject.toml packages/*/pyproject.toml
-      $ uv run ruff format
+      uv run taplo fmt pyproject.toml packages/*/pyproject.toml
+      uv run ruff format
+      uv run mdformat --number --wrap 80 README.md
       ```
 
       These must be run from the **project root**.
@@ -234,24 +236,26 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
       packages at the same time. Run it from the **project root**:
 
       ```console
-      $ uv run ruff check
+      uv run ruff check
       ```
 
    3. The other checks do not work on all packages at the same time. Run these
       for **every directory under `packages`**:
 
       ```console
-      $ cd packages/<package name>
-      $ uv run basedpyright src tests
-      $ uv run pytest tests
+      cd packages/<package name>
+      uv run basedpyright src tests
+      uv run pytest tests
+      uv run taplo fmt --check --diff pyproject.toml
       ```
 
       For example:
 
       ```console
-      $ cd packages/toolbox
-      $ uv run basedpyright src tests
-      $ uv run pytest tests
+      cd packages/toolbox
+      uv run basedpyright src tests
+      uv run pytest tests
+      uv run taplo fmt --check --diff pyproject.toml
       ```
 
       Do not skip the checks for subpackages you did not modify, as subpackages
@@ -261,8 +265,8 @@ This bot runs on Python 3.14+ and is managed with [uv]. To get started:
       subpackages may have broken the bot. Run these from the **project root**.
 
       ```console
-      $ uv run basedpyright app tests
-      $ uv run pytest tests
+      uv run basedpyright app tests
+      uv run pytest tests
       ```
 
       Note that the `basedpyright` command uses **`app`, not `src`**.
@@ -288,17 +292,21 @@ config --> main{{\_\_main__.py}}
 log{{log.py}} --> main
 bot --> main
 bot --> components
+toolbox(packages/toolbox/) --> bot
+toolbox --> components
 ```
 
 - `components/` is a place for all dedicated features ([cogs]), such as message
   filters or entity mentions. Most new features should become modules belonging
   to this package. Events (e.g. `on_ready`, `on_message`, `on_error`) should be
   defined within the component.
+- `packages/` contains reusable packages that aren't specific to Ghostty Bot.
+  - `toolbox/` is a utility package for common helpers and shared code.
 - `bot.py` contains custom attributes and behaviors for the overall Discord bot
   and then loads extensions found in `components`.
 - `config.py` handles reading and parsing the environment variables and the
   local `.env` file, and creates the GitHub client.
-- `log.py` setups up logging and optionally Sentry.
+- `log.py` sets up logging and optionally Sentry.
 - `__main__.py` initializes logging and starts the bot.
 
 # Features
@@ -324,7 +332,8 @@ different resolution scenarios:
 | Command            | Applied tag     | Argument                                  | Additional information                             |
 | ------------------ | --------------- | ----------------------------------------- | -------------------------------------------------- |
 | `/close solved`    | Solved          | Config option (optional)                  | Links to config documentation (if option provided) |
-| `/close wontfix`   | Stale           | -                                         | Adds "WONTFIX" to post title                       |
+| `/close wontfix`   | Stale           | -                                         | Adds "WON'T FIX" to post title                     |
+| `/close upstream`  | Stale           | -                                         | Adds "UPSTREAM" to post title                      |
 | `/close stale`     | Stale           | -                                         | -                                                  |
 | `/close moved`     | Moved to GitHub | GitHub entity number                      | Links to the GitHub entity                         |
 | `/close duplicate` | Duplicate       | Help post ID/link or GitHub entity number | Links to original post or GitHub entity            |
@@ -405,9 +414,17 @@ for one hour. A "❄️ Freeze" button is also provided to stop reacting to mess
 edits and deletions.
 
 Ghostty Bot also helpfully replies to mysterious asterisks with missing
-footnotes with their true destination, https://xkcd.com/2708.
+footnotes with their true destination, <https://xkcd.com/2708>.
 
 <img src="https://github.com/user-attachments/assets/ff1cf1c8-2927-4156-87af-aa5671252ee7" alt="XKCD mentions example" width="75%">
+
+## Embed fixups
+
+Ghostty Bot automatically fixes broken or missing embeds for social media links.
+When a message contains a link to Reddit, X/Twitter, or Pixiv, the bot
+suppresses the original embed and replies with a working alternative (using
+rxddit, fixupx/fxtwitter, and phixiv respectively). Same edit/delete hook rules
+apply.
 
 ## Zig code blocks
 
@@ -475,7 +492,7 @@ has multiple attachments, a "Remove attachments" button is shown which provides
 the user with a selection menu that allows them to select which attachments are
 to be removed.
 
-https://github.com/user-attachments/assets/8c8ed1cf-db00-414f-937f-43e565ae9d15
+<https://github.com/user-attachments/assets/8c8ed1cf-db00-414f-937f-43e565ae9d15>
 
 [bot-repo]: https://github.com/ghostty-org/discord-bot
 [cogs]: https://discordpy.readthedocs.io/en/stable/ext/commands/cogs.html
