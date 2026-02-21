@@ -74,4 +74,4 @@ def extract_vouch_details(body: str | None) -> tuple[str, int, int, str] | None:
 
 
 def is_vouch_pr(ev: events.PullRequestOpened | events.PullRequestClosed) -> bool:
-    return ev.sender.type == "User" and ev.pull_request.title == "Update VOUCHED list"
+    return ev.sender.type == "Bot" and ev.pull_request.title == "Update VOUCHED list"
