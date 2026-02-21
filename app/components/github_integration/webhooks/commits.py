@@ -1,3 +1,5 @@
+# pyright: reportUnusedFunction=false
+
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -15,9 +17,9 @@ if TYPE_CHECKING:
     from app.bot import GhosttyBot
 
 
-def register_hooks(bot: GhosttyBot, monalisten_client: Monalisten) -> None:
-    @monalisten_client.event.commit_comment
-    async def _(event: events.CommitComment) -> None:
+def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
+    @webhook.event.commit_comment
+    async def comment(event: events.CommitComment) -> None:
         full_sha = event.comment.commit_id
         sha = full_sha[:7]
 

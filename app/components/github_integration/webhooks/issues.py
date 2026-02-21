@@ -1,3 +1,5 @@
+# pyright: reportUnusedFunction=false
+
 import re
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
@@ -69,7 +71,7 @@ def register_hooks(
     bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
 ) -> None:
     @webhook.event.issues.opened
-    async def _(event: events.IssuesOpened) -> None:
+    async def opened(event: events.IssuesOpened) -> None:
         issue = event.issue
         body = remove_discussion_div(issue.body)
         await send_embed(
@@ -82,7 +84,7 @@ def register_hooks(
         )
 
     @webhook.event.issues.closed
-    async def _(event: events.IssuesClosed) -> None:
+    async def closed(event: events.IssuesClosed) -> None:
         issue = event.issue
         match issue.state_reason:
             case "completed":
@@ -103,7 +105,7 @@ def register_hooks(
         )
 
     @webhook.event.issues.reopened
-    async def _(event: events.IssuesReopened) -> None:
+    async def reopened(event: events.IssuesReopened) -> None:
         issue = event.issue
         await send_embed(
             bot,
@@ -114,11 +116,11 @@ def register_hooks(
         )
 
     @webhook.event.issues.edited
-    async def _(event: events.IssuesEdited) -> None:
+    async def edited(event: events.IssuesEdited) -> None:
         await send_edit_difference(bot, event, issue_embed_content, issue_footer)
 
     @webhook.event.issues.locked
-    async def _(event: events.IssuesLocked) -> None:
+    async def locked(event: events.IssuesLocked) -> None:
         issue = event.issue
         reason = f" as {r}" if (r := issue.active_lock_reason) else ""
         await send_embed(
@@ -130,7 +132,7 @@ def register_hooks(
         )
 
     @webhook.event.issues.unlocked
-    async def _(event: events.IssuesUnlocked) -> None:
+    async def unlocked(event: events.IssuesUnlocked) -> None:
         issue = event.issue
         await send_embed(
             bot,
@@ -141,7 +143,7 @@ def register_hooks(
         )
 
     @webhook.event.issues.pinned
-    async def _(event: events.IssuesPinned) -> None:
+    async def pinned(event: events.IssuesPinned) -> None:
         issue = event.issue
         await send_embed(
             bot,
@@ -152,7 +154,7 @@ def register_hooks(
         )
 
     @webhook.event.issues.unpinned
-    async def _(event: events.IssuesUnpinned) -> None:
+    async def unpinned(event: events.IssuesUnpinned) -> None:
         issue = event.issue
         await send_embed(
             bot,
@@ -163,7 +165,7 @@ def register_hooks(
         )
 
     @webhook.event.issue_comment.created
-    async def _(event: events.IssueCommentCreated) -> None:
+    async def comment_created(event: events.IssueCommentCreated) -> None:
         issue = event.issue
         title = "commented on "
         if issue.pull_request:
