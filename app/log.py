@@ -2,14 +2,13 @@ import inspect
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, override
+from typing import override
 
 import sentry_sdk
 from loguru import logger
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
-if TYPE_CHECKING:
-    from app.config import Config
+from app.config import config
 
 
 # Both discord.py and httpx use the standard logging module; redirect them to Loguru.
@@ -40,7 +39,7 @@ class _InterceptHandler(logging.Handler):
         )
 
 
-def setup(config: Config) -> None:
+def setup() -> None:
     logging.basicConfig(handlers=[_InterceptHandler()], level=0, force=True)
 
     default_filter = {
@@ -59,10 +58,10 @@ def setup(config: Config) -> None:
         filters_str = " ".join(f"{f}={lvl}" for f, lvl in filters.items())
         logger.info("using log filters {}", filters_str)
 
-    if config.sentry_dsn is not None:
+    if (dsn := config().sentry_dsn) is not None:
         logger.info("initializing sentry")
         sentry_sdk.init(
-            dsn=config.sentry_dsn.get_secret_value(),
+            dsn=dsn.get_secret_value(),
             enable_logs=True,
             traces_sample_rate=1.0,
             profiles_sample_rate=1.0,

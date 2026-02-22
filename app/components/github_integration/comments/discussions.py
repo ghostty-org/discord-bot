@@ -55,7 +55,7 @@ async def get_discussion_comment(
     packed = msgpack.packb([0, 0, comment_id])
     node_id = "DC_" + urlsafe_b64encode(packed).decode()
     try:
-        resp = await gh.graphql.arequest(
+        resp = await gh().graphql.arequest(
             DISCUSSION_COMMENT_QUERY, variables={"id": node_id}
         )
     except GraphQLFailed:

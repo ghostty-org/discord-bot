@@ -14,15 +14,15 @@ import sentry_sdk
 from discord.ext import commands
 from loguru import logger
 
+from app.config import config
 from app.status import BotStatus
 from toolbox.discord import pretty_print_account, try_dm
 from toolbox.errors import handle_error, interaction_error_handler
 from toolbox.messages import REGULAR_MESSAGE_TYPES
 
 if TYPE_CHECKING:
-    from app.config import Config, WebhookFeedType
+    from app.config import WebhookFeedType
     from toolbox.discord import Account
-    from toolbox.misc import GH
 
 EmojiName = Literal[
     "commit",
@@ -46,7 +46,7 @@ type Emojis = MappingProxyType[EmojiName, dc.Emoji | str]
 
 @final
 class GhosttyBot(commands.Bot):
-    def __init__(self, config: Config, gh: GH) -> None:
+    def __init__(self) -> None:
         intents = dc.Intents.default()
         intents.members = True
         intents.message_content = True
@@ -57,8 +57,6 @@ class GhosttyBot(commands.Bot):
         )
 
         self.tree.on_error = interaction_error_handler
-        self.config = config
-        self.gh = gh
         self.bot_status = BotStatus()
 
         self._ghostty_emojis: dict[EmojiName, dc.Emoji | str]
@@ -131,7 +129,7 @@ class GhosttyBot(commands.Bot):
     @cached_property
     def ghostty_guild(self) -> dc.Guild:
         logger.debug("fetching ghostty guild")
-        if self.config.guild_id and (guild := self.get_guild(self.config.guild_id)):
+        if (id_ := config().guild_id) and (guild := self.get_guild(id_)):
             logger.trace("found ghostty guild")
             return guild
         logger.info(
@@ -145,21 +143,21 @@ class GhosttyBot(commands.Bot):
     @cached_property
     def log_channel(self) -> dc.TextChannel:
         logger.debug("fetching log channel")
-        channel = self.get_channel(self.config.log_channel_id)
+        channel = self.get_channel(config().log_channel_id)
         assert isinstance(channel, dc.TextChannel)
         return channel
 
     @cached_property
     def help_channel(self) -> dc.ForumChannel:
         logger.debug("fetching help channel")
-        channel = self.get_channel(self.config.help_channel_id)
+        channel = self.get_channel(config().help_channel_id)
         assert isinstance(channel, dc.ForumChannel)
         return channel
 
     @cached_property
     def webhook_channels(self) -> dict[WebhookFeedType, dc.TextChannel]:
         channels: dict[WebhookFeedType, dc.TextChannel] = {}
-        for feed_type, id_ in self.config.webhook_channel_ids.items():
+        for feed_type, id_ in config().webhook_channel_ids.items():
             logger.debug("fetching {feed_type} webhook channel", feed_type)
             channel = self.ghostty_guild.get_channel(id_)
             if not isinstance(channel, dc.TextChannel):
@@ -174,15 +172,13 @@ class GhosttyBot(commands.Bot):
 
     def is_privileged(self, member: dc.Member) -> bool:
         return not (
-            member.get_role(self.config.mod_role_id) is None
-            and member.get_role(self.config.helper_role_id) is None
+            member.get_role(config().mod_role_id) is None
+            and member.get_role(config().helper_role_id) is None
         )
 
     def is_ghostty_mod(self, user: Account) -> bool:
         member = self.ghostty_guild.get_member(user.id)
-        return (
-            member is not None and member.get_role(self.config.mod_role_id) is not None
-        )
+        return member is not None and member.get_role(config().mod_role_id) is not None
 
     def _fails_message_filters(self, message: dc.Message) -> bool:
         # This can't be the MessageFilter cog type because that would cause an import

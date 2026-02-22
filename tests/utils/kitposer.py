@@ -1,6 +1,14 @@
 """Toolkit for monkeypatching githubkit requests"""
 
-from typing import Any, Self, cast, final, override
+from typing import TYPE_CHECKING, Any, Self, cast, final, override
+
+from app.config import gh_var
+
+if TYPE_CHECKING:
+    from contextvars import Token
+    from types import TracebackType
+
+    from githubkit import GitHub, TokenAuthStrategy
 
 
 class PoserSetupError(RuntimeError):
@@ -50,6 +58,19 @@ class KitPoser:
     ) -> None:
         self.responses = responses
         self._context = context
+        self._token: Token[GitHub[TokenAuthStrategy]] | None = None
+
+    def __enter__(self) -> None:
+        self._token = gh_var.set(cast("GitHub[TokenAuthStrategy]", self))
+
+    def __exit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        _exc_value: BaseException | None,
+        _tb: TracebackType | None,
+    ) -> None:
+        if self._token is not None:
+            gh_var.reset(self._token)
 
     def __getattr__(self, attr: str) -> Self:
         context = f"{self._context}/{attr}"

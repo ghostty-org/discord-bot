@@ -6,6 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 import app.components.github_integration.entities.fmt as github_entities_fmt
+from app.config import config
 from toolbox.discord import generate_autocomplete, is_dm
 from toolbox.message_moving import MovedMessage
 
@@ -37,7 +38,7 @@ class Close(commands.GroupCog, group_name="close"):
         user = interaction.user
         if is_dm(user) or not (
             isinstance((post := interaction.channel), dc.Thread)
-            and post.parent_id == self.bot.config.help_channel_id
+            and post.parent_id == config().help_channel_id
         ):
             # Can only close posts in #help
             return False
@@ -174,12 +175,12 @@ class Close(commands.GroupCog, group_name="close"):
         post = interaction.channel
 
         assert isinstance(post, dc.Thread)
-        assert post.parent_id == self.bot.config.help_channel_id
+        assert post.parent_id == config().help_channel_id
 
         help_tags = {
             tag
             for tag in cast("dc.ForumChannel", post.parent).available_tags
-            if tag.id in self.bot.config.help_channel_tag_ids.values()
+            if tag.id in config().help_channel_tag_ids.values()
         }
 
         if set(post.applied_tags) & help_tags:
@@ -190,7 +191,7 @@ class Close(commands.GroupCog, group_name="close"):
 
         await interaction.response.defer(ephemeral=True)
 
-        desired_tag_id = self.bot.config.help_channel_tag_ids[tag]
+        desired_tag_id = config().help_channel_tag_ids[tag]
         await post.add_tags(next(tag for tag in help_tags if tag.id == desired_tag_id))
 
         if title_prefix is None:

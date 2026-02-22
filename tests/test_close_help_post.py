@@ -5,6 +5,7 @@ from typing import Any, cast, get_args
 import pytest
 from githubkit.exception import RequestFailed
 
+from tests.utils import config
 from tests.utils import kitposer as kp
 
 from app.bot import EmojiName
@@ -69,29 +70,17 @@ emojis = cast(
     ("entity_id", "kind"),
     [(189, "Issue"), (1234, "Pull Request"), (2354, "Discussion")],
 )
-async def test_mention_entity(
-    entity_id: int,
-    kind: str,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    entities_subpkg_path = "app.components.github_integration.entities"
-    monkeypatch.setattr(f"{entities_subpkg_path}.cache.entity_cache.gh", gh_env)
-    monkeypatch.setattr(f"{entities_subpkg_path}.discussions.gh", gh_env)
-
-    msg_content = await Close.mention_entity(emojis, entity_id)
+async def test_mention_entity(entity_id: int, kind: str) -> None:
+    with config(), gh_env:
+        msg_content = await Close.mention_entity(emojis, entity_id)
 
     assert msg_content is not None
     assert f"{kind} [#{entity_id}]" in msg_content
 
 
 @pytest.mark.parametrize("entity_id", [-13, 1023, 8192])
-async def test_mention_missing_entity(
-    entity_id: int, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    entities_subpkg_path = "app.components.github_integration.entities"
-    monkeypatch.setattr(f"{entities_subpkg_path}.cache.entity_cache.gh", gh_env)
-    monkeypatch.setattr(f"{entities_subpkg_path}.discussions.gh", gh_env)
-
-    msg_content = await Close.mention_entity(emojis, entity_id)
+async def test_mention_missing_entity(entity_id: int) -> None:
+    with config(), gh_env:
+        msg_content = await Close.mention_entity(emojis, entity_id)
 
     assert msg_content is None
