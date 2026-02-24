@@ -1,3 +1,5 @@
+# pyright: reportUnusedFunction=false
+
 from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
@@ -65,7 +67,7 @@ def register_hooks(  # noqa: C901, PLR0915
     bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
 ) -> None:
     @webhook.event.pull_request.opened
-    async def _(event: events.PullRequestOpened) -> None:
+    async def opened(event: events.PullRequestOpened) -> None:
         pr = event.pull_request
         if is_vouch_pr(event):
             logger.info(
@@ -85,7 +87,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.closed
-    async def _(event: events.PullRequestClosed) -> None:
+    async def closed(event: events.PullRequestClosed) -> None:
         pr = event.pull_request
         action, color = ("merged", "purple") if pr.merged else ("closed", "red")
         if action == "merged" and is_vouch_pr(event):
@@ -119,7 +121,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.reopened
-    async def _(event: events.PullRequestReopened) -> None:
+    async def reopened(event: events.PullRequestReopened) -> None:
         pr = event.pull_request
         await send_embed(
             bot,
@@ -130,11 +132,11 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.edited
-    async def _(event: events.PullRequestEdited) -> None:
+    async def edited(event: events.PullRequestEdited) -> None:
         await send_edit_difference(bot, event, pr_embed_content, pr_footer)
 
     @webhook.event.pull_request.converted_to_draft
-    async def _(event: events.PullRequestConvertedToDraft) -> None:
+    async def converted_to_draft(event: events.PullRequestConvertedToDraft) -> None:
         pr = event.pull_request
         await send_embed(
             bot,
@@ -145,7 +147,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.ready_for_review
-    async def _(event: events.PullRequestReadyForReview) -> None:
+    async def ready_for_review(event: events.PullRequestReadyForReview) -> None:
         pr = event.pull_request
         await send_embed(
             bot,
@@ -156,7 +158,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.locked
-    async def _(event: events.PullRequestLocked) -> None:
+    async def locked(event: events.PullRequestLocked) -> None:
         pr = event.pull_request
         template = "locked {}"
         if reason := pr.active_lock_reason:
@@ -170,7 +172,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.unlocked
-    async def _(event: events.PullRequestUnlocked) -> None:
+    async def unlocked(event: events.PullRequestUnlocked) -> None:
         pr = event.pull_request
         await send_embed(
             bot,
@@ -181,7 +183,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.review_requested
-    async def _(event: events.PullRequestReviewRequested) -> None:
+    async def review_requested(event: events.PullRequestReviewRequested) -> None:
         pr = event.pull_request
         content = f"from {_format_reviewer(event)}"
         await send_embed(
@@ -192,7 +194,9 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request.review_request_removed
-    async def _(event: events.PullRequestReviewRequestRemoved) -> None:
+    async def review_request_removed(
+        event: events.PullRequestReviewRequestRemoved,
+    ) -> None:
         pr = event.pull_request
         content = f"from {_format_reviewer(event)}"
         await send_embed(
@@ -204,7 +208,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request_review.submitted
-    async def _(event: events.PullRequestReviewSubmitted) -> None:
+    async def submitted(event: events.PullRequestReviewSubmitted) -> None:
         pr, review = event.pull_request, event.review
 
         if review.state == "commented" and not review.body:
@@ -237,7 +241,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request_review.dismissed
-    async def _(event: events.PullRequestReviewDismissed) -> None:
+    async def dismissed(event: events.PullRequestReviewDismissed) -> None:
         pr = event.pull_request
         emoji = "pull_" + (
             "draft" if pr.draft else "merged" if pr.merged_at else pr.state
@@ -258,7 +262,7 @@ def register_hooks(  # noqa: C901, PLR0915
         )
 
     @webhook.event.pull_request_review_comment.created
-    async def _(event: events.PullRequestReviewCommentCreated) -> None:
+    async def created(event: events.PullRequestReviewCommentCreated) -> None:
         pr, content = event.pull_request, event.comment.body
 
         hunk = _reduce_diff_hunk(event.comment.diff_hunk)

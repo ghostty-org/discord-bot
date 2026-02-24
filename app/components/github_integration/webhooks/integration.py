@@ -1,3 +1,5 @@
+# pyright: reportUnusedFunction=false
+
 import asyncio
 from typing import TYPE_CHECKING, final, override
 
@@ -19,20 +21,20 @@ if TYPE_CHECKING:
 
 def register_internal_hooks(webhook: Monalisten) -> None:
     @webhook.internal.error
-    async def _(error: Error) -> None:
+    async def error(error: Error) -> None:
         error.exc.add_note(f"payload: {error.payload}")
         sentry_sdk.set_context("payload", error.payload or {})  # pyright: ignore[reportArgumentType]
         handle_error(error.exc)
 
     @webhook.internal.auth_issue
-    async def _(issue: AuthIssue) -> None:
+    async def auth_issue(issue: AuthIssue) -> None:
         guid = issue.payload.get("x-github-delivery", "<missing-guid>")
         logger.warning(
             "token {} in event {}: {}", issue.kind.value, guid, issue.payload
         )
 
     @webhook.internal.ready
-    async def _() -> None:
+    async def ready() -> None:
         logger.info("monalisten client ready")
 
 
