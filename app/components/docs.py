@@ -8,6 +8,7 @@ from discord.ext import commands
 from githubkit.exception import RequestFailed
 from loguru import logger
 
+from app.config import config, gh
 from toolbox.discord import generate_autocomplete
 from toolbox.message_moving import get_or_create_webhook
 
@@ -96,8 +97,8 @@ class Docs(commands.Cog):
 
     async def _get_file(self, path: str) -> str:
         return (
-            await self.bot.gh.rest.repos.async_get_content(
-                self.bot.config.github_org,
+            await gh().rest.repos.async_get_content(
+                config().github_org,
                 "website",
                 path,
                 headers={"Accept": "application/vnd.github.raw+json"},

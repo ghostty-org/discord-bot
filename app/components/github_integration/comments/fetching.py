@@ -327,7 +327,7 @@ async def _get_issue_comment(
 ) -> Comment | None:
     owner, repo, _ = entity_gist
     comment_resp, entity = await asyncio.gather(
-        gh.rest.issues.async_get_comment(owner, repo, comment_id),
+        gh().rest.issues.async_get_comment(owner, repo, comment_id),
         entity_cache.get(entity_gist),
     )
     comment = comment_resp.parsed_data
@@ -344,7 +344,7 @@ async def _get_issue_comment(
 
 async def _get_pr_review(entity_gist: EntityGist, comment_id: int) -> Comment | None:
     comment = (
-        await gh.rest.pulls.async_get_review(*entity_gist, comment_id)
+        await gh().rest.pulls.async_get_review(*entity_gist, comment_id)
     ).parsed_data
     entity = await entity_cache.get(entity_gist)
     return entity and Comment(
@@ -367,7 +367,7 @@ async def _get_pr_review_comment(
 ) -> Comment | None:
     owner, repo, _ = entity_gist
     comment = (
-        await gh.rest.pulls.async_get_review_comment(owner, repo, comment_id)
+        await gh().rest.pulls.async_get_review_comment(owner, repo, comment_id)
     ).parsed_data
     entity = await entity_cache.get(entity_gist)
     return entity and Comment(
@@ -417,7 +417,9 @@ def _make_crlf_codeblock(lang: str, body: str) -> str:
 
 async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None:
     owner, repo, entity_no = entity_gist
-    event = (await gh.rest.issues.async_get_event(owner, repo, comment_id)).parsed_data
+    event = (
+        await gh().rest.issues.async_get_event(owner, repo, comment_id)
+    ).parsed_data
     entity = await entity_cache.get(entity_gist)
     if not entity:
         return None
@@ -447,7 +449,7 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None
     elif event.event == "review_dismissed":
         dismissed_review = cast("IssueEventDismissedReview", event.dismissed_review)
         review = (
-            await gh.rest.pulls.async_get_review(
+            await gh().rest.pulls.async_get_review(
                 owner, repo, entity_no, dismissed_review.review_id
             )
         ).parsed_data

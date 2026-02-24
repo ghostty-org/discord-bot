@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, final, override
+from typing import final, override
 
 from githubkit.exception import RequestFailed
 
@@ -7,25 +7,18 @@ from app.components.github_integration.models import Entity, Issue, PullRequest
 from app.config import gh
 from toolbox.cache import TTRCache
 
-if TYPE_CHECKING:
-    from toolbox.misc import GH
-
 type EntitySignature = tuple[str, str, int]
 
 
 @final
 class EntityCache(TTRCache[EntitySignature, Entity]):
-    def __init__(self, gh: GH, **ttr: float) -> None:
-        super().__init__(**ttr)
-        self.gh: GH = gh
-
     @override
     async def fetch(self, key: EntitySignature) -> None:
         try:
-            entity = (await self.gh.rest.issues.async_get(*key)).parsed_data
+            entity = (await gh().rest.issues.async_get(*key)).parsed_data
             model = Issue
             if entity.pull_request:
-                entity = (await self.gh.rest.pulls.async_get(*key)).parsed_data
+                entity = (await gh().rest.pulls.async_get(*key)).parsed_data
                 model = PullRequest
             self[key] = model.model_validate(entity, from_attributes=True)
         except RequestFailed:
@@ -33,4 +26,4 @@ class EntityCache(TTRCache[EntitySignature, Entity]):
                 self[key] = discussion
 
 
-entity_cache = EntityCache(gh, minutes=30)
+entity_cache = EntityCache(minutes=30)

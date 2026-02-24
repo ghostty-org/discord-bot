@@ -44,7 +44,7 @@ def remove_codeblocks(content: str) -> str:
 
 
 async def find_repo_owner(name: str) -> str:
-    resp = await gh.rest.search.async_repos(
+    resp = await gh().rest.search.async_repos(
         q=name, sort="stars", order="desc", per_page=20
     )
     return next(
@@ -60,10 +60,10 @@ async def resolve_repo_signature(
     match owner, repo:
         case None, None:
             # The Ghostty repo
-            return config.github_org, "ghostty"
+            return config().github_org, "ghostty"
         case None, repo if repo in REPO_ALIASES:
             # Special ghostty-org prefixes
-            return config.github_org, REPO_ALIASES[repo]
+            return config().github_org, REPO_ALIASES[repo]
         case None, repo:
             # Only a name provided
             if repo_owner := await owner_cache.get(repo):

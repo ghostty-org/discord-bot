@@ -9,8 +9,6 @@ from app.config import gh
 if TYPE_CHECKING:
     import datetime as dt
 
-    from toolbox.misc import GH
-
 
 class CommitKey(NamedTuple):
     owner: str
@@ -33,8 +31,7 @@ class CommitSummary(NamedTuple):
 
 @final
 class CommitCache:
-    def __init__(self, gh: GH) -> None:
-        self._gh: GH = gh
+    def __init__(self) -> None:
         self._cache: dict[CommitKey, CommitSummary] = {}
 
     def _filter_prefix(self, prefix: str) -> list[CommitKey]:
@@ -52,7 +49,7 @@ class CommitCache:
 
     async def _fetch(self, key: CommitKey) -> CommitSummary | None:
         try:
-            resp = await self._gh.rest.repos.async_get_commit(*key)
+            resp = await gh().rest.repos.async_get_commit(*key)
         except RequestFailed:
             return None
         obj = resp.parsed_data
@@ -74,4 +71,4 @@ class CommitCache:
         return commit_summary
 
 
-commit_cache = CommitCache(gh)
+commit_cache = CommitCache()

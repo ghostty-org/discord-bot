@@ -1,9 +1,9 @@
 # pyright: reportUnannotatedClassAttribute=false
 
-import sys
-from typing import Literal
+from contextvars import ContextVar
+from typing import Any, Literal
 
-from githubkit import GitHub
+from githubkit import GitHub, TokenAuthStrategy
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,9 +23,11 @@ REPO_ALIASES = {
 
 
 class Config(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="BOT_", env_file=".env", enable_decoding=False
-    )
+    model_config = SettingsConfigDict(env_prefix="BOT_", enable_decoding=False)
+
+    def __init__(self, env_file: str, *args: Any, **kwargs: Any) -> None:
+        self.model_config["env_file"] = env_file
+        super().__init__(*args, **kwargs)
 
     token: SecretStr
 
@@ -64,10 +66,7 @@ class Config(BaseSettings):
         }
 
 
-if "pytest" in sys.modules:
-    Config.model_config["env_file"] = ".env.example"
-
-
-# https://github.com/pydantic/pydantic-settings/issues/201
-config = Config()  # pyright: ignore[reportCallIssue]
-gh = GitHub(config.github_token.get_secret_value())
+config_var = ContextVar[Config]("config")
+config = config_var.get
+gh_var = ContextVar[GitHub[TokenAuthStrategy]]("gh")
+gh = gh_var.get

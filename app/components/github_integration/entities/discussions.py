@@ -34,7 +34,7 @@ query getDiscussion($number: Int!, $org: String!, $repo: String!) {
 
 async def get_discussion(org: str, name: str, number: int) -> Discussion | None:
     try:
-        resp = await gh.graphql.arequest(
+        resp = await gh().graphql.arequest(
             DISCUSSION_QUERY, variables={"number": number, "org": org, "repo": name}
         )
     except GraphQLFailed:

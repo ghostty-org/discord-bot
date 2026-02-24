@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, final
 import discord as dc
 from discord.ext import commands
 
+from app.config import config
 from toolbox.discord import dynamic_timestamp, post_is_solved
 from toolbox.misc import aenumerate
 
@@ -27,7 +28,7 @@ class LockOldPosts(commands.Cog):
             message.author.bot
             or not isinstance(post, dc.Thread)
             or not post.parent
-            or post.parent.id != self.bot.config.help_channel_id
+            or post.parent.id != config().help_channel_id
             or post.locked
             or post.last_message_id is None
             or not post_is_solved(post)
