@@ -41,7 +41,8 @@ def test_format_unicode_partial_emoji(emoji: str) -> None:
     ],
 )
 def test_format_partial_emoji(name: str, animated: bool, id_: int) -> None:
-    url = f"https://cdn.discordapp.com/emojis/{id_}.{'gif' if animated else 'png'}"
+    file_ending = "webp?animated=true" if animated else "png"
+    url = f"https://cdn.discordapp.com/emojis/{id_}.{file_ending}"
     assert (
         _format_emoji(dc.PartialEmoji(name=name, animated=animated, id=id_))
         == f"[{name}](<{url}>)"
