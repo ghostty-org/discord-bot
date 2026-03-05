@@ -106,13 +106,13 @@ class BotStatus:
 
     @staticmethod
     async def _get_github_data() -> SimpleNamespace:
-        match gh.auth:
+        match gh().auth:
             case TokenAuthStrategy(token) if token.startswith(("gh", "github")):
                 correct_token = True
             case _:
                 correct_token = False
         try:
-            resp = await gh.rest.users.async_get_authenticated()
+            resp = await gh().rest.users.async_get_authenticated()
             api_ok = resp.status_code == 200
         except RequestFailed:
             api_ok = False
@@ -133,7 +133,7 @@ class BotStatus:
             "launch_time": dynamic_timestamp(self.launch_time, "R"),
             "last_login_time": dynamic_timestamp(self.last_login_time, "R"),
             "last_sitemap_refresh": dynamic_timestamp(self.last_sitemap_refresh, "R"),
-            "help_channel": f"<#{config.help_channel_id}>",
+            "help_channel": f"<#{config().help_channel_id}>",
             "scan": self._get_scan_data(),
             "gh": await self._get_github_data(),
         }
