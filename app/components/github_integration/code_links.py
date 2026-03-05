@@ -13,7 +13,7 @@ from discord.ext import commands
 from githubkit.exception import RequestFailed
 from zig_codeblocks import highlight_zig_code
 
-from app.components.zig_codeblocks import THEME
+from app.components.zig_codeblocks import FILE_HIGHLIGHT_NOTE, THEME
 from toolbox.cache import TTRCache
 from toolbox.discord import suppress_embeds_after_delay
 from toolbox.linker import (
@@ -149,19 +149,22 @@ class CodeLinks(commands.Cog):
 
         blobs = list(map(self._format_snippet, snippets))
 
+        # When there is only a single blob and it goes over the limit, upload it as
+        # a file instead.
         if len(blobs) == 1 and len(blobs[0]) > 2000:
-            # When there is only a single blob which goes over the limit, upload it as
-            # a file instead.
             snippet = snippets[0]
-            # Correct the filename to use the snippet's language in case it
-            # differs from the filename's extension, which is done for multiple
-            # file types by get_snippets().
+            content = self._format_snippet(snippet, include_body=False)
+            # If the snippet's language is `ansi`, as done for Zig codeblocks,
+            # highlighting doesn't show up unless the file is expanded, so add the note
+            # shown for Zig codeblocks attached as a file.
+            if snippet.lang == "ansi":
+                content += FILE_HIGHLIGHT_NOTE
+            # Correct the filename to use the snippet's language in case it differs from
+            # the filename's extension, which is done for multiple file types by
+            # get_snippets().
             filename = Path(snippet.path).with_suffix(f".{snippet.lang}").name
-            return ProcessedMessage(
-                content=self._format_snippet(snippet, include_body=False),
-                files=[dc.File(BytesIO(snippet.body.encode()), filename=filename)],
-                item_count=1,
-            )
+            file = dc.File(BytesIO(snippet.body.encode()), filename=filename)
+            return ProcessedMessage(content=content, files=[file], item_count=1)
 
         if len("\n\n".join(blobs)) > 2000:
             while len("\n\n".join(blobs)) > 1970:  # Accounting for omission note
