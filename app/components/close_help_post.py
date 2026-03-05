@@ -31,9 +31,7 @@ class Close(commands.GroupCog, group_name="close"):
         self.bot = bot
 
     @override
-    # This code does work, and the docs also state "this function **can** be
-    # a coroutine", but the type signature doesn't have an async override. ¯\_(ツ)_/¯
-    async def interaction_check(self, interaction: dc.Interaction, /) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def interaction_check(self, interaction: dc.Interaction, /) -> bool:
         user = interaction.user
         if is_dm(user) or not (
             isinstance((post := interaction.channel), dc.Thread)
