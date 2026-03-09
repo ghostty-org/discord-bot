@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
     from app.bot import GhosttyBot
 
+
 def config() -> Token[Config]:
     """
     Intended to be used as a context manager:

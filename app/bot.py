@@ -51,11 +51,12 @@ emojis = emojis_var.get
 @final
 class GhosttyBot(commands.Bot):
     def __init__(self) -> None:
+        log.setup()
         self._config_context_token = config_var.set(Config(".env", bot=self))
+        log.setup_sentry(config().sentry_dsn)
         self._gh_context_token = gh_var.set(
             GitHub(config().github_token.get_secret_value())
         )
-        log.setup()
 
         intents = dc.Intents.default()
         intents.members = True
