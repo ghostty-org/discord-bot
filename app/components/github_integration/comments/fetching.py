@@ -217,10 +217,14 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     # https://github.com/google-gemini/gemini-cli/pull/4625#event-19668902591
     "removed_from_merge_queue": "Removed this pull request from the merge queue",
     # https://github.com/Foxboron/sbctl/pull/300#event-12587455392
+    # https://github.com/ghostty-org/website/pull/411#event-22986127374
     "deployed": lambda event: (
-        "Deployed this" + f" via {escape_special(event.performed_via_github_app.name)}"
-        if event.performed_via_github_app is not None
-        else ""
+        "Deployed this"
+        + (
+            f" via {escape_special(event.performed_via_github_app.name)}"
+            if event.performed_via_github_app is not None
+            else ""
+        )
     ),
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21541845202
     # https://github.com/ghostty-org/discord-bot/pull/429#event-21541845197
