@@ -119,7 +119,7 @@ async def send_edit_difference(
         to_file = (
             CODEBLOCK.sub(_convert_codeblock, event_object.body).splitlines()
             if event_object.body
-            else ""
+            else []
         )
         old_title = changes.title.from_ if changes.title else event_object.title
         new_title = event_object.title
