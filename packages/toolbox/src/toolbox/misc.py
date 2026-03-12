@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterable
 
+    from githubkit.typing import Missing
+    from githubkit.versions.latest.models import SimpleUser
+
 __all__ = (
     "URL_REGEX",
     "aenumerate",
@@ -57,3 +60,7 @@ async def async_process_check_output(program: str, *args: str, **kwargs: Any) ->
             stderr=proc.stderr and await proc.stderr.read(),
         )
     return (await proc.stdout.read()).decode()
+
+
+def format_event_sender(sender: Missing[SimpleUser]) -> str:
+    return f"@{sender.login}" if sender else "?"

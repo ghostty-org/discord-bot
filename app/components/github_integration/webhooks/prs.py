@@ -18,6 +18,7 @@ from app.components.github_integration.webhooks.vouch import (
     extract_vouch_details,
     is_vouch_pr,
 )
+from toolbox.misc import format_event_sender
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
@@ -66,6 +67,15 @@ def pr_embed_content(
 def register_hooks(  # noqa: C901, PLR0915
     bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
 ) -> None:
+    @webhook.event.pull_request
+    async def log_event(event: events.PullRequest) -> None:
+        logger.info(
+            "received event {!r} for PR #{} from {}",
+            event.action,
+            event.pull_request.number,
+            format_event_sender(event.sender),
+        )
+
     @webhook.event.pull_request.opened
     async def opened(event: events.PullRequestOpened) -> None:
         pr = event.pull_request

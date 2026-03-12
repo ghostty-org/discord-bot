@@ -14,6 +14,7 @@ from app.components.github_integration.webhooks.vouch import (
     find_vouch_command,
     register_vouch_command,
 )
+from toolbox.misc import format_event_sender
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import DiscussionPropCategory, SimpleUser
@@ -72,6 +73,15 @@ def discussion_embed_content(
 def register_hooks(
     bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
 ) -> None:
+    @webhook.event.discussion
+    async def log_event(event: events.Discussion) -> None:
+        logger.info(
+            "received event {!r} for discussion #{} from {}",
+            event.action,
+            event.discussion.number,
+            format_event_sender(event.sender),
+        )
+
     @webhook.event.discussion.created
     async def created(event: events.DiscussionCreated) -> None:
         discussion = event.discussion
