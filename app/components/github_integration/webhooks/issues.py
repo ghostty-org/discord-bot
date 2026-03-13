@@ -15,6 +15,7 @@ from app.components.github_integration.webhooks.vouch import (
     find_vouch_command,
     register_vouch_command,
 )
+from toolbox.misc import format_event_sender
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
@@ -70,6 +71,15 @@ def issue_embed_content(
 def register_hooks(
     bot: GhosttyBot, webhook: Monalisten, vouch_queue: VouchQueue
 ) -> None:
+    @webhook.event.issues
+    async def log_event(event: events.Issues) -> None:
+        logger.info(
+            "received event {!r} for issue #{} from {}",
+            event.action,
+            event.issue.number,
+            format_event_sender(event.sender),
+        )
+
     @webhook.event.issues.opened
     async def opened(event: events.IssuesOpened) -> None:
         issue = event.issue

@@ -10,6 +10,7 @@ from app.components.github_integration.webhooks.utils import (
     Footer,
     send_embed,
 )
+from toolbox.misc import format_event_sender
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events
@@ -22,6 +23,11 @@ def register_hooks(bot: GhosttyBot, webhook: Monalisten) -> None:
     async def comment(event: events.CommitComment) -> None:
         full_sha = event.comment.commit_id
         sha = full_sha[:7]
+        logger.info(
+            "received a commit comment event for commit {!r} from {}",
+            sha,
+            format_event_sender(event.sender),
+        )
 
         owner, _, repo_name = event.repository.full_name.partition("/")
         if commit_summary := await commit_cache.get(
