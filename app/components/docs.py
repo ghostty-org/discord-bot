@@ -111,7 +111,7 @@ class Docs(commands.Cog):
     @dc.app_commands.default_permissions(ban_members=True)
     async def refresh_docs(self, interaction: dc.Interaction) -> None:
         # The client-side check with `default_permissions` isn't guaranteed to work.
-        if not self.bot.is_ghostty_mod(interaction.user):
+        if not config().is_ghostty_mod(interaction.user):
             await interaction.response.send_message(
                 "Only mods can run this command", ephemeral=True
             )

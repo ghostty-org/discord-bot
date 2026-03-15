@@ -54,10 +54,10 @@ class GitHubWebhooks(commands.Cog):
     @override
     async def cog_load(self) -> None:
         register_internal_hooks(self.monalisten_client)
-        discussions.register_hooks(self.bot, self.monalisten_client, self._vouch_queue)
-        issues.register_hooks(self.bot, self.monalisten_client, self._vouch_queue)
-        prs.register_hooks(self.bot, self.monalisten_client, self._vouch_queue)
-        commits.register_hooks(self.bot, self.monalisten_client)
+        discussions.register_hooks(self.monalisten_client, self._vouch_queue)
+        issues.register_hooks(self.monalisten_client, self._vouch_queue)
+        prs.register_hooks(self.monalisten_client, self._vouch_queue)
+        commits.register_hooks(self.monalisten_client)
 
         # Maintain strong reference to avoid task from being gc
         self._monalisten_task = asyncio.create_task(self.monalisten_client.listen())

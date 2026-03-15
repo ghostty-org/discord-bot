@@ -2,13 +2,14 @@ import inspect
 import logging
 import os
 import sys
-from typing import override
+from typing import TYPE_CHECKING, override
 
 import sentry_sdk
 from loguru import logger
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
-from app.config import config
+if TYPE_CHECKING:
+    from pydantic import SecretStr
 
 
 # Both discord.py and httpx use the standard logging module; redirect them to Loguru.
@@ -58,10 +59,14 @@ def setup() -> None:
         filters_str = " ".join(f"{f}={lvl}" for f, lvl in filters.items())
         logger.info("using log filters {}", filters_str)
 
-    if (dsn := config().sentry_dsn) is not None:
+
+# This function cannot be done alongside setup(), as the sentry_dsn is only known after
+# the configuration is loaded, but loading the configuration requires loguru.
+def setup_sentry(sentry_dsn: SecretStr | None) -> None:
+    if sentry_dsn is not None:
         logger.info("initializing sentry")
         sentry_sdk.init(
-            dsn=dsn.get_secret_value(),
+            dsn=sentry_dsn.get_secret_value(),
             enable_logs=True,
             traces_sample_rate=1.0,
             profiles_sample_rate=1.0,
