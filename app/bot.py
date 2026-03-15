@@ -199,8 +199,5 @@ class GhosttyBot(commands.Bot):
         }:
             emoji_list = ", ".join(missing_emojis)
             logger.error("failed to load emojis {}", emoji_list)
-            await config().log_channel.send(
-                f"Failed to load the following emojis: {emoji_list}"
-            )
 
         self.emojis_loaded.set()
