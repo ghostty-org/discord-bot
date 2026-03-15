@@ -141,14 +141,15 @@ class XKCDMentions(commands.Cog):
         words = "".join(
             c for c in message.content if c in ("*", "`") or c.isalnum() or c.isspace()
         ).split()
-        # Ignore the last word to avoid catching postfix asterisk corrections such as
-        # `fairy floss*`. This won't skip things like `fairy floss* sorry I forgot I'm
-        # Australian`, but those are very unlikely.
+        # words[:-1] is used to ignore the last word, so that postfix asterisk
+        # corrections such as `fairy floss*` aren't caught. This won't skip things like
+        # `fairy floss* sorry I forgot I'm Australian`, but those are very unlikely.
         has_asterisk = any(w.endswith("*") for w in words[:-1])
-        # NOTE: this also filters out any Markdown syntax such as `*foo*` or `**bar**`.
-        # Other cases like `foo* bar*` that make ` bar` italics in CommonMark don't
-        # actually do so in Discord Markdown, so those are fine to count.
-        has_footnote = any(w.startswith("*") for w in words)
+        # Footnotes start with an asterisk. This also filters out any Markdown syntax
+        # such as `*foo*`, `**bar**`, or `some**thing**`. Other cases like `foo* bar*`
+        # that make ` bar` italics in CommonMark don't actually do so in Discord
+        # Markdown, so those are fine to count.
+        has_footnote = any("*" in w.rstrip("*") for w in words)
         # A "mysterious asterisk", as defined by xkcd 2708, is an asterisk without
         # a matching footnote.
         return has_asterisk and not has_footnote
