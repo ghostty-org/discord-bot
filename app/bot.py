@@ -42,7 +42,7 @@ EmojiName = Literal[
 
 _EMOJI_NAMES = frozenset(get_args(EmojiName))
 
-emojis_var = ContextVar[MappingProxyType[EmojiName, dc.Emoji | str]](
+emojis_var = ContextVar[MappingProxyType[EmojiName, dc.Emoji | Literal["❓"]]](
     "emojis", default=MappingProxyType(dict.fromkeys(_EMOJI_NAMES, "❓"))
 )
 emojis = emojis_var.get
