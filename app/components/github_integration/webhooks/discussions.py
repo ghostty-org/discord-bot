@@ -63,8 +63,7 @@ def discussion_embed_content(
     discussion: DiscussionLike, template: str, body: str | None = None
 ) -> EmbedContent:
     return EmbedContent(
-        template.format(f"discussion #{discussion.number}")
-        + f" in {discussion.category.name}",
+        template.format(f"#{discussion.number}") + f" in {discussion.category.name}",
         discussion.html_url,
         body,
     )
