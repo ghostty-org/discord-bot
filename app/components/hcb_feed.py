@@ -31,7 +31,7 @@ class TransactionDetails(NamedTuple):
     @classmethod
     def from_transaction(cls, txn: hcb.Transaction) -> Self | None:
         if txn.type is None:
-            logger.warning("missing transaction type for {}", txn.id)
+            logger.error("missing transaction type for {}", txn.id)
             return None
         kind = txn.type.replace("_", " ").capitalize()
         memo = txn.memo
