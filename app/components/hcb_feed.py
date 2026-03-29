@@ -76,7 +76,7 @@ class HCBFeed(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
 
-        self.history_file = config().data_dir / "hcb.log"
+        self.history_file = config().data_dir / "hcb_feed"
         self.history_file.touch()
 
         self.org = None
