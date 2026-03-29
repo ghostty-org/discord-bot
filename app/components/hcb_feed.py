@@ -95,11 +95,8 @@ class HCBFeed(commands.Cog):
             return
 
         amt = txn.amount_cents
-        if amt is None:
-            amount, color = "$?", None
-        else:
-            color = COLOR_PALETTE["green" if amt > 0 else "red"] if amt else None
-            amount = f"{'−' * (amt < 0)}${abs(amt) / 100:,.2f}"  # noqa: RUF001
+        amount = f"{'−' * (amt < 0)}${abs(amt) / 100:,.2f}" if amt is not None else "$?"  # noqa: RUF001
+        color = COLOR_PALETTE["green" if amt > 0 else "red"] if amt else None
 
         title = f"{summary.kind}: {amount}"
         timestamp = f"  •  {txn.date:%B %-d, %Y}" if txn.date else ""
