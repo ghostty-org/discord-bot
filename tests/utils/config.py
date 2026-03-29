@@ -17,5 +17,5 @@ def config() -> Token[Config]:
     """
     # NOTE: stub out the functions on `bot` as needed (with SimpleNamespace) for
     # execution of the tests.
-    cfg = Config(".env.example", data_dir=".", bot=cast("GhosttyBot", object()))
-    return config_var.set(cfg)
+    bot = cast("GhosttyBot", object())
+    return config_var.set(Config(".env.example", data_dir=".", bot=bot))
