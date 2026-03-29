@@ -9,7 +9,8 @@ from toolbox.misc import URL_REGEX
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import SimpleUser
 
-    from app.components.github_integration.webhooks.utils import EmbedColor, Footer
+    from app.components.github_integration.webhooks.utils import Footer
+    from toolbox.misc import EmbedColor
 
 type VouchKind = Literal["vouch", "unvouch", "denounce"]
 type VouchQueue = dict[int, VouchQueueEntry]

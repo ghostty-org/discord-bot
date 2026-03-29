@@ -21,8 +21,8 @@ if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName
-    from app.components.github_integration.webhooks.utils import EmbedColor
     from app.components.github_integration.webhooks.vouch import VouchQueue
+    from toolbox.misc import EmbedColor
 
 DISCUSSION_STATE_COLORS: dict[str, EmbedColor] = {
     "resolved": "purple",
