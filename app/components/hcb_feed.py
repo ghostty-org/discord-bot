@@ -90,7 +90,8 @@ class HCBFeed(commands.Cog):
         if not (summary := TransactionDetails.from_transaction(txn)):
             return
 
-        if (amt := txn.amount_cents) is None:
+        amt = txn.amount_cents
+        if amt is None:
             amount, color = "$?", None
         else:
             dollars, cents = divmod(abs(amt), 100)
