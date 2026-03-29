@@ -1,7 +1,7 @@
 import asyncio
 import re
 import subprocess
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterable
@@ -16,6 +16,17 @@ __all__ = (
     "format_diff_note",
     "truncate",
 )
+
+type EmbedColor = Literal["green", "red", "purple", "gray", "orange", "blue"]
+
+COLOR_PALETTE: dict[EmbedColor, int] = {
+    "green": 0x3FB950,
+    "red": 0xF85149,
+    "blue": 0x4C8CED,
+    "purple": 0xAB7DF8,
+    "gray": 0x9198A1,
+    "orange": 0xEDB74A,
+}
 
 URL_REGEX = re.compile(
     r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b"

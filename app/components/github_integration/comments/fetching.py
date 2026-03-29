@@ -18,6 +18,7 @@ from app.components.github_integration.models import (
 from app.config import gh
 from toolbox.cache import TTRCache
 from toolbox.discord import escape_special
+from toolbox.misc import COLOR_PALETTE
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -38,10 +39,9 @@ COMMENT_PATTERN = re.compile(
     r"(issues|discussions|pull)/(\d+)/?#(\w+?-?)(\d+)"
 )
 STATE_TO_COLOR = {
-    "APPROVED": 0x2ECC71,  # green
-    "CHANGES_REQUESTED": 0xE74C3C,  # red
+    "APPROVED": COLOR_PALETTE["green"],
+    "CHANGES_REQUESTED": COLOR_PALETTE["red"],
 }
-EVENT_COLOR = 0x3498DB  # blue
 
 # Many of the events below are from GitHub's official documentation, which can be found
 # at https://docs.github.com/en/rest/using-the-rest-api/issue-event-types. However, some
@@ -486,7 +486,7 @@ async def _get_event(entity_gist: EntityGist, comment_id: int) -> Comment | None
         created_at=event.created_at,
         html_url=url,
         kind="Event",
-        color=EVENT_COLOR,
+        color=COLOR_PALETTE["blue"],
     )
 
 

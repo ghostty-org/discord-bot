@@ -7,6 +7,7 @@ from discord.ext import commands, tasks
 from loguru import logger
 
 from app.config import config
+from toolbox.misc import COLOR_PALETTE
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
@@ -15,8 +16,6 @@ GHOSTTY_ORG_ICON = (
     "https://github.com/user-attachments/assets/4e2e48dd-ffef-46b9-bc2f-3814bd44c11f"
 )
 ORG_USER = "Ghostty", GHOSTTY_ORG_ICON
-RECEIVE_COLOR = 0x3FB950
-SPEND_COLOR = 0xF85149
 
 
 def date_sort_key(txn: hcb.Transaction) -> dt.date:
@@ -95,7 +94,7 @@ class HCBFeed(commands.Cog):
             amount, color = "$?", None
         else:
             dollars, cents = divmod(abs(amt), 100)
-            color = RECEIVE_COLOR if amt > 0 else SPEND_COLOR if amt < 0 else None
+            color = COLOR_PALETTE["green" if amt > 0 else "red"] if amt else None
             amount = f"{'−' * (amt < 0)}${dollars}.{cents:02}"  # noqa: RUF001
 
         title = f"{summary.kind}: {amount}"

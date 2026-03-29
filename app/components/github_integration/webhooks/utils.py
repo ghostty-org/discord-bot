@@ -4,7 +4,7 @@ import difflib
 import re
 from functools import partial
 from itertools import islice
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, TypedDict
 
 import discord as dc
 from monalisten import events
@@ -12,13 +12,14 @@ from monalisten import events
 from app.bot import emojis
 from app.components.github_integration.models import GitHubUser
 from app.config import config
-from toolbox.misc import truncate
+from toolbox.misc import COLOR_PALETTE, truncate
 
 if TYPE_CHECKING:
     from githubkit.versions.latest.models import RepositoryWebhooks, SimpleUser
 
     from app.bot import EmojiName
     from app.config import WebhookFeedType
+    from toolbox.misc import EmbedColor
 
 CODEBLOCK = re.compile(r"`{3,}")
 SUBTEXT_HTML = re.compile(r"\s*<(su[pb])>(.+?)</\1>\s*?\n?")
@@ -32,17 +33,6 @@ GITHUB_DISCUSSION_URL = re.compile(
         r"(?P<number>\d+)"
     r"(?!\))"
 )  # fmt: skip
-
-type EmbedColor = Literal["green", "red", "purple", "gray", "orange", "blue"]
-
-EMBED_COLORS: dict[EmbedColor, int] = {
-    "green": 0x3FB950,
-    "purple": 0xAB7DF8,
-    "red": 0xF85149,
-    "gray": 0x9198A1,
-    "orange": 0xEDB74A,
-    "blue": 0x4C8CED,
-}
 
 
 class EmbedContentArgs(TypedDict, total=False):
@@ -180,7 +170,7 @@ async def send_embed(  # noqa: PLR0913
     author = GitHubUser(**actor.model_dump())
     embed = (
         dc
-        .Embed(color=color and EMBED_COLORS.get(color), **content.dict)
+        .Embed(color=color and COLOR_PALETTE.get(color), **content.dict)
         .set_footer(**footer.dict)
         .set_author(**author.model_dump())
     )
