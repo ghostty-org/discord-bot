@@ -22,7 +22,7 @@ def date_sort_key(txn: hcb.Transaction) -> dt.date:
     return txn.date.date() if txn.date else dt.date.min
 
 
-class TransactionDetails(NamedTuple):
+class TransactionSummary(NamedTuple):
     kind: str
     sender_name: str | None
     sender_avatar_url: str | None
@@ -87,7 +87,7 @@ class HCBFeed(commands.Cog):
         self.update_feed.cancel()
 
     async def publish_transaction(self, txn: hcb.Transaction) -> None:
-        if not (summary := TransactionDetails.from_transaction(txn)):
+        if not (summary := TransactionSummary.from_transaction(txn)):
             logger.warning(
                 "failed to create a summary; transaction {!r} will not be published",
                 txn.id,
