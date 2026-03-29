@@ -86,7 +86,7 @@ class HCBFeed(commands.Cog):
     async def cog_unload(self) -> None:
         self.update_feed.cancel()
 
-    async def post_update(self, txn: hcb.Transaction) -> None:
+    async def publish_transaction(self, txn: hcb.Transaction) -> None:
         if not (summary := TransactionDetails.from_transaction(txn)):
             return
 
@@ -120,7 +120,7 @@ class HCBFeed(commands.Cog):
 
         logger.info("found {} new transactions: {}", len(new_txns), ", ".join(new_txns))
         for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
-            await self.post_update(txns[txn])
+            await self.publish_transaction(txns[txn])
         self.history_file.write_text(",".join(txns))
 
     @update_feed.before_loop
