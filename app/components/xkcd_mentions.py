@@ -94,7 +94,7 @@ class XKCDMentions(commands.Cog):
                     day=xkcd.day, month=xkcd.month, year=xkcd.year, tzinfo=dt.UTC
                 )
                 embed = dc.Embed(title=xkcd.title, url=xkcd.url).set_footer(
-                    text=f"{xkcd.alt} • {date:%B %-d, %Y}"
+                    text=f"{xkcd.alt}  •  {date:%B %-d, %Y}"
                 )
                 # Some interactive comics have https://imgs.xkcd.com/comics/ as
                 # their image, which results in no image showing because that
