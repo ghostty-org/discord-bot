@@ -88,6 +88,10 @@ class HCBFeed(commands.Cog):
 
     async def publish_transaction(self, txn: hcb.Transaction) -> None:
         if not (summary := TransactionDetails.from_transaction(txn)):
+            logger.warning(
+                "failed to create a summary; transaction {!r} will not be published",
+                txn.id,
+            )
             return
 
         amt = txn.amount_cents
