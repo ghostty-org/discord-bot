@@ -2,6 +2,7 @@
 
 from contextvars import ContextVar
 from functools import cached_property
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import discord as dc
@@ -47,12 +48,14 @@ class Config(BaseSettings):
     github_webhook_url: SecretStr
     github_webhook_secret: SecretStr | None = None
 
+    data_dir: Path
     accept_invite_url: str
     sentry_dsn: SecretStr | None = None
 
     help_channel_tag_ids: dict[str, int]
 
     guild_id: int | None = None
+    hcb_feed_channel_id: int
     help_channel_id: int
     log_channel_id: int
     media_channel_id: int
@@ -62,6 +65,15 @@ class Config(BaseSettings):
 
     mod_role_id: int
     helper_role_id: int
+
+    @field_validator("data_dir", mode="after")
+    @classmethod
+    def resolve_data_dir_path(cls, data_dir: Path) -> Path:
+        data_dir = data_dir.expanduser().resolve()
+        if not data_dir.exists():
+            msg = f"data directory does not exist: {data_dir}"
+            raise FileNotFoundError(msg)
+        return data_dir
 
     @field_validator("serious_channel_ids", mode="before")
     @classmethod
@@ -95,6 +107,13 @@ class Config(BaseSettings):
     def log_channel(self) -> dc.TextChannel:
         logger.debug("fetching log channel")
         channel = self._bot.get_channel(self.log_channel_id)
+        assert isinstance(channel, dc.TextChannel)
+        return channel
+
+    @cached_property
+    def hcb_feed_channel(self) -> dc.TextChannel:
+        logger.debug("fetching HCB feed channel")
+        channel = self._bot.get_channel(self.hcb_feed_channel_id)
         assert isinstance(channel, dc.TextChannel)
         return channel
 

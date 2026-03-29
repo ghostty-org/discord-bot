@@ -130,6 +130,7 @@ are explanations for each variable:
 - Channel/role IDs from [step 4](#4-preparing-a-discord-server):
   - `BOT_GUILD_ID`: the id of the server you prepared (optional; useful when
     your bot is in multiple servers).
+  - `BOT_HCB_FEED_CHANNEL_ID`
   - `BOT_HELP_CHANNEL_ID`
   - `BOT_HELP_CHANNEL_TAG_IDS`: a comma-separated list of `tag_name:tag_id`
     pairs. The tag names are `moved`, `solved`, `stale` and `duplicate`.
@@ -142,6 +143,7 @@ are explanations for each variable:
     "fun" features in. See the guidelines below on which channels to include.
   - `BOT_MOD_ROLE_ID`
   - `BOT_HELPER_ROLE_ID`
+- `BOT_DATA_DIR`: a directory path for persistent state
 - `BOT_TOKEN`: the Discord bot token from
   [step 1](#1-creating-a-discord-application).
 - `BOT_GITHUB_ORG`: the GitHub organization name.

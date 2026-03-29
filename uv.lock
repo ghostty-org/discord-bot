@@ -253,6 +253,7 @@ source = { editable = "." }
 dependencies = [
     { name = "discord-py" },
     { name = "githubkit" },
+    { name = "hcb" },
     { name = "httpx" },
     { name = "loguru" },
     { name = "monalisten" },
@@ -282,6 +283,7 @@ dev = [
 requires-dist = [
     { name = "discord-py", specifier = ">=2.6.3" },
     { name = "githubkit", specifier = ">=0.14.0" },
+    { name = "hcb", specifier = ">=1.0.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.0" },
     { name = "monalisten", specifier = ">=0.4.0" },
@@ -330,6 +332,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6fb3c75474d40b3052059d95df7e73351460c8588d963/h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1", size = 101250, upload-time = "2025-04-24T03:35:25.427Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload-time = "2025-04-24T03:35:24.344Z" },
+]
+
+[[package]]
+name = "hcb"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d9/af/1b169c772a0da9bc2c3e8e6fc9955cf2d0127ddc4a83f04cd184770c6881/hcb-1.0.0.tar.gz", hash = "sha256:5af024f558a7ec2ad67fb8213b1a197a23a603fbd544fa01285e69ab8923f637", size = 7411, upload-time = "2026-03-22T23:01:50.776Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/d0/dbf2af58e10160e730b1229225bac1898a8578ffc07eed0547051ebb65b1/hcb-1.0.0-py3-none-any.whl", hash = "sha256:22917f98ceb0663a933a0948e9dc22d0bd66c8979d7073dd4d924d9e2c134039", size = 8152, upload-time = "2026-03-22T23:01:48.693Z" },
 ]
 
 [[package]]
