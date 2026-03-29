@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 from typing import TYPE_CHECKING, NamedTuple, Self, final, override
 
@@ -75,6 +76,7 @@ class TransactionSummary(NamedTuple):
 class HCBFeed(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
+        self.lock = asyncio.Lock()
 
         self.history_file = config().data_dir / "hcb_feed"
         self.history_file.touch()
@@ -109,20 +111,25 @@ class HCBFeed(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def update_feed(self) -> None:
-        assert self.org
-        logger.debug("updating HCB feed")
-        resp = await self.org.async_get_transactions(expand="donation")
-        txns = {txn.id: txn for txn in resp}
-
-        old_txns = set(self.history_file.read_text().strip().split(","))
-        if not (new_txns := txns.keys() - old_txns):
-            logger.debug("no new transactions")
+        if self.lock.locked():
             return
+        async with self.lock:
+            assert self.org
+            logger.debug("updating HCB feed")
+            resp = await self.org.async_get_transactions(expand="donation")
+            txns = {txn.id: txn for txn in resp}
 
-        logger.info("found {} new transactions: {}", len(new_txns), ", ".join(new_txns))
-        for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
-            await self.publish_transaction(txns[txn])
-        self.history_file.write_text(",".join(txns))
+            old_txns = set(self.history_file.read_text().strip().split(","))
+            if not (new_txns := txns.keys() - old_txns):
+                logger.debug("no new transactions")
+                return
+
+            logger.info(
+                "found {} new transactions: {}", len(new_txns), ", ".join(new_txns)
+            )
+            for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
+                await self.publish_transaction(txns[txn])
+            self.history_file.write_text(",".join(txns))
 
     @update_feed.before_loop
     async def before_update_feed(self) -> None:
