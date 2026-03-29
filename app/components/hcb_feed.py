@@ -37,8 +37,8 @@ class TransactionDetails(NamedTuple):
         memo = txn.memo
         match txn.type:
             case "check_deposit" | "invoice" | "reimbursed_expense":
-                logger.warning("ignoring unsupported transaction type {!r}", txn.type)
-                return None
+                logger.warning("unsupported transaction type {!r}", txn.type)
+                return cls(kind, None, None, "*(unsupported transaction type)*")
             case "bank_account_transaction":
                 if (txn.amount_cents or 0) < 0:
                     # The organization is spending
