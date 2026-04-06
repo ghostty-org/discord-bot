@@ -49,6 +49,13 @@ class GitUser(NamedTuple):
         return f"`{self.name}`"
 
 
+class GitHubTeam(NamedTuple):
+    name: str
+
+    def format(self) -> str:
+        return f"the `{self.name}` team"
+
+
 class Reactions(BaseModel, frozen=True):
     plus_one: int
     minus_one: int

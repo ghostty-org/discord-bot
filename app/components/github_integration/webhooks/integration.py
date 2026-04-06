@@ -59,7 +59,7 @@ class GitHubWebhooks(commands.Cog):
         register_internal_hooks(self.monalisten_client)
         discussions.register_hooks(self.monalisten_client, self._vouch_queue)
         issues.register_hooks(self.monalisten_client, self._vouch_queue)
-        prs.register_hooks(self.monalisten_client, self._vouch_queue)
+        prs.register_hooks(self.monalisten_client, self._vouch_queue, {})
         commits.register_hooks(self.monalisten_client)
 
         # Maintain strong reference to avoid task from being gc

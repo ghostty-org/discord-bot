@@ -1,18 +1,12 @@
 # pyright: reportPrivateUsage=false
 
 from typing import TYPE_CHECKING
-from unittest.mock import Mock
 
 import pytest
-from githubkit.versions.latest.models import SimpleUser
 
 from tests.webhooks.utils import make_pr
 
-from app.components.github_integration.webhooks.prs import (
-    _format_reviewer,
-    _reduce_diff_hunk,
-    pr_footer,
-)
+from app.components.github_integration.webhooks.prs import _reduce_diff_hunk, pr_footer
 
 if TYPE_CHECKING:
     from app.bot import EmojiName
@@ -52,31 +46,3 @@ def test_pr_footer(state: str, draft: bool, merged: bool, expected: EmojiName) -
 )
 def test_reduce_diff_hunk(hunk: str, expected: str) -> None:
     assert _reduce_diff_hunk(hunk) == expected
-
-
-def test_format_reviewer_team() -> None:
-    team = Mock(())
-    team.name = "core-team"
-    event = Mock((), requested_team=team)
-    assert _format_reviewer(event) == "the `core-team` team"
-
-
-def test_format_reviewer_user() -> None:
-    user = Mock(
-        SimpleUser,
-        model_dump=Mock(
-            (),
-            return_value={
-                "login": "reviewer",
-                "html_url": "https://github.com/reviewer",
-                "avatar_url": "https://avatars.githubusercontent.com/u/1",
-            },
-        ),
-    )
-    event = Mock((), requested_reviewer=user)
-    result = _format_reviewer(event)
-    assert "reviewer" in result
-
-
-def test_format_reviewer_none() -> None:
-    assert _format_reviewer(Mock(())) == "`?`"
