@@ -1,12 +1,10 @@
 import datetime as dt
-import subprocess
-import sys
 from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock
 
 import discord as dc
 import pytest
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis import strategies as st
 
 from toolbox.discord import (
@@ -19,12 +17,9 @@ from toolbox.discord import (
     pretty_print_account,
     suppress_embeds_after_delay,
 )
-from toolbox.github import format_diff_note
-from toolbox.messages import is_attachment_only
-from toolbox.misc import aenumerate, async_process_check_output, truncate
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable
+    from collections.abc import Callable
 
 
 @pytest.mark.parametrize(("type_", "result"), [(dc.Member, False), (dc.User, True)])
@@ -86,72 +81,6 @@ def test_post_is_not_solved(names: list[str]) -> None:
     assert not post_is_solved(Mock(dc.Thread, applied_tags=tags))
 
 
-@given(st.lists(st.from_type(type)), st.integers())
-async def test_aenumerate[T](items: list[T], start: int) -> None:
-    async def async_iterator() -> AsyncGenerator[T]:
-        for item in items:
-            yield item
-
-    assert [x async for x in aenumerate(async_iterator(), start)] == list(
-        enumerate(items, start)
-    )
-
-
-@pytest.mark.parametrize(
-    ("attachments", "content", "preprocessed_content", "embeds", "result"),
-    [
-        ([], "", None, [], False),
-        ([1], "", None, [], True),
-        ([1, 2, 3], "", None, [], True),
-        ([1, 2, 3], "foo", "", [], True),  # The pre-processing removes the content.
-        ([1, 2, 3], "", "foo", [], False),
-        ([], "", "foo", [], False),
-        ([1, 2, 3], "", "", [1, 2], False),
-        ([1, 2, 3], "", "foo", [1, 2], False),
-        ([1, 2, 3], "foo", "bar", [], False),
-        ([1, 2, 3], "foo", "bar", [1, 2], False),
-    ],
-)
-def test_is_attachment_only(
-    attachments: list[int],
-    content: str,
-    preprocessed_content: str | None,
-    embeds: list[int],
-    result: bool,
-) -> None:
-    # NOTE: we don't actually care about having real Discord objects here, we only care
-    # about whether they are truthy, so ints are used everywhere.
-    fake_message = Mock(
-        dc.Message,
-        attachments=attachments,
-        components=[],
-        content=content,
-        preprocessed_content=preprocessed_content,
-        embeds=embeds,
-        poll=None,
-        stickers=[],
-    )
-    assert (
-        is_attachment_only(fake_message, preprocessed_content=preprocessed_content)
-        == result
-    )
-
-
-@pytest.mark.parametrize(
-    ("s", "length", "suffix", "result"),
-    [
-        ("aaaaaaaaaaaaaaa", 10, "", "aaaaaaaaaa"),
-        ("the quick brown fox", 4, "!", "the!"),
-        ("aaaaaaaaaaaaaaa", 10, "…", "aaaaaaaaa…"),
-        ("", 10, "…", ""),
-        ("aaaaaaaa", 10, "bbbbb", "aaaaaaaa"),
-        ("aaaaaaaaaaaaaaa", 10, "...", "aaaaaaa..."),
-    ],
-)
-def test_truncate(s: str, length: int, suffix: str, result: str) -> None:
-    assert truncate(s, length, suffix=suffix) == result
-
-
 @pytest.mark.parametrize(
     ("dt", "fmt", "result"),
     [
@@ -183,20 +112,6 @@ async def test_suppress_embeds_after_delay() -> None:
     assert suppressed
 
 
-@given(st.integers(), st.integers(), st.integers())
-def test_format_diff_note(additions: int, deletions: int, changed_files: int) -> None:
-    assume(changed_files and (additions or deletions))
-    formatted = format_diff_note(additions, deletions, changed_files)
-    assert formatted is not None
-    assert f"+{additions}" in formatted
-    assert f"-{deletions}" in formatted
-    assert str(changed_files) in formatted
-
-
-def test_format_diff_note_unavailable() -> None:
-    assert format_diff_note(0, 0, 0) is None
-
-
 @pytest.mark.parametrize(
     ("content", "template", "transform", "result"),
     [
@@ -212,10 +127,7 @@ def test_format_diff_note_unavailable() -> None:
     ],
 )
 def test_format_or_file_short(
-    content: str,
-    template: str | None,
-    transform: Callable[[str], str],
-    result: str,
+    content: str, template: str | None, transform: Callable[[str], str], result: str
 ) -> None:
     assert format_or_file(
         content,
@@ -250,33 +162,6 @@ def test_format_or_file_long_template_transform() -> None:
     assert content == "# !"
     assert file
     assert file.fp.read() == b"a" * 5000
-
-
-@pytest.mark.skipif(not sys.executable, reason="cannot find python interpreter path")
-@pytest.mark.parametrize(
-    ("code", "output"),
-    [
-        ("print('Hello, world!')", "Hello, world!\n"),
-        ("", ""),
-        ("import sys; print('Hello, world!', file=sys.stderr)", ""),
-    ],
-)
-async def test_async_process_check_output_succeeds(code: str, output: str) -> None:
-    stdout = await async_process_check_output(sys.executable, "-c", code)
-    assert stdout == output
-
-
-@pytest.mark.skipif(not sys.executable, reason="cannot find python interpreter path")
-async def test_async_process_check_output_fails() -> None:
-    with pytest.raises(subprocess.CalledProcessError):
-        await async_process_check_output(
-            sys.executable, "-c", "import sys; sys.exit(1)"
-        )
-
-
-async def test_async_process_check_output_invalid_argument() -> None:
-    with pytest.raises(ValueError, match="stdout argument not allowed"):
-        await async_process_check_output("", stdout=subprocess.DEVNULL)
 
 
 @given(st.text(), st.integers())
