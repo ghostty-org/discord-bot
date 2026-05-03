@@ -15,7 +15,7 @@ from app.components.github_integration.webhooks.vouch import (
     find_vouch_command,
     register_vouch_command,
 )
-from toolbox.misc import format_event_sender
+from toolbox.github import format_event_sender
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
