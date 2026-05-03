@@ -18,7 +18,7 @@ check:
 check-package pkg:
     cd {{pkg}} && uv run basedpyright src tests
     cd {{pkg}} && uv run pytest -p terminalprogress tests
-    cd {{pkg}} && uv run taplo fmt --check --diff pyproject.toml config-example.toml
+    cd {{pkg}} && uv run taplo fmt --check --diff pyproject.toml
 
 # Run taplo, ruff's formatter, ruff's isort rules, and mdformat in fix mode
 format:
