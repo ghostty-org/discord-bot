@@ -116,7 +116,7 @@ class CommitLinks(commands.Cog):
                 continue
             if sep == "/blob/":
                 continue  # This is likely a code link
-            if bool(site) != (sep == "/commit/"):
+            if bool(site) ^ (sep == "/commit/"):
                 continue  # Separator was `@` despite this being a link or vice versa
             if site and not owner:
                 continue  # Not a valid GitHub link

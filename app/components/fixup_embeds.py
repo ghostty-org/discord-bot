@@ -31,7 +31,7 @@ def _reddit_transformer(match: re.Match[str]) -> str | None:
 
     # Post links have either a subdomain (representing the subreddit) or a subreddit, so
     # ignore everything else.
-    if bool(match["subdomain"]) == bool(match["subreddit"]):
+    if not (bool(match["subdomain"]) ^ bool(match["subreddit"])):
         return None
 
     skin = f"{s}." if (s := match["skin"]) else ""
