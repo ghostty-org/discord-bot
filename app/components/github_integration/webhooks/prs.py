@@ -19,8 +19,7 @@ from app.components.github_integration.webhooks.vouch import (
     extract_vouch_details,
     is_vouch_pr,
 )
-from toolbox.github import prettify_suggestions
-from toolbox.misc import format_event_sender
+from toolbox.github import format_event_sender, prettify_suggestions
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events

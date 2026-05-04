@@ -10,7 +10,7 @@ from app.components.github_integration.webhooks.utils import (
     Footer,
     send_embed,
 )
-from toolbox.misc import format_event_sender
+from toolbox.github import format_event_sender
 
 if TYPE_CHECKING:
     from monalisten import Monalisten, events

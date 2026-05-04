@@ -6,10 +6,8 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, AsyncIterable
 
-    from githubkit.typing import Missing
-    from githubkit.versions.latest.models import SimpleUser
-
 __all__ = (
+    "COLOR_PALETTE",
     "URL_REGEX",
     "aenumerate",
     "async_process_check_output",
@@ -50,7 +48,7 @@ async def aenumerate[T](
 
 async def async_process_check_output(program: str, *args: str, **kwargs: Any) -> str:
     if "stdout" in kwargs:
-        msg = "stdout argument not allowed, it will be overridden."
+        msg = "stdout argument not allowed: it would be overridden"
         raise ValueError(msg)
     proc = await asyncio.create_subprocess_exec(
         program, *args, stdout=subprocess.PIPE, **kwargs
@@ -64,7 +62,3 @@ async def async_process_check_output(program: str, *args: str, **kwargs: Any) ->
             stderr=proc.stderr and await proc.stderr.read(),
         )
     return (await proc.stdout.read()).decode()
-
-
-def format_event_sender(sender: Missing[SimpleUser]) -> str:
-    return f"@{sender.login}" if sender else "?"

@@ -3,13 +3,16 @@ from typing import TYPE_CHECKING, cast
 from zig_codeblocks import CodeBlock, extract_codeblocks
 
 if TYPE_CHECKING:
+    from githubkit.typing import Missing
     from githubkit.versions.latest.models import (
         PullRequestReviewComment,
+        SimpleUser,
         WebhookPullRequestReviewCommentCreatedPropComment,
     )
 
 __all__ = (
     "format_diff_note",
+    "format_event_sender",
     "prettify_suggestions",
 )
 
@@ -47,3 +50,7 @@ def prettify_suggestions(
             str(suggestion), str(CodeBlock("diff", suggestion_as_added_diff)), 1
         )
     return body
+
+
+def format_event_sender(sender: Missing[SimpleUser]) -> str:
+    return f"@{sender.login}" if sender else "?"
