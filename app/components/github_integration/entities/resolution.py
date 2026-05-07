@@ -83,7 +83,7 @@ async def resolve_entity_signatures(
     for match in ENTITY_REGEX.finditer(remove_codeblocks(message.content)):
         site, sep = match["site"], match["sep"]
         # Ensure that the correct separator is used.
-        if bool(site) == (sep == "#"):
+        if not (bool(site) ^ (sep == "#")):
             continue
         # NOTE: this *must* be after the previous check, as the number can be an empty
         # string if an incorrect separator was used, which would result in a ValueError
