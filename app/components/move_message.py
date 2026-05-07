@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Self, cast, final, override
 
 import discord as dc
@@ -25,6 +26,7 @@ from toolbox.misc import truncate
 
 if TYPE_CHECKING:
     from app.bot import GhosttyBot
+    from app.components.message_filter import MessageFilter
     from toolbox.discord import Account
 
 
@@ -32,6 +34,8 @@ if TYPE_CHECKING:
 _MAXIMUM_NUMBER_OF_ACTIVE_THREADS_REACHED = 160006
 
 _EDIT_METHOD_PROMPT = "What would you like to do?"
+_SELECT_CHANNEL_PROMPT = "Select a channel to move this message to."
+_DELETE_ATTACHMENTS_PROMPT = "Select attachments to delete."
 _MESSAGE_EDIT_HELP = (
     "*Edit via modal* displays a text box that allows you to edit the contents of your "
     "message easily and conveniently. However, Discord's text box is only intended for "
@@ -113,26 +117,52 @@ _EDITING_TIMEOUT_ALMOST_REACHED = (
 _UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 
 
-@final
-class DeleteInstead(SafeView):
-    def __init__(self, message: dc.Message) -> None:
-        super().__init__()
-        self.message = message
-
-    @dc.ui.button(label="Delete instead", emoji="❌")
-    async def delete(
-        self, interaction: dc.Interaction, button: dc.ui.Button[Self]
-    ) -> None:
-        button.disabled = True
-        await self.message.delete()
-        await interaction.response.edit_message(view=self)
-
-
 @dataclass
 class ThreadState:
     moved_message: MovedMessage
     split_subtext: SplitSubtext
     last_update: dt.datetime
+
+
+@final
+class DeleteInstead(SafeView):
+    def __init__(
+        self,
+        message: dc.Message,
+        *,
+        retry_message: str | None = None,
+        retry_view: SafeView | None = None,
+    ) -> None:
+        super().__init__()
+        self.message = message
+
+        if retry_view is not None:
+            self.retry_button = dc.ui.Button[Self](label="Try again", emoji="🔁")
+            self.retry_button.callback = partial(
+                self.retry, retry_message=retry_message, retry_view=retry_view
+            )
+            self.add_item(self.retry_button)
+        else:
+            self.retry_button = None
+
+        self.delete_button = dc.ui.Button[Self](label="Delete instead", emoji="❌")
+        self.delete_button.callback = self.delete
+        self.add_item(self.delete_button)
+
+    async def retry(
+        self,
+        interaction: dc.Interaction,
+        retry_message: str | None,
+        retry_view: SafeView,
+    ) -> None:
+        await interaction.response.edit_message(content=retry_message, view=retry_view)
+
+    async def delete(self, interaction: dc.Interaction) -> None:
+        if self.retry_button:
+            self.retry_button.disabled = True
+        self.delete_button.disabled = True
+        await self.message.delete()
+        await interaction.response.edit_message(view=self)
 
 
 @final
@@ -163,6 +193,21 @@ class SelectChannel(SafeView):
                     "You can't move a message to the same channel. "
                     "Pick a different channel."
                 )
+            )
+            return
+
+        message_filter = cast("MessageFilter | None", self.bot.get_cog("MessageFilter"))
+        if message_filter and (
+            failing_filter := message_filter.check_in(channel, self.message)
+        ):
+            await interaction.response.edit_message(
+                content=(
+                    f"You can't move this message to {channel.mention} since it does "
+                    f"not contain {failing_filter.requirement}."
+                ),
+                view=DeleteInstead(
+                    self.message, retry_message=_SELECT_CHANNEL_PROMPT, retry_view=self
+                ),
             )
             return
 
@@ -313,7 +358,7 @@ class ChooseMessageAction(SafeView):
 
     async def send_attachment_picker(self, interaction: dc.Interaction) -> None:
         await interaction.response.edit_message(
-            content="Select attachments to delete.",
+            content=_DELETE_ATTACHMENTS_PROMPT,
             view=DeleteAttachments(
                 self._message, preprocessed_content=self._split_subtext.content
             ),
@@ -469,7 +514,12 @@ class DeleteAttachments(SafeView):
             self._message, preprocessed_content=self._content
         ):
             await interaction.response.edit_message(
-                content=_NO_ATTACHMENTS_LEFT, view=DeleteInstead(self._message)
+                content=_NO_ATTACHMENTS_LEFT,
+                view=DeleteInstead(
+                    self._message,
+                    retry_message=_DELETE_ATTACHMENTS_PROMPT,
+                    retry_view=self,
+                ),
             )
             return
         await self._message.edit(attachments=remaining)
@@ -761,7 +811,7 @@ class MoveMessage(commands.Cog):
             return
 
         await interaction.response.send_message(
-            "Select a channel to move this message to.",
+            _SELECT_CHANNEL_PROMPT,
             view=SelectChannel(self.bot, message, executor=interaction.user),
             ephemeral=True,
         )
