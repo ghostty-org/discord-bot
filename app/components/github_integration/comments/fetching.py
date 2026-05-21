@@ -257,6 +257,19 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     "comment_deleted": "Deleted a comment",
     # https://github.com/xtermjs/xterm.js/issues/5686#event-23575567225
     "user_blocked": "Blocked a user",
+    # https://github.com/ghostty-org/discord-bot/issues/551#event-25804791481
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25804935575
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25804935708
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25804936726
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25805073359
+    "issue_field_added": "Set a field",
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25804979963
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25805098924
+    "issue_field_changed": "Changed a field",
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25805016559
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25805048941
+    # https://github.com/ghostty-org/discord-bot/issues/553#event-25805123262
+    "issue_field_removed": "Cleared a field",
 }
 
 
