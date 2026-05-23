@@ -648,6 +648,8 @@ class AttachmentChoice(SafeView):
     async def keep(
         self, interaction: dc.Interaction, _button: dc.ui.Button[Self]
     ) -> None:
+        # Set the content to MISSING so that discord.py ignores the content argument
+        # when editing.
         await self._edit(interaction, dc.utils.MISSING)
 
     @dc.ui.button(label="Yes, discard content", emoji="🖼️")  # test: allow-vs16
@@ -710,11 +712,12 @@ class MoveMessage(commands.Cog):
         new_content: str,
     ) -> None:
         channel = moved_message.channel
-        converted_content = convert_nitro_emojis(
-            self.bot, config().ghostty_guild, new_content
-        )
-        if len(converted_content) <= 2000:
-            new_content = converted_content
+        if new_content is not dc.utils.MISSING:
+            converted_content = convert_nitro_emojis(
+                self.bot, config().ghostty_guild, new_content
+            )
+            if len(converted_content) <= 2000:
+                new_content = converted_content
         # Suppress NotFound in case the user attempts to commit an edit to a message
         # that was deleted in the meantime.
         with safe_edit:
