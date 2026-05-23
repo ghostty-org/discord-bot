@@ -2,14 +2,7 @@
 import datetime as dt
 from typing import TYPE_CHECKING, Annotated, Literal, NamedTuple, Self, cast, override
 
-from pydantic import (
-    AliasChoices,
-    BaseModel,
-    BeforeValidator,
-    ConfigDict,
-    Field,
-    field_validator,
-)
+from pydantic import AliasChoices, BaseModel, BeforeValidator, Field, field_validator
 
 from toolbox.misc import truncate
 
@@ -30,9 +23,7 @@ def state_validator(value: object) -> bool:
             raise ValueError(msg)
 
 
-class GitHubUser(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+class GitHubUser(BaseModel, frozen=True):
     name: str = Field(alias="login")
     # `html_url` comes before `url` to prefer the human-readable GitHub page link when
     # both fields are present
@@ -58,9 +49,14 @@ class GitUser(NamedTuple):
         return f"`{self.name}`"
 
 
-class Reactions(BaseModel):
-    model_config = ConfigDict(frozen=True)
+class GitHubTeam(NamedTuple):
+    name: str
 
+    def format(self) -> str:
+        return f"the `{self.name}` team"
+
+
+class Reactions(BaseModel, frozen=True):
     plus_one: int
     minus_one: int
     laugh: int
@@ -71,9 +67,7 @@ class Reactions(BaseModel):
     rocket: int
 
 
-class Entity(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+class Entity(BaseModel, frozen=True):
     number: int
     title: str
     body: str | None
@@ -104,7 +98,7 @@ class Entity(BaseModel):
         return True
 
 
-class Issue(Entity):
+class Issue(Entity, frozen=True):
     closed: Annotated[bool, Field(alias="state"), BeforeValidator(state_validator)]
     state_reason: Literal["completed", "reopened", "not_planned", "duplicate"] | None
     labels: tuple[str, ...]  # a tuple so that the model is hashable
@@ -115,7 +109,7 @@ class Issue(Entity):
         return tuple(cast("str", label.name) for label in value)
 
 
-class PullRequest(Entity):
+class PullRequest(Entity, frozen=True):
     closed: Annotated[bool, Field(alias="state"), BeforeValidator(state_validator)]
     draft: bool
     merged: bool
@@ -124,7 +118,7 @@ class PullRequest(Entity):
     changed_files: int
 
 
-class Discussion(Entity):
+class Discussion(Entity, frozen=True):
     answered_by: GitHubUser | None
     closed: bool
     state_reason: Literal["DUPLICATE", "RESOLVED", "OUTDATED", "REOPENED"] | None
@@ -145,9 +139,7 @@ class EntityGist(NamedTuple):
         return f"{self.owner}/{self.repo}#{self.number}"
 
 
-class Comment(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+class Comment(BaseModel, frozen=True):
     author: GitHubUser
     body: str
     reactions: Reactions | None = None

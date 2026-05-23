@@ -1,26 +1,31 @@
+import asyncio
 import subprocess
 import sys
-from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from toolbox.misc import aenumerate, async_process_check_output, truncate
+from tests.utils import any_comparables
 
-if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+from toolbox.misc import (
+    aenumerate,
+    async_process_check_output,
+    drain_queue,
+    seq_to_aiter,
+    truncate,
+)
 
 
-@given(st.lists(st.from_type(type)), st.integers())
-async def test_aenumerate[T](items: list[T], start: int) -> None:
-    async def async_iterator() -> AsyncGenerator[T]:
-        for item in items:
-            yield item
+@given(st.lists(any_comparables()))
+async def test_seq_to_aiter(elems: list[object]) -> None:
+    assert [e async for e in seq_to_aiter(elems)] == elems
 
-    assert [x async for x in aenumerate(async_iterator(), start)] == list(
-        enumerate(items, start)
-    )
+
+@given(st.lists(any_comparables()), st.integers())
+async def test_aenumerate(elems: list[object], start: int) -> None:
+    result = [e async for e in aenumerate(seq_to_aiter(elems), start)]
+    assert result == list(enumerate(elems, start))
 
 
 @pytest.mark.parametrize(
@@ -63,3 +68,24 @@ async def test_async_process_check_output_fails() -> None:
 async def test_async_process_check_output_invalid_argument() -> None:
     with pytest.raises(ValueError, match="stdout argument not allowed"):
         await async_process_check_output("", stdout=subprocess.DEVNULL)
+
+
+@given(st.lists(any_comparables()))
+async def test_drain_queue(elems: list[object]) -> None:
+    queue = asyncio.Queue[object]()
+
+    async def producer() -> None:
+        for e in elems:
+            await queue.put(e)
+        queue.shutdown()
+
+    async def consumer() -> None:
+        async for i, e in aenumerate(drain_queue(queue)):
+            assert e == elems[i]
+
+    async with asyncio.TaskGroup() as group:
+        group.create_task(producer())
+        group.create_task(consumer())
+
+    with pytest.raises(asyncio.QueueShutDown):
+        await queue.get()

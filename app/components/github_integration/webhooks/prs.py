@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 from loguru import logger
 
 from app.components.github_integration.models import GitHubUser
+from app.components.github_integration.webhooks.review_summary import (
+    handle_review_request,
+)
 from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,
@@ -25,6 +28,10 @@ if TYPE_CHECKING:
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName
+    from app.components.github_integration.webhooks.review_summary import (
+        ReviewPools,
+        ReviewRequestsModified,
+    )
     from app.components.github_integration.webhooks.vouch import VouchQueue
 
 # This looks like a silly const but I wanted to have a single place to document this:
@@ -69,7 +76,11 @@ def pr_embed_content(
     )
 
 
-def register_hooks(webhook: Monalisten, vouch_queue: VouchQueue) -> None:  # noqa: C901, PLR0915
+def register_hooks(  # noqa: C901, PLR0915
+    webhook: Monalisten,
+    vouch_queue: VouchQueue,
+    review_pools: ReviewPools,
+) -> None:
     @webhook.event.pull_request
     async def log_event(event: events.PullRequest) -> None:
         logger.info(
@@ -216,28 +227,17 @@ def register_hooks(webhook: Monalisten, vouch_queue: VouchQueue) -> None:  # noq
             color="blue",
         )
 
-    @webhook.event.pull_request.review_requested
-    async def review_requested(event: events.PullRequestReviewRequested) -> None:
-        pr = event.pull_request
-        content = f"from {_format_reviewer(event)}"
-        await send_embed(
-            event.sender,
-            pr_embed_content(pr, "requested review for {}", content),
-            pr_footer(pr),
-        )
-
+    @webhook.event.pull_request.review_requested  # pyright: ignore[reportArgumentType]
     @webhook.event.pull_request.review_request_removed
-    async def review_request_removed(
-        event: events.PullRequestReviewRequestRemoved,
-    ) -> None:
+    async def review_requests_modified(event: ReviewRequestsModified) -> None:
         pr = event.pull_request
-        content = f"from {_format_reviewer(event)}"
-        await send_embed(
-            event.sender,
-            pr_embed_content(pr, "removed review request for {}", content),
-            pr_footer(pr),
-            origin_repo=event.repository,
-        )
+        if summary := await handle_review_request(review_pools, event):
+            title, body = summary.format()
+            await send_embed(
+                event.sender,
+                pr_embed_content(pr, f"{title} for {{}}", description=body),
+                pr_footer(pr),
+            )
 
     @webhook.event.pull_request_review.submitted
     async def submitted(event: events.PullRequestReviewSubmitted) -> None:
@@ -330,12 +330,3 @@ def _reduce_diff_hunk(hunk: str) -> str:
 
     hunk_lines = [*dropwhile(missing_diff_marker, hunk.splitlines())]
     return "\n".join([*dropwhile(missing_diff_marker, hunk_lines[::-1])][::-1])
-
-
-# Abusing `Any`/`getattr`/`hasattr` here because the API models are insufferable
-def _format_reviewer(event: Any) -> str:
-    if hasattr(event, "requested_team"):
-        return f"the `{event.requested_team.name}` team"
-    if requested_reviewer := getattr(event, "requested_reviewer", None):
-        return GitHubUser(**requested_reviewer.model_dump()).format()
-    return "`?`"
