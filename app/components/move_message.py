@@ -183,9 +183,9 @@ class SelectChannel(SafeView):
         max_values=1,
     )
     async def select_channel(
-        self, interaction: dc.Interaction, sel: dc.ui.ChannelSelect[Self]
+        self, interaction: dc.Interaction, select: dc.ui.ChannelSelect[Self]
     ) -> None:
-        channel = await self.bot.fetch_channel(sel.values[0].id)
+        channel = await self.bot.fetch_channel(select.values[0].id)
         assert isinstance(channel, GuildTextChannel)
         if channel.id == self.message.channel.id:
             await interaction.response.edit_message(
@@ -211,7 +211,15 @@ class SelectChannel(SafeView):
             )
             return
 
-        await interaction.response.defer()
+        select.disabled = True
+        if self.message.attachments or any(
+            m.attachments for m in self.message.message_snapshots
+        ):
+            await interaction.response.edit_message(content=_UPLOADING, view=self)
+        else:
+            await interaction.response.defer()
+            await interaction.edit_original_response(view=self)
+
         webhook_channel, thread = (
             (channel.parent, channel)
             if isinstance(channel, dc.Thread)
@@ -276,7 +284,12 @@ class HelpPostTitle(SafeModal, title="Turn into #help post"):
 
     @override
     async def on_submit(self, interaction: dc.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        if self._message.attachments or any(
+            m.attachments for m in self._message.message_snapshots
+        ):
+            await interaction.response.send_message(_UPLOADING, ephemeral=True)
+        else:
+            await interaction.response.defer(ephemeral=True, thinking=True)
 
         webhook = await get_or_create_webhook(config().channels.help)
         msg = await move_message(
@@ -289,8 +302,8 @@ class HelpPostTitle(SafeModal, title="Turn into #help post"):
         await (await msg.channel.send(f"<@{msg.original_author_id}>")).delete()
 
         # Apparently msg.channel.mention is unavailable
-        await interaction.followup.send(
-            content=f"Help post created: <#{msg.channel.id}>", ephemeral=True
+        await interaction.edit_original_response(
+            content=f"Help post created: <#{msg.channel.id}>"
         )
 
 
