@@ -51,7 +51,7 @@ class GitHubWebhooks(commands.Cog):
             if (token := config().webhook.secret)
             else None,
         )
-        self._monalisten_task: asyncio.Task[None] | None = None
+        self._tasks = set[asyncio.Task[None]]()
         self._vouch_queue: VouchQueue = {}
 
     @override
@@ -59,16 +59,17 @@ class GitHubWebhooks(commands.Cog):
         register_internal_hooks(self.monalisten_client)
         discussions.register_hooks(self.monalisten_client, self._vouch_queue)
         issues.register_hooks(self.monalisten_client, self._vouch_queue)
-        prs.register_hooks(self.monalisten_client, self._vouch_queue, {})
+        prs.register_hooks(self.monalisten_client, self._tasks, self._vouch_queue, {})
         commits.register_hooks(self.monalisten_client)
 
         # Maintain strong reference to avoid task from being gc
-        self._monalisten_task = asyncio.create_task(self.monalisten_client.listen())
+        self._tasks.add(asyncio.create_task(self.monalisten_client.listen()))
 
     @override
     async def cog_unload(self) -> None:
-        if self._monalisten_task and not self._monalisten_task.done():
-            self._monalisten_task.cancel()
+        for task in self._tasks:
+            if not task.done():
+                task.cancel()
 
 
 async def setup(bot: GhosttyBot) -> None:

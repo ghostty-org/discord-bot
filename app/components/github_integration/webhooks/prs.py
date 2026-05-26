@@ -1,5 +1,6 @@
 # pyright: reportUnusedFunction=false
 
+import asyncio
 from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
@@ -78,6 +79,7 @@ def pr_embed_content(
 
 def register_hooks(  # noqa: C901, PLR0915
     webhook: Monalisten,
+    tasks: set[asyncio.Task[None]],
     vouch_queue: VouchQueue,
     review_pools: ReviewPools,
 ) -> None:
@@ -230,14 +232,19 @@ def register_hooks(  # noqa: C901, PLR0915
     @webhook.event.pull_request.review_requested  # pyright: ignore[reportArgumentType]
     @webhook.event.pull_request.review_request_removed
     async def review_requests_modified(event: ReviewRequestsModified) -> None:
-        pr = event.pull_request
-        if summary := await handle_review_request(review_pools, event):
-            title, body = summary.format()
-            await send_embed(
-                event.sender,
-                pr_embed_content(pr, f"{title} for {{}}", description=body),
-                pr_footer(pr),
-            )
+        async def run() -> None:
+            pr = event.pull_request
+            if summary := await handle_review_request(review_pools, event):
+                title, body = summary.format()
+                await send_embed(
+                    event.sender,
+                    pr_embed_content(pr, f"{title} for {{}}", description=body),
+                    pr_footer(pr),
+                )
+
+        task = asyncio.create_task(run())
+        tasks.add(task)
+        task.add_done_callback(tasks.discard)
 
     @webhook.event.pull_request_review.submitted
     async def submitted(event: events.PullRequestReviewSubmitted) -> None:
