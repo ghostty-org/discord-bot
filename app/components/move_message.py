@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import time
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import partial
@@ -121,7 +122,7 @@ _UPLOADING = "⌛ Uploading attachments (this may take some time)…"
 class ThreadState:
     moved_message: MovedMessage
     split_subtext: SplitSubtext
-    last_update: dt.datetime
+    last_update: float  # monotonic time in seconds.
 
 
 @final
@@ -455,7 +456,7 @@ class ChooseMessageAction(SafeView):
                 view=CancelEditing(self._cog, thread),
             )
         self._cog.edit_threads[thread.id] = ThreadState(
-            self._message, self._split_subtext, dt.datetime.now(tz=dt.UTC)
+            self._message, self._split_subtext, time.monotonic()
         )
         self._cog.edit_thread_creators[interaction.user.id] = thread.id
         await self._cog.remove_edit_thread_after_timeout(thread, interaction.user)
@@ -577,7 +578,7 @@ class ContinueEditing(SafeView):
     async def continue_editing(
         self, interaction: dc.Interaction, _button: dc.ui.Button[Self]
     ) -> None:
-        self._cog.edit_threads[self._thread.id].last_update = dt.datetime.now(tz=dt.UTC)
+        self._cog.edit_threads[self._thread.id].last_update = time.monotonic()
         assert interaction.message is not None
         await interaction.message.delete()
 
@@ -613,7 +614,7 @@ class SkipLargeAttachments(SafeView):
     async def skip_large_attachments(
         self, interaction: dc.Interaction, button: dc.ui.Button[Self]
     ) -> None:
-        self._state.last_update = dt.datetime.now(tz=dt.UTC)
+        self._state.last_update = time.monotonic()
         if is_attachment_only(self._message) and not is_attachment_only(
             self._moved_message, preprocessed_content=self._state.split_subtext.content
         ):
@@ -659,7 +660,7 @@ class AttachmentChoice(SafeView):
         await self._edit(interaction, self._state.split_subtext.subtext)
 
     async def _edit(self, interaction: dc.Interaction, content: str) -> None:
-        self._state.last_update = dt.datetime.now(tz=dt.UTC)
+        self._state.last_update = time.monotonic()
         await interaction.response.edit_message(content=_UPLOADING, view=None)
         await self._cog.apply_edit_from_thread(
             self._state.moved_message, self._message, content
@@ -751,34 +752,32 @@ class MoveMessage(commands.Cog):
     async def remove_edit_thread_after_timeout(
         self, thread: dc.Thread, author: Account
     ) -> None:
-        # Start off with a last update check so that recursive calls to this function
-        # don't need to pass the remaining time around.
-        elapsed = dt.datetime.now(tz=dt.UTC) - self.edit_threads[thread.id].last_update
-        time_to_warning = dt.timedelta(minutes=10) - elapsed
-        # Keep sleeping until we have a zero or negative time to the warning. This has
-        # to be a while loop because other coroutines may have touched the last update
-        # time of this edit thread while we were sleeping.
-        while time_to_warning > dt.timedelta():
-            await asyncio.sleep(time_to_warning.total_seconds())
+        ten_minutes = 10 * 60
+        fifteen_minutes = 15 * 60
+        # Start off with a last update check so that the recursive call at the bottom of
+        # this function doesn't need to pass the remaining time around.
+        elapsed = time.monotonic() - self.edit_threads[thread.id].last_update
+        time_to_warning = ten_minutes - elapsed
+        # Keep sleeping until we have a zero or negative time left until the warning.
+        # This has to be a while loop because other coroutines may have touched the last
+        # update time of this edit thread while we were sleeping.
+        while time_to_warning > 0:
+            await asyncio.sleep(time_to_warning)
             if thread.id not in self.edit_threads:
                 # The user finished or canceled editing of the thread while we were
                 # asleep.
                 return
             # Re-calculate how much of the timeout has been elapsed to account for the
             # last thread update time once again.
-            elapsed = (
-                dt.datetime.now(tz=dt.UTC) - self.edit_threads[thread.id].last_update
-            )
-            time_to_warning = dt.timedelta(minutes=10) - elapsed
+            elapsed = time.monotonic() - self.edit_threads[thread.id].last_update
+            time_to_warning = ten_minutes - elapsed
         # At this point, we have definitely waited ten minutes from the last thread
         # update, so send a warning to the user.
         remaining = dt.timedelta(minutes=5)
+        timestamp = dynamic_timestamp(dt.datetime.now(tz=dt.UTC) + remaining, "R")
         await thread.send(
             _EDITING_TIMEOUT_ALMOST_REACHED.format(
-                author.mention,
-                in_five_minutes=dynamic_timestamp(
-                    dt.datetime.now(tz=dt.UTC) + remaining, "R"
-                ),
+                author.mention, in_five_minutes=timestamp
             ),
             view=ContinueEditing(self, thread),
         )
@@ -790,8 +789,8 @@ class MoveMessage(commands.Cog):
         # account for the last thread update time. This is especially important this
         # time around since it's how the "Continue Editing" button signals to us that
         # the user opted to continue.
-        elapsed = dt.datetime.now(tz=dt.UTC) - self.edit_threads[thread.id].last_update
-        if elapsed >= dt.timedelta(minutes=15):
+        elapsed = time.monotonic() - self.edit_threads[thread.id].last_update
+        if elapsed >= fifteen_minutes:
             # Fifteen minutes (time_to_warning's delta + remaining) have passed, so we
             # shall delete the thread now.
             await self.remove_edit_thread(thread, author, action="abandoned editing of")
@@ -907,7 +906,7 @@ class MoveMessage(commands.Cog):
             return
 
         state = self.edit_threads[message.channel.id]
-        state.last_update = dt.datetime.now(tz=dt.UTC)
+        state.last_update = time.monotonic()
         moved_message, split_subtext = state.moved_message, state.split_subtext
 
         new_content = "\n".join(filter(None, (message.content, split_subtext.subtext)))
