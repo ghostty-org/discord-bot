@@ -80,8 +80,8 @@ class TransactionSummary(NamedTuple):
 class HCBFeed(commands.Cog):
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
-        self.lock = asyncio.Lock()
 
+        self.file_lock = asyncio.Lock()
         self.history_file = config().data_dir / "hcb_feed"
 
         self.org = None
@@ -114,14 +114,14 @@ class HCBFeed(commands.Cog):
 
     @tasks.loop(minutes=3)
     async def update_feed(self) -> None:
-        if self.lock.locked():
+        if self.file_lock.locked():
             return
-        async with self.lock:
-            assert self.org
-            logger.debug("updating HCB feed")
-            resp = await self.org.async_get_transactions(expand="donation")
-            txns = {txn.id: txn for txn in resp if txn.pending is False}
 
+        assert self.org
+        logger.debug("updating HCB feed")
+        resp = await self.org.async_get_transactions(expand="donation")
+        txns = {txn.id: txn for txn in resp if txn.pending is False}
+        async with self.file_lock:
             try:
                 old_txns = set(self.history_file.read_text().strip().split(","))
                 if not (new_txns := txns.keys() - old_txns):
@@ -144,9 +144,9 @@ class HCBFeed(commands.Cog):
                     txn_count=len(new_txns),
                     txn_ids=", ".join(new_txns),
                 )
-            for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
-                await self.publish_transaction(txns[txn])
             self.history_file.write_text(",".join(txns))
+        for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
+            await self.publish_transaction(txns[txn])
 
     @update_feed.before_loop
     async def before_update_feed(self) -> None:
