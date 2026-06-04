@@ -9,8 +9,7 @@
   - [3. Creating a GitHub webhook](#3-creating-a-github-webhook)
   - [4. Preparing a Discord server](#4-preparing-a-discord-server)
   - [5. Preparing the config file](#5-preparing-the-config-file)
-    - [5.1. Serious channels](#51-serious-channels)
-    - [5.2. Config overrides](#52-config-overrides)
+    - [5.1. Config overrides](#51-config-overrides)
   - [6. Running the bot](#6-running-the-bot)
 - [Project structure](#project-structure)
 
@@ -138,8 +137,6 @@ Create a `config.toml` file in the root of the project based on
   - `channels.media`
   - `channels.showcase`
   - `channels.log` pairs. The feed type names are `main` and `discussions`.
-  - `channels.serious`: a comma-separated list of channel ids to disable "fun"
-    features in. See the guidelines below on which channels to include.
   - `roles.mod`
   - `roles.helper`
 - `data_dir`: a directory path for persistent state
@@ -154,27 +151,7 @@ Create a `config.toml` file in the root of the project based on
   - `webhook.secret`: a token for validating events (optional).
   - `webhook.channels`: a table of `feed_type` → `channel_id` pairs.
 
-### 5.1 Serious channels
-
-Some Ghostty Bot features aren't suitable for all channels. Currently, that is:
-
-- Asterisks missing a corresponding footnote are replied to with
-  https://xkcd.com/2708.
-
-This list can be anything you like, but here's guidelines to help you pick
-serious channels:
-
-- All channels from [section 4](#4-preparing-a-discord-server) above **should**
-  be added to the serious channel list.
-- These fun features were primarily created for the off-topic category of the
-  Ghostty server; were you to have an equivalent of those in your server, you
-  **shouldn't** add them to the serious channel list.
-- If you have an equivalent of the on-topic channels like `#development`, they
-  **should** be added to the serious channel list. You should probably leave a
-  channel or two off the serious channel list, should you want to modify any of
-  the fun features above.
-
-### 5.2. Config overrides
+### 5.1. Config overrides
 
 `.env` files are also supported, although they have a lower priority than the
 TOML file.

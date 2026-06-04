@@ -68,7 +68,6 @@ class ConfigChannels(BaseModel):
     log: int
     media: int
     showcase: int
-    serious: list[int] = Field(default_factory=list)
     help_tags: dict[str, int] = Field(default_factory=dict)
 
 
