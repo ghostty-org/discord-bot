@@ -53,22 +53,28 @@ def _alias(name: str) -> AliasChoices:
 
 
 class ConfigRoles(BaseModel):
-    mod: int
-    helper: int
+    mod: Annotated[int, Field(description="the id of the mod role")]
+    helper: Annotated[int, Field(description="the id of the helper role")]
 
 
 class ConfigTokens(BaseModel):
-    discord: SecretStr
-    github: SecretStr
+    discord: Annotated[SecretStr, Field(description="the Discord bot token")]
+    github: Annotated[SecretStr, Field(description="the GitHub token")]
 
 
 class ConfigChannels(BaseModel):
-    hcb_feed: int
-    help: int
-    log: int
-    media: int
-    showcase: int
-    help_tags: dict[str, int] = Field(default_factory=dict)
+    hcb_feed: Annotated[int, Field(description="the id of the hcb feed channel")]
+    help: Annotated[int, Field(description="the id of the help forum channel")]
+    log: Annotated[int, Field(description="the id of the log channel")]
+    media: Annotated[int, Field(description="the id of the media channel")]
+    showcase: Annotated[int, Field(description="the id of the showcase channel")]
+    help_tags: dict[str, int] = Field(
+        default_factory=dict,
+        description=(
+            "a table of tag_name → tag_id pairs; the tag names are `moved`, `solved`,"
+            " `stale`, and `duplicate`"
+        ),
+    )
 
 
 class Channels(NamedTuple):
@@ -78,15 +84,28 @@ class Channels(NamedTuple):
 
 
 class WebhookChannels(BaseModel):
-    main: int
-    discussions: int
+    main: Annotated[int, Field(description="the id of the main webhook feed channel")]
+    discussions: Annotated[
+        int, Field(description="the id of the discussions webhook feed channel")
+    ]
 
 
 class ConfigWebhook(BaseModel):
     _bot: dc.Client
-    url: SecretStr
-    secret: SecretStr | None = None
-    channel_ids: Annotated[WebhookChannels, Field(alias="channels")]
+    url: Annotated[SecretStr, Field(description="the URL to receive events from")]
+    secret: Annotated[
+        SecretStr | None, Field(description="a token for validating events")
+    ] = None
+    channel_ids: Annotated[
+        WebhookChannels,
+        Field(
+            alias="channels",
+            description=(
+                "a table of feed_type → channel_id pairs; the feed type names are"
+                " `main` and `discussions`"
+            ),
+        ),
+    ]
 
     @cached_property
     def channels(self) -> dict[WebhookFeedType, dc.TextChannel]:
@@ -112,10 +131,22 @@ class Config(BaseSettings):
     )
 
     bot: CliSuppress[dc.Client]
-    accept_invite_url: str
-    guild_id: int | None = None
-    data_dir: DirectoryPath
-    sentry_dsn: SecretStr | None = None
+    accept_invite_url: Annotated[
+        str, Field(description="a URL to visit to accept the Ghostty invite")
+    ]
+    guild_id: Annotated[
+        int | None,
+        Field(
+            description=(
+                "the id of the server you prepared (useful when your bot is in multiple"
+                " servers)"
+            )
+        ),
+    ] = None
+    data_dir: Annotated[
+        DirectoryPath, Field(description="a directory path for persistent state")
+    ]
+    sentry_dsn: Annotated[SecretStr | None, Field(description="the Sentry DSN")] = None
 
     tokens: ConfigTokens
     role_ids: Annotated[ConfigRoles, Field(validation_alias=_alias("roles"))]
