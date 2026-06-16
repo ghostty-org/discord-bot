@@ -25,13 +25,13 @@ CODEBLOCK = re.compile(r"`{3,}")
 SUBTEXT_HTML = re.compile(r"\s*<(su[pb])>(.+?)</\1>\s*?\n?")
 GITHUB_DISCUSSION_URL = re.compile(
     # Ignore if already inside a hyperlink
-    r"(?<!\()"
-        r"https://github\.com/"
-        r"(?P<owner>\b[a-zA-Z0-9\-]+)/"
-        r"(?P<repo>\b[a-zA-Z0-9\-\._]+)"
-        r"(?P<sep>/(?:issues|pull|discussions)/)"
-        r"(?P<number>\d+)"
-    r"(?!\))"
+    r"(?<!\]\()"
+    r"https://github\.com/"
+    r"(?P<owner>\b[a-zA-Z0-9\-]+)/"
+    r"(?P<repo>\b[a-zA-Z0-9\-\._]+)"
+    r"(?P<sep>/(?:issues|pull|discussions)/)"
+    r"(?P<number>\d+)"
+    r"(?:#[a-zA-Z0-9\-]+)?"
 )  # fmt: skip
 
 

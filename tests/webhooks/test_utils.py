@@ -1,9 +1,17 @@
+# pyright: reportPrivateUsage=false
+from functools import partial
 from unittest.mock import Mock, patch
 
 import discord as dc
 import pytest
+from githubkit.versions.latest.models import RepositoryWebhooks
 
-from app.components.github_integration.webhooks.utils import EmbedContent, Footer
+from app.components.github_integration.webhooks.utils import (
+    GITHUB_DISCUSSION_URL,
+    EmbedContent,
+    Footer,
+    _shorten_same_repo_links,
+)
 
 
 @pytest.mark.parametrize(
@@ -44,3 +52,36 @@ def test_footer_dict() -> None:
 
         assert result["text"] == "Issue #1: Test"
         assert result["icon_url"] == "https://example.com/emoji.png"
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (
+            "https://github.com/ghostty-org/ghostty/discussions/8268#discussioncomment-14492426",
+            "[#8268](https://github.com/ghostty-org/ghostty/discussions/8268#discussioncomment-14492426)",
+        ),
+        (
+            "two months ago (https://github.com/ghostty-org/ghostty/pull/8912#issuecomm"
+            "ent-4002278186), and there",
+            "two months ago ([#8912](https://github.com/ghostty-org/ghostty/pull/8912#i"
+            "ssuecomment-4002278186)), and there",
+        ),
+        (
+            "see [#8912](https://github.com/ghostty-org/ghostty/pull/8912)",
+            "see [#8912](https://github.com/ghostty-org/ghostty/pull/8912)",
+        ),
+        (
+            "check out https://github.com/other-org/other-repo/pull/123",
+            "check out https://github.com/other-org/other-repo/pull/123",
+        ),
+        (
+            "(https://github.com/ghostty-org/ghostty/issues/999) for context",
+            "([#999](https://github.com/ghostty-org/ghostty/issues/999)) for context",
+        ),
+    ],
+)
+def test_shorten_same_repo_links(source: str, expected: str) -> None:
+    origin_repo = Mock(RepositoryWebhooks, full_name="ghostty-org/ghostty")
+    shorten = partial(_shorten_same_repo_links, origin_repo)
+    assert GITHUB_DISCUSSION_URL.sub(shorten, source) == expected
