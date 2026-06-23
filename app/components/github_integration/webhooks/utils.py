@@ -3,7 +3,7 @@ import datetime as dt
 import difflib
 import re
 from functools import partial
-from itertools import islice
+from itertools import dropwhile, islice
 from typing import TYPE_CHECKING, Any, NamedTuple, NotRequired, Protocol, TypedDict
 
 import discord as dc
@@ -122,7 +122,17 @@ async def send_edit_difference(
             # If the titles are the same, there's no point in showing them;
             # they just take up a lot of the 750 available characters.
             diff_lines = islice(diff_lines, 2, None)
-        diff = truncate("\n".join(diff_lines), 750 - len("```diff\n\n```"))
+        diff = "\n".join(diff_lines)
+        max_diff_len = 750 - len("```diff\n\n```")
+        if len(diff) > max_diff_len:
+            truncated = truncate(diff, max_diff_len)
+            if not any(
+                (line.startswith("-") and not line.startswith("--- "))
+                or (line.startswith("+") and not line.startswith("+++ "))
+                for line in truncated.splitlines()
+            ):
+                diff = reduce_diff_hunk(diff)
+        diff = truncate(diff, max_diff_len)
         verb = "edited"
         content = f"```diff\n{diff}\n```"
     elif changes.title:
@@ -139,6 +149,14 @@ async def send_edit_difference(
         content_generator(event_object, f"{verb} {{}}", None, description=content),
         footer_generator(event_object),
     )
+
+
+def reduce_diff_hunk(hunk: str) -> str:
+    def missing_diff_marker(line: str) -> bool:
+        return not line.startswith(("-", "+"))
+
+    hunk_lines = [*dropwhile(missing_diff_marker, hunk.splitlines())]
+    return "\n".join([*dropwhile(missing_diff_marker, hunk_lines[::-1])][::-1])
 
 
 def _shorten_same_repo_links(
