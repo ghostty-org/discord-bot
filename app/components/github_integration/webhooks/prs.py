@@ -1,7 +1,6 @@
 # pyright: reportUnusedFunction=false
 
 import asyncio
-from itertools import dropwhile
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from loguru import logger
@@ -13,6 +12,7 @@ from app.components.github_integration.webhooks.review_summary import (
 from app.components.github_integration.webhooks.utils import (
     EmbedContent,
     Footer,
+    reduce_diff_hunk,
     send_edit_difference,
     send_embed,
 )
@@ -314,7 +314,7 @@ def register_hooks(  # noqa: C901, PLR0915
             logger.info("Copilot review comment dropped")
             return
 
-        hunk = _reduce_diff_hunk(event.comment.diff_hunk)
+        hunk = reduce_diff_hunk(event.comment.diff_hunk)
         hunk_can_fit = 500 - len(content) - len(hunk) - HUNK_CODEBLOCK_OVERHEAD >= 0
         if hunk.strip() and hunk_can_fit and no_suggestions_present:
             content = HUNK_TEMPLATE.format(hunk=hunk, content=content)
@@ -329,11 +329,3 @@ def register_hooks(  # noqa: C901, PLR0915
             pr_footer(pr, from_review=True),
             origin_repo=event.repository,
         )
-
-
-def _reduce_diff_hunk(hunk: str) -> str:
-    def missing_diff_marker(line: str) -> bool:
-        return not line.startswith(("-", "+"))
-
-    hunk_lines = [*dropwhile(missing_diff_marker, hunk.splitlines())]
-    return "\n".join([*dropwhile(missing_diff_marker, hunk_lines[::-1])][::-1])

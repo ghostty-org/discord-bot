@@ -6,7 +6,8 @@ import pytest
 
 from tests.webhooks.utils import make_pr
 
-from app.components.github_integration.webhooks.prs import _reduce_diff_hunk, pr_footer
+from app.components.github_integration.webhooks.prs import pr_footer
+from app.components.github_integration.webhooks.utils import reduce_diff_hunk
 
 if TYPE_CHECKING:
     from app.bot import EmojiName
@@ -45,4 +46,4 @@ def test_pr_footer(state: str, draft: bool, merged: bool, expected: EmojiName) -
     ],
 )
 def test_reduce_diff_hunk(hunk: str, expected: str) -> None:
-    assert _reduce_diff_hunk(hunk) == expected
+    assert reduce_diff_hunk(hunk) == expected
