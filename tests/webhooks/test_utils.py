@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import discord as dc
 import pytest
-from githubkit.versions.latest.models import RepositoryWebhooks
+from githubkit_schemas.latest.models import RepositoryWebhooks
 
 from app.components.github_integration.webhooks.utils import (
     GITHUB_DISCUSSION_URL,

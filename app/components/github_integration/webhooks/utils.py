@@ -15,7 +15,7 @@ from app.config import config
 from toolbox.misc import COLOR_PALETTE, truncate
 
 if TYPE_CHECKING:
-    from githubkit.versions.latest.models import RepositoryWebhooks, SimpleUser
+    from githubkit_schemas.latest.models import RepositoryWebhooks, SimpleUser
 
     from app.bot import EmojiName
     from app.config import WebhookFeedType

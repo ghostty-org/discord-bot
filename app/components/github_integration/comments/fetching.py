@@ -4,7 +4,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, cast, final, override
 
 from githubkit.exception import RequestFailed
-from githubkit.versions.latest.models import IssuePropPullRequest, ReactionRollup
+from githubkit_schemas.latest.models import IssuePropPullRequest, ReactionRollup
 
 from .discussions import get_discussion_comment
 from app.components.github_integration.entities.cache import entity_cache
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
 
     from githubkit.typing import Missing
-    from githubkit.versions.latest.models import (
+    from githubkit_schemas.latest.models import (
         Issue,
         IssueEvent,
         IssueEventDismissedReview,

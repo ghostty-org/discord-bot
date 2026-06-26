@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 from githubkit.exception import RequestFailed
-from githubkit.versions.latest.models import Issue
+from githubkit_schemas.latest.models import Issue
 
 from tests.utils import config
 from tests.utils import kitposer as kp

@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from githubkit.versions.latest.models import SimpleUser
+from githubkit_schemas.latest.models import SimpleUser
 from hypothesis import assume, given
 from hypothesis import strategies as st
 

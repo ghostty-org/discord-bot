@@ -7,7 +7,7 @@ from pydantic import AliasChoices, BaseModel, BeforeValidator, Field, field_vali
 from toolbox.misc import truncate
 
 if TYPE_CHECKING:
-    from githubkit.versions.latest.models import IssuePropLabelsItemsOneof1
+    from githubkit_schemas.latest.models import IssuePropLabelsItemsOneof1
 
 type EntitySignature = tuple[str, str, int]
 
