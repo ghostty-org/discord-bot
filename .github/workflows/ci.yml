@@ -46,6 +46,8 @@ jobs:
       - name: basedpyright
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run basedpyright app tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
       - name: pytest
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run pytest -vv tests
@@ -72,6 +74,8 @@ jobs:
       - name: basedpyright
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run basedpyright src tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
       - name: pytest
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run pytest -vv tests

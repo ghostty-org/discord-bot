@@ -4,11 +4,13 @@ default:
 
 set windows-shell := ["cmd.exe", "/c"]
 
+basedpyright := "NODE_OPTIONS=--max-old-space-size=8192 uv run basedpyright"
+
 # Run ruff, basedpyright, pytest, taplo, and mdformat in check mode
 check:
     uv run ruff check
     @just check-package packages/toolbox
-    uv run basedpyright app tests
+    {{basedpyright}} app tests
     uv run pytest -p terminalprogress tests
     uv run taplo fmt --check --diff pyproject.toml config-example.toml
     uv run ruff format --diff
@@ -16,7 +18,7 @@ check:
 
 [private]
 check-package pkg:
-    cd {{pkg}} && uv run basedpyright src tests
+    cd {{pkg}} && {{basedpyright}} src tests
     cd {{pkg}} && uv run pytest -p terminalprogress tests
     cd {{pkg}} && uv run taplo fmt --check --diff pyproject.toml
 
