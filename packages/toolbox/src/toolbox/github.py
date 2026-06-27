@@ -4,7 +4,7 @@ from zig_codeblocks import CodeBlock, extract_codeblocks
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
-    from githubkit_schemas.latest.models import (
+    from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
         PullRequestReviewComment,
         SimpleUser,
         WebhookPullRequestReviewCommentCreatedPropComment,
