@@ -7,7 +7,7 @@ on:
   pull_request:
 
 env:
-  UV_VERSION: 0.11.15
+  UV_VERSION: 0.11.24
   UV_NO_SYNC: 1
   UV_LOCKED: 1
   PY_COLORS: 1
@@ -20,11 +20,11 @@ jobs:
     runs-on: namespace-profile-ghostty-sm
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Setup uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
       - name: Environment
@@ -46,6 +46,8 @@ jobs:
       - name: basedpyright
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run basedpyright app tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
       - name: pytest
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run pytest -vv tests
@@ -58,11 +60,11 @@ jobs:
         working-directory: ./packages/toolbox
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Setup uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
       - name: Environment
@@ -72,6 +74,8 @@ jobs:
       - name: basedpyright
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run basedpyright src tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
       - name: pytest
         if: ${{ !cancelled() && steps.sync.conclusion == 'success' }}
         run: uv run pytest -vv tests
@@ -84,9 +88,9 @@ jobs:
       security-events: write # Required for upload-sarif (used by zizmor-action) to upload SARIF files.
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d  # v0.5.6
+        uses: zizmorcore/zizmor-action@192e21d79ab29983730a13d1382995c2307fbcaa # v0.5.7

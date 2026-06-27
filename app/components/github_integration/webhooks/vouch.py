@@ -8,7 +8,9 @@ from monalisten import events
 from toolbox.misc import URL_REGEX
 
 if TYPE_CHECKING:
-    from githubkit.versions.latest.models import SimpleUser
+    from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
+        SimpleUser,
+    )
 
     from app.components.github_integration.webhooks.utils import Footer
     from toolbox.misc import EmbedColor
