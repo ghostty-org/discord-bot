@@ -34,7 +34,7 @@ GITHUB_DISCUSSION_URL = re.compile(
     r"(?P<repo>\b[a-zA-Z0-9\-\._]+)"
     r"(?P<sep>/(?:issues|pull|discussions)/)"
     r"(?P<number>\d+)"
-    r"(?:#[a-zA-Z0-9\-]+)?"
+    r"(?P<comment>#[a-zA-Z0-9\-]+)?"
 )  # fmt: skip
 
 
@@ -166,9 +166,10 @@ def _shorten_same_repo_links(
     origin_repo: RepositoryWebhooks, matchobj: re.Match[str]
 ) -> str:
     owner, _, repo = origin_repo.full_name.partition("/")
+    # Only use a short hand if the link comes from same repo
     if matchobj["owner"] == owner and matchobj["repo"] == repo:
-        # Only short hand if link comes from same repo
-        return f"[#{matchobj['number']}]({matchobj[0]})"
+        comment = " (comment)" if matchobj["comment"] else ""
+        return f"[#{matchobj['number']}{comment}]({matchobj[0]})"
     return matchobj[0]
 
 
