@@ -811,7 +811,7 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not config().is_privileged(interaction.user):
+        if not config().is_privileged_discord(interaction.user):
             await interaction.response.send_message(
                 "You do not have permission to move messages.", ephemeral=True
             )
@@ -843,7 +843,7 @@ class MoveMessage(commands.Cog):
         """
         assert not is_dm(interaction.user)
 
-        if not config().is_privileged(interaction.user):
+        if not config().is_privileged_discord(interaction.user):
             await interaction.response.send_message(
                 "You do not have permission to use this action.", ephemeral=True
             )

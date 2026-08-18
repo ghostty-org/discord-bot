@@ -115,11 +115,12 @@ following tags:
 - Stale
 - Duplicate
 
-The following roles will be necessary (both requiring the Manage Messages
+The following roles will be necessary (all requiring the Manage Messages
 permission):
 
 - `mod`
 - `helper`
+- `maintainer`
 
 ## 5. Preparing the config file
 

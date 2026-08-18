@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, final, override
 from githubkit.exception import RequestFailed
 from zig_codeblocks import extract_codeblocks
 
+from app.components.github_integration.repositories import can_link_repo
 from app.config import REPO_ALIASES, gh
 from toolbox.cache import TTLCache
 
@@ -100,7 +101,9 @@ async def resolve_entity_signatures(
                 # Ignore the xkcd prefix, as it is handled by xkcd_mentions.py
                 continue
 
-        if sig := await resolve_repo_signature(owner, repo):
+        if (sig := await resolve_repo_signature(owner, repo)) and can_link_repo(
+            message.author, *sig
+        ):
             kind_hint = sep.strip("/#") if site else None
             yield (*sig, number), kind_hint
             valid_signatures += 1

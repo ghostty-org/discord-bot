@@ -34,12 +34,16 @@ type WebhookFeedType = Literal["main", "discussions"]
 REPO_ALIASES = {
     "ghostty": "ghostty",
     "main": "ghostty",
+    "meta": "meta",
     "web": "website",
     "website": "website",
     "discord-bot": "discord-bot",
     "bot": "discord-bot",
     "bobr": "discord-bot",
 }
+# Repositories in this set can only be linked by privileged Discord members. The full
+# owner/name is kept here so the restriction also applies to full GitHub URLs.
+PRIVATE_REPOS = frozenset({"meta"})
 ENV_PREFIX = "BOT__"
 
 
@@ -55,6 +59,7 @@ def _alias(name: str) -> AliasChoices:
 class ConfigRoles(BaseModel):
     mod: Annotated[int, Field(description="the id of the mod role")]
     helper: Annotated[int, Field(description="the id of the helper role")]
+    maintainer: Annotated[int, Field(description="the id of the maintainer role")]
 
 
 class ConfigTokens(BaseModel):
@@ -199,10 +204,16 @@ class Config(BaseSettings):
         )
         return guild
 
-    def is_privileged(self, member: dc.Member) -> bool:
+    def is_privileged_discord(self, member: dc.Member) -> bool:
         return not (
             member.get_role(self.role_ids.mod) is None
             and member.get_role(self.role_ids.helper) is None
+        )
+
+    def is_privileged_github(self, member: dc.Member) -> bool:
+        return not (
+            member.get_role(self.role_ids.mod) is None
+            and member.get_role(self.role_ids.maintainer) is None
         )
 
     def is_ghostty_mod(self, user: Account) -> bool:

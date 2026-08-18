@@ -12,6 +12,7 @@ from app.bot import emojis
 from app.components.github_integration.commit_types import CommitKey, commit_cache
 from app.components.github_integration.entities.resolution import resolve_repo_signature
 from app.components.github_integration.models import GitHubUser
+from app.components.github_integration.repositories import can_link_repo
 from toolbox.discord import (
     dynamic_timestamp,
     suppress_embeds_after_delay,
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 
     from app.bot import GhosttyBot
     from app.components.github_integration.commit_types import CommitSummary
+    from toolbox.discord import Account
 
 COMMIT_SHA_PATTERN = re.compile(
     r"(?P<site>\bhttps?://(?:www\.)?github\.com/)?"
@@ -62,7 +64,9 @@ class CommitLinks(commands.Cog):
         if commit_url := self.bot.bot_status.commit_url:
             # Commit links need the emojis, so wait until they're loaded.
             await self.bot.emojis_loaded.wait()
-            fake_message = cast("dc.Message", SimpleNamespace(content=commit_url))
+            fake_message = cast(
+                "dc.Message", SimpleNamespace(content=commit_url, author=0)
+            )
             if (links := await self.process(fake_message)).item_count:
                 self.bot.bot_status.commit_data = links.content
 
@@ -107,6 +111,7 @@ class CommitLinks(commands.Cog):
 
     @staticmethod
     async def resolve_repo_signatures(
+        author: Account,
         sigs: Iterable[tuple[str, str, str, str, str]],
     ) -> AsyncGenerator[CommitKey]:
         valid_signatures = 0
@@ -120,7 +125,9 @@ class CommitLinks(commands.Cog):
                 continue  # Separator was `@` despite this being a link or vice versa
             if site and not owner:
                 continue  # Not a valid GitHub link
-            if sig := await resolve_repo_signature(owner or None, repo or None):
+            if (
+                sig := await resolve_repo_signature(owner or None, repo or None)
+            ) and can_link_repo(author, *sig):
                 yield CommitKey(*sig, sha)
                 valid_signatures += 1
                 if valid_signatures == 10:
@@ -128,7 +135,7 @@ class CommitLinks(commands.Cog):
 
     async def process(self, message: dc.Message) -> ProcessedMessage:
         shas = dict.fromkeys(COMMIT_SHA_PATTERN.findall(message.content))
-        shas = [r async for r in self.resolve_repo_signatures(shas)]
+        shas = [r async for r in self.resolve_repo_signatures(message.author, shas)]
         commit_summaries = await asyncio.gather(*(commit_cache.get(c) for c in shas))
         valid_shas = list(filter(None, commit_summaries))
         content = "\n\n".join(map(self._format, valid_shas))
