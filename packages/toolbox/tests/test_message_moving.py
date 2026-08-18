@@ -1,7 +1,7 @@
 # ruff: noqa: RUF001, RUF003 (because of `×`)
 # pyright: reportPrivateUsage=false
+
 import datetime as dt
-import re
 from unittest.mock import Mock
 
 import discord as dc
@@ -141,6 +141,7 @@ def test_unattachable_embed(elem: str) -> None:
         # because the subtext will never contain code blocks with snowflakes contained
         # within.
         ("`<@192849172497>`", "@", (192849172497, 1)),
+        ("``<@192849172497>``", "@", (192849172497, 2)),
         ("```<@192849172497>```", "@", (192849172497, 3)),
     ],
 )
@@ -176,14 +177,6 @@ def test_find_snowflake(
             ),
             665120188047556609,
         ),
-        ("a\n -# Moved from <#1281624935558807678> by <@665120188047556609>", None),
-        (
-            (
-                "Scanned 0 open posts in <#1305317376346296321>.\n-# <t:1744158570> • "
-                "Moved from <#1324364626225266758> by <@665120188047556609>"
-            ),
-            None,
-        ),
         (
             (
                 "-# (content attached)\n-# Authored by <@665120188047556609> • "
@@ -191,28 +184,7 @@ def test_find_snowflake(
             ),
             665120188047556609,
         ),
-        (
-            (
-                "-# (content attached)\n-# Moved from "
-                "<#1281624935558807678> by <@665120188047556609>"
-            ),
-            None,
-        ),
-        ("test", None),
-        ("", None),
-        ("-# Moved from <#1281624935558807678> by <@665120188047556609>", None),
         ("-# Authored by <@665120188047556609>", 665120188047556609),
-        ("Authored by <@665120188047556609>", None),
-        ("<@665120188047556609>", None),
-        ("-#<@665120188047556609>", None),
-        ("<@665120188047556609 go to <#1294988140645453834>", None),
-        (
-            (
-                "-# <@252206453878685697> what are you doing in <#1337443701403815999> "
-                "👀\n-# it's not ||[redacted]|| is it...?"
-            ),
-            None,
-        ),
         # False positives that are not going to be handled.
         (
             "-# <@252206453878685697> what are you doing in <#1337443701403815999> 👀",
@@ -224,13 +196,64 @@ def test_find_snowflake(
         ("-# Moved by <@665120188047556609>", 665120188047556609),
         # See the comment in test_find_snowflake().
         ("-# Moved by `<@665120188047556609>`", 665120188047556609),
+        ("-# Moved by ``<@665120188047556609>``", 665120188047556609),
         ("-# Authored by ```<@665120188047556609>```", 665120188047556609),
     ],
 )
-def test_get_moved_message_author_id(content: str, result: int | None) -> None:
-    # NOTE: casting a SimpleNamespace to MovedMessage seems to break the code in
-    # ExtensibleMessage, so we shall access _extract_author_id() directly.
-    assert MovedMessage._extract_author_id(content) == result
+def test_get_moved_message_author_id(content: str, result: int) -> None:
+    fake_message = Mock(dc.WebhookMessage, content=content)
+    assert MovedMessage(fake_message).original_author_id == result
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "a\n -# Moved from <#1281624935558807678> by <@665120188047556609>",
+        (
+            "Scanned 0 open posts in <#1305317376346296321>.\n-# <t:1744158570> • "
+            "Moved from <#1324364626225266758> by <@665120188047556609>"
+        ),
+        (
+            "-# (content attached)\n-# Moved from "
+            "<#1281624935558807678> by <@665120188047556609>"
+        ),
+        "test",
+        "",
+        "-# meow",
+        "-# Moved from <#1281624935558807678> by <@665120188047556609>",
+        "Authored by <@665120188047556609>",
+        "<@665120188047556609>",
+        "-#<@665120188047556609>",
+        "<@665120188047556609 go to <#1294988140645453834>",
+        (
+            "-# <@252206453878685697> what are you doing in <#1337443701403815999> "
+            "👀\n-# it's not ||[redacted]|| is it...?"
+        ),
+    ],
+)
+def test_get_moved_message_no_author_id(content: str) -> None:
+    with pytest.raises(ValueError, match="not a moved message"):
+        MovedMessage(Mock(dc.WebhookMessage, content=content))
+
+
+@given(st.integers(min_value=0))
+def test_moved_message_author_assert_pass(author_id: int) -> None:
+    fake_message = Mock(dc.WebhookMessage, content=f"-# <@{author_id}>")
+    MovedMessage(fake_message, author=Mock(dc.Member, id=author_id))
+
+
+@st.composite
+def differing_ids(draw: st.DrawFn) -> tuple[int, int]:
+    n = draw(st.integers(min_value=0))
+    return n, draw(st.integers(min_value=0).filter(lambda x: x != n))
+
+
+@given(differing_ids())
+def test_moved_message_author_assert_fail(ids: tuple[int, int]) -> None:
+    subtext_id, author_id = ids
+    fake_message = Mock(dc.WebhookMessage, content=f"-# <@{subtext_id}>")
+    with pytest.raises(ValueError, match="incorrect author passed"):
+        MovedMessage(fake_message, author=Mock(dc.Member, id=author_id))
 
 
 @pytest.mark.parametrize(
@@ -654,13 +677,3 @@ def test_subtext_format_simple(
     subtext.poll_error = poll_error
 
     assert subtext.format_simple() == expected
-
-
-@pytest.mark.parametrize(
-    ("message_content", "error_message"),
-    [("-# meow", "not a moved message"), ("-# <@567>", "incorrect author passed")],
-)
-def test_moved_message_init_errors(message_content: str, error_message: str) -> None:
-    message = Mock(dc.WebhookMessage, content=message_content)
-    with pytest.raises(ValueError, match=re.escape(error_message)):
-        MovedMessage(message, author=Mock(dc.Member, id=123))
