@@ -17,6 +17,7 @@ from app.components.github_integration.models import (
     GitHubUser,
     Reactions,
 )
+from app.components.github_integration.repositories import can_link_repo
 from app.config import gh
 from toolbox.cache import TTLCache
 from toolbox.discord import escape_special
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncGenerator, Callable
 
+    import discord as dc
     from githubkit.typing import Missing
     from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
         Issue,
@@ -485,10 +487,12 @@ async def _get_entity_starter(entity_gist: EntityGist, _: int) -> Comment | None
     )
 
 
-async def get_comments(content: str) -> AsyncGenerator[Comment]:
+async def get_comments(message: dc.Message) -> AsyncGenerator[Comment]:
     found_comments = set[Comment]()
-    for match in COMMENT_PATTERN.finditer(content):
+    for match in COMMENT_PATTERN.finditer(message.content):
         owner, repo, kind, number, event, event_no = map(str, match.groups())
+        if not can_link_repo(message.author, owner, repo):
+            continue
         entity_gist = EntityGist(owner, repo, int(number), kind)
         comment = await comment_cache.get((entity_gist, event, int(event_no)))
         if comment and comment not in found_comments:

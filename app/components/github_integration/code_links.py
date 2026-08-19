@@ -13,6 +13,7 @@ from discord.ext import commands
 from githubkit.exception import RequestFailed
 from zig_codeblocks import highlight_zig_code
 
+from app.components.github_integration.repositories import can_link_repo
 from app.components.zig_codeblocks import FILE_HIGHLIGHT_NOTE, THEME
 from app.config import gh
 from toolbox.cache import TTLCache
@@ -86,12 +87,14 @@ class CodeLinks(commands.Cog):
         CodeLinkActions.linker = self.linker
         self.cache = ContentCache(minutes=30)
 
-    async def get_snippets(self, content: str) -> AsyncGenerator[Snippet]:
-        for match in CODE_LINK_PATTERN.finditer(content):
+    async def get_snippets(self, message: dc.Message) -> AsyncGenerator[Snippet]:
+        for match in CODE_LINK_PATTERN.finditer(message.content):
             *snippet_path, range_start, range_end = match.groups()
             snippet_path[-1] = snippet_path[-1].rstrip("/")
 
             snippet_path = SnippetPath(*snippet_path)
+            if not can_link_repo(message.author, snippet_path.owner, snippet_path.repo):
+                continue
             range_start = int(range_start)
             # slice(a - 1, b) since lines are 1-indexed
             content_range = slice(
@@ -139,7 +142,7 @@ class CodeLinks(commands.Cog):
         ) + (f"\n```{snippet.lang}\n{snippet.body}\n```" * include_body)
 
     async def process(self, message: dc.Message) -> ProcessedMessage:
-        snippets = [s async for s in self.get_snippets(message.content)]
+        snippets = [s async for s in self.get_snippets(message)]
         if not snippets:
             return ProcessedMessage(item_count=0)
 

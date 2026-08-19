@@ -77,10 +77,7 @@ class GitHubComments(commands.Cog):
 
     @commands.Cog.listener("on_accepted_message")
     async def reply_with_comments(self, message: dc.Message) -> None:
-        embeds = [
-            self.comment_to_embed(comment)
-            async for comment in get_comments(message.content)
-        ]
+        embeds = [self.comment_to_embed(c) async for c in get_comments(message)]
         if not embeds:
             return
         if len(embeds) > 10:
@@ -102,7 +99,7 @@ class GitHubComments(commands.Cog):
             group.create_task(remove_view_after_delay(sent_message))
 
     async def process(self, msg: dc.Message) -> ProcessedMessage:
-        comments = [self.comment_to_embed(i) async for i in get_comments(msg.content)]
+        comments = [self.comment_to_embed(c) async for c in get_comments(msg)]
         return ProcessedMessage(embeds=comments, item_count=len(comments))
 
     @commands.Cog.listener()

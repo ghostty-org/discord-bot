@@ -27,7 +27,7 @@ POST_TITLE_TOO_LONG = (
 async def mention_entity(entity_id: int) -> str | None:
     output = await github_entities_fmt.entity_message(
         # Forging a message to use the entity mention logic
-        cast("dc.Message", SimpleNamespace(content=f"#{entity_id}")),
+        cast("dc.Message", SimpleNamespace(content=f"#{entity_id}", author=0)),
     )
     return output.content or None
 
@@ -50,7 +50,7 @@ class Close(commands.GroupCog, group_name="close"):
             return False
 
         # Allow privileged users to close posts, as well as the author of the post.
-        if config().is_privileged(user) or user.id == post.owner_id:
+        if config().is_privileged_discord(user) or user.id == post.owner_id:
             return True
 
         # When "Turn into #help post" is used, the owner ID is the ID of the webhook
