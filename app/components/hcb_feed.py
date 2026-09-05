@@ -103,13 +103,13 @@ class HCBFeed(commands.Cog):
     async def cog_unload(self) -> None:
         self.feed_loop.cancel()
 
-    async def publish_transaction(self, txn: hcb.Transaction) -> None:
+    async def publish_transaction(self, txn: hcb.Transaction) -> bool:
         if not (summary := TransactionSummary.from_transaction(txn)):
             logger.warning(
                 "failed to create a summary; transaction {txn!r} will not be published",
                 txn=txn.id,
             )
-            return
+            return False
 
         amt = txn.amount_cents
         amount = f"{'−' * (amt < 0)}${abs(amt) / 100:,.2f}" if amt is not None else "$?"  # noqa: RUF001
@@ -123,6 +123,7 @@ class HCBFeed(commands.Cog):
         embed.set_footer(text=f"ID: {txn.id}{timestamp}")
 
         await config().channels.hcb_feed.send(embed=embed)
+        return True
 
     @tasks.loop(minutes=3)
     async def feed_loop(self) -> None:
@@ -141,35 +142,64 @@ class HCBFeed(commands.Cog):
             logger.debug("initializing HCB feed organization")
             self.org = await hcb.async_get_organization("ghostty")
 
-        logger.debug("updating HCB feed")
-        resp = await self.org.async_get_transactions(expand="donation")
-        txns = {txn.id: txn for txn in resp if txn.pending is False}
+        logger.debug("fetching HCB feed transactions")
+        response = await self.org.async_get_transactions(expand="donation")
+        transactions = {txn.id: txn for txn in response if txn.pending is False}
+
         try:
-            old_txns = set(self.history_file.read_text().strip().split(","))
-            if not (new_txns := txns.keys() - old_txns):
-                logger.debug("no new transactions")
-                return
+            history = self.history_file.read_text()
         except FileNotFoundError:
-            # Ignore the new transactions and pretend they had already been sent, so
-            # as to avoid spamming 50 transactions when the history file is created
-            # for the first time.
+            # Ignore the new transactions and pretend they had already been sent, so as
+            # to avoid spamming 50 transactions when the history file is created for the
+            # first time.
             logger.warning(
-                "hcb feed history file not found; ignoring {txn_count} "
-                "transactions for first run",
-                txn_count=len(txns),
+                "HCB feed history file not found; baselining {txn_count} transactions",
+                txn_count=len(transactions),
             )
-            new_txns = set[str]()
+            self._save_history(set(transactions))
+            return
 
-        if new_txns:
-            logger.info(
-                "found {txn_count} new transactions: {txn_ids}",
-                txn_count=len(new_txns),
-                txn_ids=", ".join(new_txns),
-            )
-        self.history_file.write_text(",".join(txns))
+        sent_ids = set(history.strip().split(","))
 
-        for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
-            await self.publish_transaction(txns[txn])
+        retained_ids = sent_ids & transactions.keys()
+        if retained_ids != sent_ids:
+            self._save_history(retained_ids)
+        sent_ids = retained_ids
+
+        new_ids = sorted(
+            transactions.keys() - sent_ids,
+            key=lambda txn_id: (date_sort_key(transactions[txn_id]), txn_id),
+        )
+        if not new_ids:
+            logger.debug("no new transactions")
+            return
+
+        logger.info(
+            "found {txn_count} new transactions: {txn_ids}",
+            txn_count=len(new_ids),
+            txn_ids=", ".join(new_ids),
+        )
+        for txn_id in new_ids:
+            try:
+                published = await self.publish_transaction(transactions[txn_id])
+            except Exception:
+                logger.exception(
+                    "failed to publish HCB transaction {txn_id!r}; leaving for retry",
+                    txn_id=txn_id,
+                )
+                continue
+
+            if published:
+                sent_ids.add(txn_id)
+                self._save_history(sent_ids)
+
+    def _save_history(self, transaction_ids: set[str]) -> None:
+        temp = self.history_file.with_suffix(".tmp")
+        try:
+            temp.write_text(",".join(sorted(transaction_ids)))
+            temp.replace(self.history_file)
+        finally:
+            temp.unlink(missing_ok=True)
 
     @feed_loop.before_loop
     async def before_update_feed(self) -> None:
