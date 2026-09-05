@@ -1,4 +1,3 @@
-import asyncio
 import datetime as dt
 from typing import TYPE_CHECKING, NamedTuple, Self, assert_never, final, override
 
@@ -89,18 +88,20 @@ class TransactionSummary(NamedTuple):
 
 @final
 class HCBFeed(commands.Cog):
+    org: hcb.Organization | None
+
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
 
-        self.file_lock = asyncio.Lock()
+        self.poll_failed = False
         self.history_file = config().data_dir / "hcb_feed"
 
         self.org = None
-        self.update_feed.start()
+        self.feed_loop.start()
 
     @override
     async def cog_unload(self) -> None:
-        self.update_feed.cancel()
+        self.feed_loop.cancel()
 
     async def publish_transaction(self, txn: hcb.Transaction) -> None:
         if not (summary := TransactionSummary.from_transaction(txn)):
@@ -124,45 +125,55 @@ class HCBFeed(commands.Cog):
         await config().channels.hcb_feed.send(embed=embed)
 
     @tasks.loop(minutes=3)
-    async def update_feed(self) -> None:
-        if self.file_lock.locked():
-            return
+    async def feed_loop(self) -> None:
+        try:
+            await self._update_feed()
+        except Exception:
+            self.poll_failed = True
+            logger.exception("HCB feed poll failed; retrying on next scheduled poll")
+        else:
+            if self.poll_failed:
+                logger.info("HCB feed polling recovered")
+            self.poll_failed = False
 
-        assert self.org
+    async def _update_feed(self) -> None:
+        if self.org is None:
+            logger.debug("initializing HCB feed organization")
+            self.org = await hcb.async_get_organization("ghostty")
+
         logger.debug("updating HCB feed")
         resp = await self.org.async_get_transactions(expand="donation")
         txns = {txn.id: txn for txn in resp if txn.pending is False}
-        async with self.file_lock:
-            try:
-                old_txns = set(self.history_file.read_text().strip().split(","))
-                if not (new_txns := txns.keys() - old_txns):
-                    logger.debug("no new transactions")
-                    return
-            except FileNotFoundError:
-                # Ignore the new transactions and pretend they had already been sent, so
-                # as to avoid spamming 50 transactions when the history file is created
-                # for the first time.
-                logger.warning(
-                    "hcb feed history file not found; ignoring {txn_count} "
-                    "transactions for first run",
-                    txn_count=len(txns),
-                )
-                new_txns = set[str]()
+        try:
+            old_txns = set(self.history_file.read_text().strip().split(","))
+            if not (new_txns := txns.keys() - old_txns):
+                logger.debug("no new transactions")
+                return
+        except FileNotFoundError:
+            # Ignore the new transactions and pretend they had already been sent, so
+            # as to avoid spamming 50 transactions when the history file is created
+            # for the first time.
+            logger.warning(
+                "hcb feed history file not found; ignoring {txn_count} "
+                "transactions for first run",
+                txn_count=len(txns),
+            )
+            new_txns = set[str]()
 
-            if new_txns:
-                logger.info(
-                    "found {txn_count} new transactions: {txn_ids}",
-                    txn_count=len(new_txns),
-                    txn_ids=", ".join(new_txns),
-                )
-            self.history_file.write_text(",".join(txns))
+        if new_txns:
+            logger.info(
+                "found {txn_count} new transactions: {txn_ids}",
+                txn_count=len(new_txns),
+                txn_ids=", ".join(new_txns),
+            )
+        self.history_file.write_text(",".join(txns))
+
         for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
             await self.publish_transaction(txns[txn])
 
-    @update_feed.before_loop
+    @feed_loop.before_loop
     async def before_update_feed(self) -> None:
         await self.bot.wait_until_ready()
-        self.org = await hcb.async_get_organization("ghostty")
 
 
 async def setup(bot: GhosttyBot) -> None:
