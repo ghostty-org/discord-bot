@@ -1,6 +1,6 @@
 import asyncio
 import datetime as dt
-from typing import TYPE_CHECKING, NamedTuple, Self, final, override
+from typing import TYPE_CHECKING, NamedTuple, Self, assert_never, final, override
 
 import discord as dc
 import hcb
@@ -34,18 +34,23 @@ class TransactionSummary(NamedTuple):
         if txn.type is None:
             logger.error("missing transaction type for {txn}", txn=txn.id)
             return None
+
+        # Acceptable fallbacks
         kind = txn.type.replace("_", " ").capitalize()
         memo = txn.memo
+        user = (None, None)
+
         match txn.type:
-            case "check_deposit" | "invoice" | "reimbursed_expense":
-                logger.warning("unsupported transaction type {!r}", txn.type)
-                return cls(kind, None, None, "*(unsupported transaction type)*")
+            case "check_deposit" | "invoice" | "reimbursed_expense" as unsupported:
+                logger.warning(
+                    "unsupported transaction type {txn_type!r}", txn_type=unsupported
+                )
+                memo = "*(unsupported transaction type)*"
             case "bank_account_transaction":
                 if (txn.amount_cents or 0) < 0:
-                    # The organization is spending
+                    # The organization is spending. In other cases we don't know the
+                    # sender as this transaction type doesn't provide it.
                     user = ORG_USER
-                # The organization is receiving but we don't know the sender
-                user = (None, None)
             case (
                 "ach_transfer"
                 | "card_charge"
@@ -55,24 +60,30 @@ class TransactionSummary(NamedTuple):
                 | "wise_transfer"
             ):
                 if txn.type == "ach_transfer":
+                    # Casing adjustment
                     kind = "ACH transfer"
                 if txn.user:
                     user = (txn.user.full_name, txn.user.photo)
                 elif (txn.amount_cents or 0) < 0:
                     user = ORG_USER
-                else:
-                    user = (None, None)
             case "donation":
                 don = txn.donation
                 assert don
-                assert don.donor
                 if memo and don.recurring is not None:
                     memo += " (recurring)" if don.recurring else " (one-time)"
-                user = don.donor.name, don.donor.avatar
-                if user == ("Anonymous", None):
-                    user = (None, None)
+                if don.donor is not None:
+                    donor_info = don.donor.name, don.donor.avatar
+                    # We don't want to set the field for anonymous users as it's not
+                    # very helpful and only takes up space.
+                    if donor_info != ("Anonymous", None):
+                        user = donor_info
             case "hcb_fee":
-                kind, user = "HCB fee", ORG_USER
+                kind = "HCB fee"
+                user = ORG_USER
+            case _:
+                # This will only get triggered if HCB adds a new transaction type.
+                assert_never(txn.type)
+
         return cls(kind, *user, memo)
 
 
