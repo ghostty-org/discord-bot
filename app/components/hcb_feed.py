@@ -1,6 +1,5 @@
-import asyncio
 import datetime as dt
-from typing import TYPE_CHECKING, NamedTuple, Self, final, override
+from typing import TYPE_CHECKING, NamedTuple, Self, assert_never, final, override
 
 import discord as dc
 import hcb
@@ -34,18 +33,23 @@ class TransactionSummary(NamedTuple):
         if txn.type is None:
             logger.error("missing transaction type for {txn}", txn=txn.id)
             return None
+
+        # Acceptable fallbacks
         kind = txn.type.replace("_", " ").capitalize()
         memo = txn.memo
+        user = (None, None)
+
         match txn.type:
-            case "check_deposit" | "invoice" | "reimbursed_expense":
-                logger.warning("unsupported transaction type {!r}", txn.type)
-                return cls(kind, None, None, "*(unsupported transaction type)*")
+            case "check_deposit" | "invoice" | "reimbursed_expense" as unsupported:
+                logger.warning(
+                    "unsupported transaction type {txn_type!r}", txn_type=unsupported
+                )
+                memo = "*(unsupported transaction type)*"
             case "bank_account_transaction":
                 if (txn.amount_cents or 0) < 0:
-                    # The organization is spending
+                    # The organization is spending. In other cases we don't know the
+                    # sender as this transaction type doesn't provide it.
                     user = ORG_USER
-                # The organization is receiving but we don't know the sender
-                user = (None, None)
             case (
                 "ach_transfer"
                 | "card_charge"
@@ -55,49 +59,57 @@ class TransactionSummary(NamedTuple):
                 | "wise_transfer"
             ):
                 if txn.type == "ach_transfer":
+                    # Casing adjustment
                     kind = "ACH transfer"
                 if txn.user:
                     user = (txn.user.full_name, txn.user.photo)
                 elif (txn.amount_cents or 0) < 0:
                     user = ORG_USER
-                else:
-                    user = (None, None)
             case "donation":
                 don = txn.donation
                 assert don
-                assert don.donor
                 if memo and don.recurring is not None:
                     memo += " (recurring)" if don.recurring else " (one-time)"
-                user = don.donor.name, don.donor.avatar
-                if user == ("Anonymous", None):
-                    user = (None, None)
+                if don.donor is not None:
+                    donor_info = don.donor.name, don.donor.avatar
+                    # We don't want to set the field for anonymous users as it's not
+                    # very helpful and only takes up space.
+                    if donor_info != ("Anonymous", None):
+                        user = donor_info
             case "hcb_fee":
-                kind, user = "HCB fee", ORG_USER
+                kind = "HCB fee"
+                user = ORG_USER
+            case _:
+                # This will only get triggered if HCB adds a new transaction type.
+                assert_never(txn.type)
+
         return cls(kind, *user, memo)
 
 
 @final
 class HCBFeed(commands.Cog):
+    org: hcb.Organization | None
+
     def __init__(self, bot: GhosttyBot) -> None:
         self.bot = bot
 
-        self.file_lock = asyncio.Lock()
+        self.poll_failed = False
         self.history_file = config().data_dir / "hcb_feed"
 
         self.org = None
-        self.update_feed.start()
+        self.feed_loop.start()
 
     @override
     async def cog_unload(self) -> None:
-        self.update_feed.cancel()
+        self.feed_loop.cancel()
 
-    async def publish_transaction(self, txn: hcb.Transaction) -> None:
+    async def publish_transaction(self, txn: hcb.Transaction) -> bool:
         if not (summary := TransactionSummary.from_transaction(txn)):
             logger.warning(
                 "failed to create a summary; transaction {txn!r} will not be published",
                 txn=txn.id,
             )
-            return
+            return False
 
         amt = txn.amount_cents
         amount = f"{'−' * (amt < 0)}${abs(amt) / 100:,.2f}" if amt is not None else "$?"  # noqa: RUF001
@@ -111,47 +123,87 @@ class HCBFeed(commands.Cog):
         embed.set_footer(text=f"ID: {txn.id}{timestamp}")
 
         await config().channels.hcb_feed.send(embed=embed)
+        return True
 
     @tasks.loop(minutes=3)
-    async def update_feed(self) -> None:
-        if self.file_lock.locked():
+    async def feed_loop(self) -> None:
+        try:
+            await self._update_feed()
+        except Exception:
+            self.poll_failed = True
+            logger.exception("HCB feed poll failed; retrying on next scheduled poll")
+        else:
+            if self.poll_failed:
+                logger.info("HCB feed polling recovered")
+            self.poll_failed = False
+
+    async def _update_feed(self) -> None:
+        if self.org is None:
+            logger.debug("initializing HCB feed organization")
+            self.org = await hcb.async_get_organization("ghostty")
+
+        logger.debug("fetching HCB feed transactions")
+        response = await self.org.async_get_transactions(expand="donation")
+        transactions = {txn.id: txn for txn in response if txn.pending is False}
+
+        try:
+            history = self.history_file.read_text()
+        except FileNotFoundError:
+            # Ignore the new transactions and pretend they had already been sent, so as
+            # to avoid spamming 50 transactions when the history file is created for the
+            # first time.
+            logger.warning(
+                "HCB feed history file not found; baselining {txn_count} transactions",
+                txn_count=len(transactions),
+            )
+            self._save_history(set(transactions))
             return
 
-        assert self.org
-        logger.debug("updating HCB feed")
-        resp = await self.org.async_get_transactions(expand="donation")
-        txns = {txn.id: txn for txn in resp if txn.pending is False}
-        async with self.file_lock:
+        sent_ids = set(history.strip().split(","))
+
+        retained_ids = sent_ids & transactions.keys()
+        if retained_ids != sent_ids:
+            self._save_history(retained_ids)
+        sent_ids = retained_ids
+
+        new_ids = sorted(
+            transactions.keys() - sent_ids,
+            key=lambda txn_id: (date_sort_key(transactions[txn_id]), txn_id),
+        )
+        if not new_ids:
+            logger.debug("no new transactions")
+            return
+
+        logger.info(
+            "found {txn_count} new transactions: {txn_ids}",
+            txn_count=len(new_ids),
+            txn_ids=", ".join(new_ids),
+        )
+        for txn_id in new_ids:
             try:
-                old_txns = set(self.history_file.read_text().strip().split(","))
-                if not (new_txns := txns.keys() - old_txns):
-                    logger.debug("no new transactions")
-                    return
-            except FileNotFoundError:
-                # Ignore the new transactions and pretend they had already been sent, so
-                # as to avoid spamming 50 transactions when the history file is created
-                # for the first time.
-                logger.warning(
-                    "hcb feed history file not found; ignoring {txn_count} "
-                    "transactions for first run",
-                    txn_count=len(txns),
+                published = await self.publish_transaction(transactions[txn_id])
+            except Exception:
+                logger.exception(
+                    "failed to publish HCB transaction {txn_id!r}; leaving for retry",
+                    txn_id=txn_id,
                 )
-                new_txns = set[str]()
+                continue
 
-            if new_txns:
-                logger.info(
-                    "found {txn_count} new transactions: {txn_ids}",
-                    txn_count=len(new_txns),
-                    txn_ids=", ".join(new_txns),
-                )
-            self.history_file.write_text(",".join(txns))
-        for txn in sorted(new_txns, key=lambda k: date_sort_key(txns[k])):
-            await self.publish_transaction(txns[txn])
+            if published:
+                sent_ids.add(txn_id)
+                self._save_history(sent_ids)
 
-    @update_feed.before_loop
+    def _save_history(self, transaction_ids: set[str]) -> None:
+        temp = self.history_file.with_suffix(".tmp")
+        try:
+            temp.write_text(",".join(sorted(transaction_ids)))
+            temp.replace(self.history_file)
+        finally:
+            temp.unlink(missing_ok=True)
+
+    @feed_loop.before_loop
     async def before_update_feed(self) -> None:
         await self.bot.wait_until_ready()
-        self.org = await hcb.async_get_organization("ghostty")
 
 
 async def setup(bot: GhosttyBot) -> None:
