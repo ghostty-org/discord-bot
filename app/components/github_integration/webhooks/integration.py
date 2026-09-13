@@ -63,7 +63,15 @@ class GitHubWebhooks(commands.Cog):
         commits.register_hooks(self.monalisten_client)
 
         # Maintain strong reference to avoid task from being gc
-        self._tasks.add(asyncio.create_task(self.monalisten_client.listen()))
+        self._tasks.add(asyncio.create_task(self._listen_with_restarts()))
+
+    async def _listen_with_restarts(self) -> None:
+        while True:
+            try:
+                await self.monalisten_client.listen()
+            except Exception:
+                logger.exception("monalisten client crashed; restarting")
+                await asyncio.sleep(5)
 
     @override
     async def cog_unload(self) -> None:
