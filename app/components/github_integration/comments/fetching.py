@@ -275,6 +275,8 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805048941
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805123262
     "issue_field_removed": "Cleared a field",
+    # https://github.com/ghostty-org/discord-bot/pull/572#event-31132926526
+    "added_to_stack": "Added this pull request to a stack",
 }
 
 
