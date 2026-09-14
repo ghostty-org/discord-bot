@@ -1,4 +1,5 @@
 import datetime as dt
+from itertools import islice
 from typing import TYPE_CHECKING, NamedTuple, Self, assert_never, final, override
 
 import discord as dc
@@ -143,8 +144,11 @@ class HCBFeed(commands.Cog):
             self.org = await hcb.async_get_organization("ghostty")
 
         logger.debug("fetching HCB feed transactions")
-        response = await self.org.async_get_transactions(expand="donation")
-        transactions = {txn.id: txn for txn in response if txn.pending is False}
+        resp = await self.org.async_get_transactions(expand="donation", per_page=100)
+        transactions = {
+            txn.id: txn
+            for txn in islice((txn for txn in resp if txn.pending is False), 50)
+        }
 
         try:
             history = self.history_file.read_text()

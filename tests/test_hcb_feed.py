@@ -130,7 +130,7 @@ async def test_poll_recovers(
     assert snapshots == [{"txn_old"}] * (failure_count + 2)
     assert harness.fetch.await_count == failure_count + 2
     harness.lookup.assert_awaited_once_with("ghostty")
-    harness.fetch.assert_awaited_with(expand="donation")
+    harness.fetch.assert_awaited_with(expand="donation", per_page=100)
     harness.send.assert_awaited_once()
     assert history(harness.feed) == {"txn_old", "txn_new"}
 
