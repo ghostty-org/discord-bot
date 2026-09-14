@@ -145,6 +145,14 @@ class HCBFeed(commands.Cog):
 
         logger.debug("fetching HCB feed transactions")
         resp = await self.org.async_get_transactions(expand="donation", per_page=100)
+
+        # Temporary log for response and behavior tracking, to be removed soon hopefully
+        resp_summary = "; ".join(
+            f"{txn.id} {txn.date or dt.date.min:%Y-%m-%d} p={txn.pending}"
+            for txn in resp
+        )
+        logger.info("HCB response: {response}", response=resp_summary)
+
         transactions = {
             txn.id: txn
             for txn in islice((txn for txn in resp if txn.pending is False), 50)
