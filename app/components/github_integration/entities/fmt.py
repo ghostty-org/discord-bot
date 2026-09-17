@@ -107,7 +107,7 @@ def _format_pr_stack(stack: PRStack) -> str:
     )
     path = f"-# {' ← '.join(path_parts)}"
 
-    return "\n".join((heading, *pr_list, path))
+    return "\n".join((heading, *pr_list, path, ""))
 
 
 def _format_mention(entity: Entity) -> str:
