@@ -9,7 +9,9 @@ from app.components.github_integration.models import (
     Entity,
     EntitySignature,
     Issue,
+    PRStack,
     PullRequest,
+    StackedPR,
 )
 from app.config import gh
 from toolbox.cache import TTLCache
@@ -31,6 +33,28 @@ async def get_pr(key: EntitySignature) -> PullRequest | None:
     return None
 
 
+async def get_stack(key: EntitySignature) -> PRStack | None:
+    try:
+        stack = (await gh().rest.pulls.async_stacks_get(*key)).parsed_data
+    except RequestFailed:
+        return None
+
+    return PRStack(
+        number=key[2],
+        html_url=stack.pull_requests[0].html_url,
+        created_at=stack.created_at,
+        pull_requests=[
+            StackedPR(
+                head_ref=pr.head.ref,
+                base_ref=pr.base.ref,
+                merged=pr.merged_at is not None,
+                **pr.model_dump(),
+            )
+            for pr in stack.pull_requests
+        ],
+    )
+
+
 @final
 class EntityCache(TTLCache[tuple[EntitySignature, str | None], Entity]):
     @override
@@ -45,6 +69,8 @@ class EntityCache(TTLCache[tuple[EntitySignature, str | None], Entity]):
             self[unhinted_key] = issue_or_pr
         elif discussion := await get_discussion(*key_):
             self[unhinted_key] = discussion
+        elif stack := await get_stack(key_):
+            self[unhinted_key] = stack
 
     @override
     async def get(self, key: tuple[EntitySignature, str | None]) -> Entity | None:

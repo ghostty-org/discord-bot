@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING
 from .cache import entity_cache
 from .resolution import resolve_entity_signatures
 from app.bot import emojis
-from app.components.github_integration.models import Discussion, Issue, PullRequest
+from app.components.github_integration.models import (
+    Discussion,
+    Issue,
+    PRStack,
+    PullRequest,
+    StackedPR,
+)
 from toolbox.discord import dynamic_timestamp, escape_special
 from toolbox.github import format_diff_note
 from toolbox.linker import ProcessedMessage
@@ -15,17 +21,15 @@ if TYPE_CHECKING:
 
     from app.components.github_integration.models import Entity
 
-ENTITY_TEMPLATE = "**{entity.kind} [#{entity.number}](<{entity.html_url}>):** {title}"
 
-
-def get_entity_emoji(entity: Entity) -> dc.Emoji | str:
+def get_entity_emoji(entity: Entity | StackedPR) -> dc.Emoji | str:
     if isinstance(entity, Issue):
         state = "open"
         if entity.closed:
             state = "closed_"
             state += "completed" if entity.state_reason == "completed" else "unplanned"
         emoji_name = "issue_" + state
-    elif isinstance(entity, PullRequest):
+    elif isinstance(entity, (PullRequest, StackedPR)):
         emoji_name = "pull_" + (
             "merged" if entity.merged
             else "closed" if entity.closed
@@ -73,8 +77,45 @@ def _format_entity_detail(entity: Entity) -> str:
     return f"-# {body}\n"
 
 
+def _collapse(entries: list[str], *, limit: int, placeholder: str) -> list[str]:
+    if len(entries) <= limit:
+        return entries
+    start = entries[: limit // 2]
+    end = entries[-(limit // 2) :]
+    return [*start, placeholder, *end]
+
+
+def _format_pr_stack(stack: PRStack) -> str:
+    heading = f"{emojis()['stack']} **Stack #{stack.number}**"
+
+    prs = stack.pull_requests
+    pr_list = _collapse(
+        [
+            f"* {get_entity_emoji(pr)} **[#{pr.number}](<{pr.html_url}>):** {
+                escape_special(pr.title)
+            }"
+            for pr in reversed(prs)
+        ],
+        limit=9,
+        placeholder=f"* … *({len(prs) - 8} more)*",
+    )
+
+    owner, name = stack.owner, stack.repo_name
+    base = f"[`{owner}/{name}:{prs[0].base_ref}`](<https://github.com/{owner}/{name}>)"
+    path_parts = _collapse(
+        [base, *(f"`{pr.head_ref}`" for pr in prs)], limit=5, placeholder="…"
+    )
+    path = f"-# {' ← '.join(path_parts)}"
+
+    return "\n".join((heading, *pr_list, path))
+
+
 def _format_mention(entity: Entity) -> str:
-    headline = ENTITY_TEMPLATE.format(entity=entity, title=escape_special(entity.title))
+    if isinstance(entity, PRStack):
+        return _format_pr_stack(entity)
+    headline = f"**{entity.kind} [#{entity.number}](<{entity.html_url}>):** {
+        escape_special(entity.title)
+    }"
 
     owner, name = entity.owner, entity.repo_name
     fmt_ts = partial(dynamic_timestamp, entity.created_at)
