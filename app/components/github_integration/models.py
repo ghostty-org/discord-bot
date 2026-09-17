@@ -126,6 +126,28 @@ class Discussion(Entity, frozen=True):
     state_reason: Literal["DUPLICATE", "RESOLVED", "OUTDATED", "REOPENED"] | None
 
 
+# This inherits from Entity only to avoid special-casing the stack in all places that
+# rely on the entity cache (i.e. expect an Entity).
+class PRStack(Entity, frozen=True):
+    number: int
+    pull_requests: list[StackedPR]
+    # Fields of `Entity` that are meaningless for a stack.
+    title: str = ""
+    body: str | None = None
+    user: GitHubUser = GitHubUser.default()
+
+
+class StackedPR(BaseModel, frozen=True):
+    title: str
+    number: int
+    head_ref: str
+    base_ref: str
+    closed: Annotated[bool, Field(alias="state"), BeforeValidator(state_validator)]
+    draft: bool
+    merged: bool
+    html_url: str
+
+
 class EntityGist(NamedTuple):
     owner: str
     repo: str

@@ -12,7 +12,7 @@ authors = [
 dependencies = [
   "toolbox",
   "discord-py>=2.6.3",
-  "githubkit>=0.15.4",
+  "githubkit>=0.16.1",
   "pydantic>=2.11.7,<3",
   "sentry-sdk>=2.36",
   "zig-codeblocks>=0.3.3",

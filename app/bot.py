@@ -38,6 +38,7 @@ EmojiName = Literal[
     "pull_draft",
     "pull_merged",
     "pull_open",
+    "stack",
 ]
 
 _EMOJI_NAMES = frozenset(get_args(EmojiName))
