@@ -130,7 +130,7 @@ class Discussion(Entity, frozen=True):
 # rely on the entity cache (i.e. expect an Entity).
 class PRStack(Entity, frozen=True):
     number: int
-    pull_requests: list[StackedPR]
+    pull_requests: tuple[StackedPR, ...]
     # Fields of `Entity` that are meaningless for a stack.
     title: str = ""
     body: str | None = None
