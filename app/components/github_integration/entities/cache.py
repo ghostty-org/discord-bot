@@ -43,7 +43,7 @@ async def get_stack(key: EntitySignature) -> PRStack | None:
         number=key[2],
         html_url=stack.pull_requests[0].html_url,
         created_at=stack.created_at,
-        pull_requests=[
+        pull_requests=tuple(
             StackedPR(
                 head_ref=pr.head.ref,
                 base_ref=pr.base.ref,
@@ -51,7 +51,7 @@ async def get_stack(key: EntitySignature) -> PRStack | None:
                 **pr.model_dump(),
             )
             for pr in stack.pull_requests
-        ],
+        ),
     )
 
 
