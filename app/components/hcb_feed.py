@@ -11,6 +11,8 @@ from app.config import config
 from toolbox.misc import COLOR_PALETTE
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from app.bot import GhosttyBot
 
 GHOSTTY_ORG_ICON = (
@@ -19,8 +21,9 @@ GHOSTTY_ORG_ICON = (
 ORG_USER = "Ghostty", GHOSTTY_ORG_ICON
 
 
-def date_sort_key(txn: hcb.Transaction) -> dt.date:
-    return txn.date.date() if txn.date else dt.date.min
+def transaction_key(txn: hcb.Transaction) -> str:
+    date = txn.date.date() if txn.date else dt.date.min
+    return f"{date:%y%m%d}{txn.id.removeprefix('txn')}"
 
 
 class TransactionSummary(NamedTuple):
@@ -147,14 +150,13 @@ class HCBFeed(commands.Cog):
         resp = await self.org.async_get_transactions(expand="donation", per_page=100)
 
         # Temporary log for response and behavior tracking, to be removed soon hopefully
-        resp_summary = "; ".join(
-            f"{txn.id} {txn.date or dt.date.min:%Y-%m-%d} p={txn.pending}"
-            for txn in resp
+        resp_summary = ";".join(
+            f"{transaction_key(txn)},p={txn.pending}" for txn in resp
         )
         logger.info("HCB response: {response}", response=resp_summary)
 
         transactions = {
-            txn.id: txn
+            transaction_key(txn): txn
             for txn in islice((txn for txn in resp if txn.pending is False), 50)
         }
 
@@ -168,47 +170,44 @@ class HCBFeed(commands.Cog):
                 "HCB feed history file not found; baselining {txn_count} transactions",
                 txn_count=len(transactions),
             )
-            self._save_history(set(transactions))
+            self._save_history(transactions)
             return
 
-        sent_ids = set(history.strip().split(","))
+        sent_keys = set(history.strip().split(","))
+        sent_ids = {f"txn{sent_key[6:]}" for sent_key in sent_keys}
 
-        retained_ids = sent_ids & transactions.keys()
-        if retained_ids != sent_ids:
-            self._save_history(retained_ids)
-        sent_ids = retained_ids
-
-        new_ids = sorted(
-            transactions.keys() - sent_ids,
-            key=lambda txn_id: (date_sort_key(transactions[txn_id]), txn_id),
-        )
-        if not new_ids:
+        new_transactions = {
+            txn_key: txn
+            for txn_key, txn in sorted(transactions.items(), key=lambda i: i[0])
+            if txn.id not in sent_ids
+        }
+        if not new_transactions:
             logger.debug("no new transactions")
             return
 
         logger.info(
             "found {txn_count} new transactions: {txn_ids}",
-            txn_count=len(new_ids),
-            txn_ids=", ".join(new_ids),
+            txn_count=len(new_transactions),
+            txn_ids=", ".join(new_transactions),
         )
-        for txn_id in new_ids:
+        for txn_key, txn in new_transactions.items():
             try:
-                published = await self.publish_transaction(transactions[txn_id])
+                published = await self.publish_transaction(txn)
             except Exception:
                 logger.exception(
                     "failed to publish HCB transaction {txn_id!r}; leaving for retry",
-                    txn_id=txn_id,
+                    txn_id=txn_key,
                 )
                 continue
 
             if published:
-                sent_ids.add(txn_id)
-                self._save_history(sent_ids)
+                sent_keys.add(txn_key)
+                self._save_history(sent_keys)
 
-    def _save_history(self, transaction_ids: set[str]) -> None:
+    def _save_history(self, transaction_ids: Iterable[str]) -> None:
         temp = self.history_file.with_suffix(".tmp")
         try:
-            temp.write_text(",".join(sorted(transaction_ids)))
+            temp.write_text(",".join(sorted(transaction_ids)[-500:]))
             temp.replace(self.history_file)
         finally:
             temp.unlink(missing_ok=True)

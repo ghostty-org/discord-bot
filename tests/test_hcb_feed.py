@@ -47,7 +47,7 @@ def harness(tmp_path: Path) -> Generator[FeedHarness]:
         with patch.object(tasks.Loop, "start"):
             feed = hcb_feed.HCBFeed(bot)
 
-        feed.history_file.write_text("txn_old")
+        feed.history_file.write_text("260901_old")
         yield FeedHarness(feed, fetch, send, lookup)
 
 
@@ -127,12 +127,12 @@ async def test_poll_recovers(
         ]
 
     assert len(recovery_calls) == 1
-    assert snapshots == [{"txn_old"}] * (failure_count + 2)
+    assert snapshots == [{"260901_old"}] * (failure_count + 2)
     assert harness.fetch.await_count == failure_count + 2
     harness.lookup.assert_awaited_once_with("ghostty")
     harness.fetch.assert_awaited_with(expand="donation", per_page=100)
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old", "txn_new"}
+    assert history(harness.feed) == {"260901_old", "260901_new"}
 
 
 async def test_initialization_recovers(harness: FeedHarness) -> None:
@@ -147,7 +147,7 @@ async def test_initialization_recovers(harness: FeedHarness) -> None:
     assert harness.lookup.await_count == 2
     harness.fetch.assert_awaited_once()
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old", "txn_new"}
+    assert history(harness.feed) == {"260901_old", "260901_new"}
 
 
 @pytest.mark.parametrize("failure_stage", ["format", "send"])
@@ -177,7 +177,7 @@ async def test_failed_transaction_remains_retryable(
         await harness.feed.feed_loop()
 
     # Neither an exception nor an unpublished summary counts as delivery.
-    assert history(harness.feed) == {"txn_old", "txn_b"}
+    assert history(harness.feed) == {"260901_old", "260901_b"}
     # Remove the injected send failure and inspect only the next poll's calls.
     harness.send.reset_mock(side_effect=True)
 
@@ -185,7 +185,7 @@ async def test_failed_transaction_remains_retryable(
 
     # Only `a` is retried successfully; `b` is already recorded and `c` stays skipped.
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old", "txn_a", "txn_b"}
+    assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
     harness.send.reset_mock()
 
     await harness.feed.feed_loop()
@@ -211,7 +211,7 @@ async def test_missing_donor_details(harness: FeedHarness) -> None:
     await harness.feed.feed_loop()
 
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old", "txn_donation"}
+    assert history(harness.feed) == {"260901_old", "260901_donation"}
     embed = harness.send.await_args_list[0].kwargs["embed"]
     assert embed.author.name is None
 
@@ -226,7 +226,7 @@ async def test_missing_donation_does_not_block_batch(harness: FeedHarness) -> No
     await harness.feed.feed_loop()
 
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old", "txn_b"}
+    assert history(harness.feed) == {"260901_old", "260901_b"}
 
     # Once the API provides usable data, the failed transaction is retried.
     harness.fetch.return_value = [
@@ -248,36 +248,39 @@ async def test_missing_donation_does_not_block_batch(harness: FeedHarness) -> No
     await harness.feed.feed_loop()
 
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old", "txn_a", "txn_b"}
+    assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
 
 
-@pytest.mark.parametrize("first_run", [False, True])
-async def test_baseline_filtering_and_order(
-    harness: FeedHarness, first_run: bool
-) -> None:
-    if first_run:
-        harness.feed.history_file.unlink()
+async def test_baseline(harness: FeedHarness) -> None:
+    harness.feed.history_file.unlink()
+    harness.fetch.return_value = [transaction("txn_foo")]
+
+    await harness.feed.feed_loop()
+
+    assert harness.feed.history_file.read_text() == "260901_foo"
+    assert harness.send.await_count == 0
+
+
+async def test_filtering_and_order(harness: FeedHarness) -> None:
     harness.fetch.return_value = [
         transaction("txn_newer", date=dt.datetime(2026, 9, 2, tzinfo=dt.UTC)),
+        transaction("txn_new"),
         transaction("txn_pending", pending=True),
         transaction("txn_unknown", pending=None),
-        transaction("txn_older"),
     ]
 
     await harness.feed.feed_loop()
 
-    # Only explicitly completed transactions enter history. Pending and unknown states
-    # are excluded, and txn_old is pruned because it left the response.
-    expected = {"txn_older", "txn_newer"}
-    assert history(harness.feed) == expected
-    assert harness.send.await_count == (0 if first_run else 2)
-    if not first_run:
-        # Notifications must be chronological even when the API returns newest first.
-        embed_footers = [
-            call.kwargs["embed"].footer.text for call in harness.send.await_args_list
-        ]
-        assert embed_footers[0].startswith("ID: txn_older")
-        assert embed_footers[1].startswith("ID: txn_newer")
+    # Transactions still pending (or of unknown state) should not enter history.
+    assert history(harness.feed) == {"260901_old", "260901_new", "260902_newer"}
+    assert harness.send.await_count == 2
+
+    # Notifications must be chronological even when the API returns newest first.
+    embed_footers = [
+        call.kwargs["embed"].footer.text for call in harness.send.await_args_list
+    ]
+    assert embed_footers[0].startswith("ID: txn_new")
+    assert embed_footers[1].startswith("ID: txn_newer")
 
     # Both baselined and successfully published IDs suppress later duplicates.
     harness.send.reset_mock()
@@ -299,7 +302,7 @@ async def test_history_failure_stops_batch(harness: FeedHarness) -> None:
 
     # Abort before sending b: continuing would create more unrecorded deliveries.
     harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_old"}
+    assert history(harness.feed) == {"260901_old"}
     assert not harness.feed.history_file.with_name("hcb_feed.tmp").exists()
     assert harness.feed.poll_failed
 
@@ -308,27 +311,31 @@ async def test_history_failure_stops_batch(harness: FeedHarness) -> None:
     # The unrecorded first delivery is retried, then the second is sent. This documents
     # the duplicate possible between a send and its history write.
     assert harness.send.await_count == 3
-    assert history(harness.feed) == {"txn_old", "txn_a", "txn_b"}
+    assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
     assert not harness.feed.poll_failed
 
 
-async def test_pruning_failure_stops_batch(harness: FeedHarness) -> None:
-    # txn_old falls outside the response, so pruning is the first write.
-    harness.fetch.return_value = [transaction("txn_new")]
-
-    with patch.object(Path, "replace", side_effect=OSError("replacement failed")):
-        await harness.feed.feed_loop()
-
-    # If pruning cannot be saved, stop before any delivery. Preserve the old history and
-    # remove the temporary file so the next poll can retry cleanly.
-    harness.send.assert_not_awaited()
-    assert history(harness.feed) == {"txn_old"}
-    assert not harness.feed.history_file.with_suffix(".tmp").exists()
-    assert harness.feed.poll_failed
+async def test_history_file_is_limited_to_500_entries(harness: FeedHarness) -> None:
+    harness.feed.history_file.write_text(",".join(f"260901_{i:03}" for i in range(498)))
+    harness.fetch.return_value = [
+        transaction(f"txn_{i}", date=dt.date(2026, 9, 2)) for i in range(5)
+    ]
 
     await harness.feed.feed_loop()
 
-    # After storage recovers, pruning and delivery both complete in one poll.
-    harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"txn_new"}
-    assert not harness.feed.poll_failed
+    new_history = harness.feed.history_file.read_text().split(",")
+
+    assert len(new_history) == 500
+    assert new_history[:10] == [f"260901_{i:03}" for i in range(3, 13)]
+    assert new_history[-10:] == [
+        *(f"260901_{i:03}" for i in range(493, 498)),
+        *(f"260902_{i}" for i in range(5)),
+    ]
+
+
+async def test_no_resend_on_transaction_date_change(harness: FeedHarness) -> None:
+    harness.fetch.return_value = [transaction("txn_old", date=dt.date(2026, 9, 2))]
+
+    await harness.feed.feed_loop()
+
+    assert harness.send.await_count == 0
