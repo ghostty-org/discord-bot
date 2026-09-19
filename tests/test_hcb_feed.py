@@ -289,15 +289,15 @@ async def test_filtering_and_order(harness: FeedHarness) -> None:
 
 
 async def test_history_failure_stops_batch(harness: FeedHarness) -> None:
-    # Retain txn_old so pruning requires no write. The replacement failure therefore
-    # occurs after the first successful send, not before the batch.
     harness.fetch.return_value = [
         transaction("txn_old"),
         transaction("txn_a"),
         transaction("txn_b"),
     ]
 
-    with patch.object(Path, "replace", side_effect=OSError("replacement failed")):
+    with patch.object(
+        harness.feed, "_append_history", side_effect=OSError("append failed")
+    ):
         await harness.feed.feed_loop()
 
     # Abort before sending b: continuing would create more unrecorded deliveries.
@@ -311,6 +311,32 @@ async def test_history_failure_stops_batch(harness: FeedHarness) -> None:
     # The unrecorded first delivery is retried, then the second is sent. This documents
     # the duplicate possible between a send and its history write.
     assert harness.send.await_count == 3
+    assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
+    assert not harness.feed.poll_failed
+
+
+async def test_history_replacement_failure_preserves_deliveries(
+    harness: FeedHarness,
+) -> None:
+    harness.fetch.return_value = [
+        transaction("txn_old"),
+        transaction("txn_a"),
+        transaction("txn_b"),
+    ]
+
+    with patch.object(Path, "replace", side_effect=OSError("replacement failed")):
+        await harness.feed.feed_loop()
+
+    # Each delivery is appended before the final history replacement is attempted.
+    assert harness.send.await_count == 2
+    assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
+    assert not harness.feed.history_file.with_name("hcb_feed.tmp").exists()
+    assert harness.feed.poll_failed
+    harness.send.reset_mock()
+
+    await harness.feed.feed_loop()
+
+    harness.send.assert_not_awaited()
     assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
     assert not harness.feed.poll_failed
 
