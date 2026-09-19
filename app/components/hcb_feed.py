@@ -190,6 +190,7 @@ class HCBFeed(commands.Cog):
             txn_count=len(new_transactions),
             txn_ids=", ".join(new_transactions),
         )
+        published = None
         for txn_key, txn in new_transactions.items():
             try:
                 published = await self.publish_transaction(txn)
@@ -202,7 +203,13 @@ class HCBFeed(commands.Cog):
 
             if published:
                 sent_keys.add(txn_key)
-                self._save_history(sent_keys)
+                self._append_history(txn_key)
+        if published is not None:
+            self._save_history(sent_keys)
+
+    def _append_history(self, transaction_id: str) -> None:
+        with self.history_file.open("a") as f:
+            f.write(f",{transaction_id}")
 
     def _save_history(self, transaction_ids: Iterable[str]) -> None:
         temp = self.history_file.with_suffix(".tmp")
