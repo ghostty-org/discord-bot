@@ -203,6 +203,6 @@ class GhosttyBot(commands.Bot):
             k for k, v in self._emojis.items() if v != "❓"
         }:
             emoji_list = ", ".join(missing_emojis)
-            logger.error("failed to load emojis {emojis}", emojis=emoji_list)
+            logger.error("failed to load emojis: {emojis}", emojis=emoji_list)
 
         self.emojis_loaded.set()
