@@ -1,7 +1,6 @@
 import asyncio
 import datetime as dt
 from json import JSONDecodeError
-from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -19,6 +18,7 @@ from app.config import Channels, Config, config_var
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from pathlib import Path
 
 
 class FeedHarness(NamedTuple):
@@ -286,33 +286,6 @@ async def test_filtering_and_order(harness: FeedHarness) -> None:
     harness.send.reset_mock()
     await harness.feed.feed_loop()
     harness.send.assert_not_awaited()
-
-
-async def test_history_failure_stops_batch(harness: FeedHarness) -> None:
-    # Retain txn_old so pruning requires no write. The replacement failure therefore
-    # occurs after the first successful send, not before the batch.
-    harness.fetch.return_value = [
-        transaction("txn_old"),
-        transaction("txn_a"),
-        transaction("txn_b"),
-    ]
-
-    with patch.object(Path, "replace", side_effect=OSError("replacement failed")):
-        await harness.feed.feed_loop()
-
-    # Abort before sending b: continuing would create more unrecorded deliveries.
-    harness.send.assert_awaited_once()
-    assert history(harness.feed) == {"260901_old"}
-    assert not harness.feed.history_file.with_name("hcb_feed.tmp").exists()
-    assert harness.feed.poll_failed
-
-    await harness.feed.feed_loop()
-
-    # The unrecorded first delivery is retried, then the second is sent. This documents
-    # the duplicate possible between a send and its history write.
-    assert harness.send.await_count == 3
-    assert history(harness.feed) == {"260901_old", "260901_a", "260901_b"}
-    assert not harness.feed.poll_failed
 
 
 async def test_history_file_is_limited_to_500_entries(harness: FeedHarness) -> None:

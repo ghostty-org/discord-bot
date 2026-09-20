@@ -190,19 +190,19 @@ class HCBFeed(commands.Cog):
             txn_count=len(new_transactions),
             txn_ids=", ".join(new_transactions),
         )
+        updated = False
         for txn_key, txn in new_transactions.items():
             try:
-                published = await self.publish_transaction(txn)
+                if await self.publish_transaction(txn):
+                    sent_keys.add(txn_key)
+                    updated = True
             except Exception:
                 logger.exception(
                     "failed to publish HCB transaction {txn_id!r}; leaving for retry",
                     txn_id=txn_key,
                 )
-                continue
-
-            if published:
-                sent_keys.add(txn_key)
-                self._save_history(sent_keys)
+        if updated:
+            self._save_history(sent_keys)
 
     def _save_history(self, transaction_ids: Iterable[str]) -> None:
         temp = self.history_file.with_suffix(".tmp")
