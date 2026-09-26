@@ -1,8 +1,6 @@
 from unittest.mock import Mock
 
-from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
-    SimpleUser,
-)
+from githubkit_schemas.latest.models import SimpleUser
 from hypothesis import assume, given
 from hypothesis import strategies as st
 

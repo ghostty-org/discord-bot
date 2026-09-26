@@ -17,10 +17,7 @@ from app.components.github_integration.webhooks.vouch import (
 from toolbox.github import format_event_sender
 
 if TYPE_CHECKING:
-    from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
-        DiscussionPropCategory,
-        SimpleUser,
-    )
+    from githubkit_schemas.latest.models import DiscussionPropCategory, SimpleUser
     from monalisten import Monalisten, events
 
     from app.bot import EmojiName

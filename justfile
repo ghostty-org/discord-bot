@@ -4,7 +4,8 @@ default:
 
 set windows-shell := ["cmd.exe", "/c"]
 
-basedpyright := "NODE_OPTIONS=--max-old-space-size=8192 uv run basedpyright"
+# See https://github.com/microsoft/pyright/discussions/11540 for details on this workaround
+basedpyright := "uv run python -c 'import githubkit_schemas; from pathlib import Path; Path(next(iter(githubkit_schemas.__path__)), \"__init__.py\").touch()' && uv run basedpyright"
 
 # Run ruff, basedpyright, pytest, taplo, and mdformat in check mode
 check:

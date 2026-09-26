@@ -2,9 +2,7 @@ from types import UnionType
 from typing import TYPE_CHECKING, get_args
 from unittest.mock import Mock
 
-from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
-    SimpleUser,
-)
+from githubkit_schemas.latest.models import SimpleUser
 from hypothesis import strategies as st
 from monalisten import events
 
