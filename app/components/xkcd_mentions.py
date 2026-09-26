@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING, NamedTuple, final, override
 
 import discord as dc
-import httpx
+import httpx2
 from discord.ext import commands
 from pydantic import BaseModel, Field
 
@@ -54,7 +54,7 @@ class XKCDFetchFailed(NamedTuple):
 class XKCDMentionCache(TTLCache[int, XKCDResult]):
     @override
     async def fetch(self, key: int) -> None:
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             resp = await client.get(f"https://xkcd.com/{key}/info.0.json")
         if resp.is_success:
             self[key] = XKCD(**resp.json())
