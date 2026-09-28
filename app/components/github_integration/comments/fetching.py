@@ -4,7 +4,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, cast, final, override
 
 from githubkit.exception import RequestFailed
-from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
+from githubkit_schemas.latest.models import (
     IssuePropPullRequest,
     ReactionRollup,
 )
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     import discord as dc
     from githubkit.typing import Missing
-    from githubkit_schemas.latest.models import (  # pyright: ignore[reportMissingTypeStubs]
+    from githubkit_schemas.latest.models import (
         Issue,
         IssueEvent,
         IssueEventDismissedReview,
