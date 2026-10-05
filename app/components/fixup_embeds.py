@@ -20,40 +20,8 @@ if TYPE_CHECKING:
 
 type SiteTransformation = tuple[re.Pattern[str], Callable[[re.Match[str]], str | None]]
 
-
-def _reddit_transformer(match: re.Match[str]) -> str | None:
-    # Reddit supports `foo.reddit.com` as an alias for `reddit.com/r/foo`, but Rxddit
-    # does not. However, Reddit also has a *bunch* of random subdomains. Rxddit handles
-    # the skins (old.reddit.com and new.reddit.com) properly, so those are appended to
-    # the URL. Apparently there's also a subdomain for every two-letter sequence, with
-    # some being language codes and others being unused, which Rxddit doesn't handle, so
-    # they're simply dropped by the regex below.
-
-    # Post links have either a subdomain (representing the subreddit) or a subreddit, so
-    # ignore everything else.
-    if not (bool(match["subdomain"]) ^ bool(match["subreddit"])):
-        return None
-
-    skin = f"{s}." if (s := match["skin"]) else ""
-    if subreddit := match["subreddit"]:
-        # https://reddit.com/r///foo/comments/bar works apparently, but Rxddit doesn't
-        # support it. Honestly don't blame them.
-        subreddit = "r/" + subreddit.removeprefix("r").strip("/")
-    else:
-        # Append the subdomain as a subreddit if we don't already have one.
-        subreddit = f"r/{match['subdomain']}"
-    return f"https://{skin}rxddit.com/{subreddit}/{match['post']}"
-
-
 VALID_URI_CHARS = r"[A-Za-z0-9-._~:/?#\[\]@!$&'()*+,;%=]"
 EMBED_SITES: tuple[SiteTransformation, ...] = (
-    (
-        re.compile(
-            r"https://(?:(?:www|(?P<skin>old|new)|\w\w|(?P<subdomain>[A-Za-z0-9_]+))\.)?reddit\.com/+"
-            rf"(?P<subreddit>r/+[A-Za-z0-9_]+/+)?(?P<post>{VALID_URI_CHARS}+)"
-        ),
-        _reddit_transformer,
-    ),
     (
         re.compile(
             r"https://(?:www\.)?(?P<site>x|twitter)\.com/"

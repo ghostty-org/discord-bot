@@ -130,10 +130,10 @@ edits and deletions.
 ## Embed fixups
 
 Ghostty Bot automatically fixes broken or missing embeds for social media links.
-When a message contains a link to Reddit, X/Twitter, or Pixiv, the bot
-suppresses the original embed and replies with a working alternative (using
-[rxddit], [fixupx/fxtwitter], and [phixiv] respectively). Message edits and
-deletion are also handled, with the standard buttons provided.
+When a message contains a link to X/Twitter or Pixiv, the bot suppresses the
+original embed and replies with a working alternative (using [fixupx/fxtwitter]
+and [phixiv] respectively). Message edits and deletion are also handled, with
+the standard buttons provided.
 
 ## Zig code blocks
 
@@ -208,6 +208,5 @@ https://github.com/user-attachments/assets/8c8ed1cf-db00-414f-937f-43e565ae9d15
 [fixupx/fxtwitter]: https://github.com/FxEmbed/FxEmbed
 [main-repo]: https://github.com/ghostty-org/ghostty
 [phixiv]: https://github.com/thelaao/phixiv
-[rxddit]: https://github.com/MinnDevelopment/fxreddit
 [website-repo]: https://github.com/ghostty-org/website
 [zig-codeblocks-repo]: https://github.com/trag1c/zig-codeblocks
