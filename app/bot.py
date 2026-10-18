@@ -60,7 +60,6 @@ class GhosttyBot(commands.Bot):
         )
 
         intents = dc.Intents.default()
-        intents.members = True
         intents.message_content = True
         super().__init__(
             command_prefix=[],
