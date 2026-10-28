@@ -51,7 +51,7 @@ toolbox.workspace = true
 members = ["packages/*"]
 
 [build-system]
-requires = ["uv_build>=0.11.6,<0.13"]
+requires = ["uv_build>=0.13.6,<0.14"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -100,7 +100,6 @@ preview = true
 
 [tool.ruff.lint.flake8-import-conventions.extend-aliases]
 discord = "dc"
-datetime = "dt"
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true

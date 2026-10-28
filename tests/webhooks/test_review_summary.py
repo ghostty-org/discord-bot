@@ -1,6 +1,7 @@
 # pyright: reportPrivateUsage=false
 
 import asyncio
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
@@ -27,13 +28,15 @@ from app.components.github_integration.models import GitHubTeam, GitHubUser
 from app.components.github_integration.webhooks.review_summary import (
     Reviewer,
     ReviewPoolKey,
-    ReviewPools,
     ReviewRequestsModified,
     ReviewRequestSummary,
     _parse_reviewer,
     handle_review_request,
 )
 from toolbox.misc import seq_to_aiter
+
+if TYPE_CHECKING:
+    from app.components.github_integration.webhooks.review_summary import ReviewPools
 
 
 def test_empty_review_request_summary_falsy() -> None:
