@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import discord as dc
 import hcb
-import httpx
+import httpx2
 import pytest
 from discord.ext import tasks
 from hcb.requests import HCBAPIError
@@ -89,8 +89,8 @@ async def run_polls(feed: hcb_feed.HCBFeed, count: int) -> None:
 @pytest.mark.parametrize(
     "error",
     [
-        httpx.ReadTimeout("response headers timed out"),
-        httpx.ConnectError("connection failed"),
+        httpx2.ReadTimeout("response headers timed out"),
+        httpx2.ConnectError("connection failed"),
         HCBAPIError("temporarily unavailable"),
         JSONDecodeError("invalid JSON", "", 0),
         ValidationError.from_exception_data(
@@ -139,7 +139,7 @@ async def test_initialization_recovers(harness: FeedHarness) -> None:
     # Fail before an organization is fetched. Initialization must be retried inside of
     # the update loop, with no transaction polling or send on the failed attempt.
     org = harness.lookup.return_value
-    harness.lookup.side_effect = [httpx.ConnectError("startup connection failed"), org]
+    harness.lookup.side_effect = [httpx2.ConnectError("startup connection failed"), org]
     harness.fetch.return_value = [transaction("txn_old"), transaction("txn_new")]
 
     await run_polls(harness.feed, 2)

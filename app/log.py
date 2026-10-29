@@ -46,6 +46,7 @@ def setup() -> None:
     default_filter = {
         # httpx logs are quite noisy: it logs every single REST request under INFO.
         "httpx": "WARNING",
+        "httpx2": "WARNING",
     }
     # Log level such as `info,httpx=INFO,discord=warning`.
     levels_str = (os.getenv("LOGURU_LEVEL") or os.getenv("LOG_LEVEL") or "").split(",")
