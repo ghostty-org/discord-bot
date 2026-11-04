@@ -92,6 +92,10 @@ repo:
    choose "Send me **everything**." because the bot's webhook client still only
    triggers for events specified by hooks in the code.
 
+Alternatively, instead of a relay, the events can be read from a Redis stream:
+set `webhook.url` to a `redis://`/`rediss://` URL of a stream that a relay of
+yours pushes GitHub deliveries to (more details [here][monalisten-redis]).
+
 More resources:
 
 - *What are webhooks?* — [GitHub Docs][gh-webhook-docs]
@@ -291,4 +295,5 @@ bot --> components
 [gh-webhook-docs]: https://docs.github.com/en/webhooks/about-webhooks
 [just]: https://just.systems/
 [monalisten-docs-warning]: https://github.com/trag1c/monalisten#foreword-on-how-this-works
+[monalisten-redis]: https://github.com/trag1c/monalisten#monalisten-1
 [uv]: https://docs.astral.sh/uv/

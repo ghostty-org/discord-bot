@@ -13,7 +13,7 @@ from app.config import config
 from toolbox.errors import handle_error
 
 if TYPE_CHECKING:
-    from monalisten import AuthIssue, Error
+    from monalisten import AuthResult, Error, EventPayload
 
     from app.bot import GhosttyBot
     from app.components.github_integration.webhooks.vouch import VouchQueue
@@ -27,13 +27,13 @@ def register_internal_hooks(webhook: Monalisten) -> None:
         handle_error(error.exc)
 
     @webhook.internal.auth_issue
-    async def auth_issue(issue: AuthIssue) -> None:
-        guid = issue.payload.get("x-github-delivery", "<missing-guid>")
+    async def auth_issue(payload: EventPayload, result: AuthResult) -> None:
+        guid = payload.get("x-github-delivery", "<missing-guid>")
         logger.warning(
             "token {kind} in event {guid}: {payload}",
-            kind=issue.kind.value,
+            kind=result.value,
             guid=guid,
-            payload=issue.payload,
+            payload=payload,
         )
 
     @webhook.internal.ready
@@ -66,6 +66,7 @@ class GitHubWebhooks(commands.Cog):
         self._tasks.add(asyncio.create_task(self._listen_with_restarts()))
 
     async def _listen_with_restarts(self) -> None:
+        await self.bot.wait_until_ready()
         while True:
             try:
                 await self.monalisten_client.listen()
