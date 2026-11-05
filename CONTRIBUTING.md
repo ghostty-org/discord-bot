@@ -119,13 +119,6 @@ following tags:
 - Stale
 - Duplicate
 
-The following roles will be necessary (all requiring the Manage Messages
-permission):
-
-- `mod`
-- `helper`
-- `maintainer`
-
 ## 5. Preparing the config file
 
 Create a `config.toml` file in the root of the project based on
@@ -142,8 +135,6 @@ Create a `config.toml` file in the root of the project based on
   - `channels.media`
   - `channels.showcase`
   - `channels.log` pairs. The feed type names are `main` and `discussions`.
-  - `roles.mod`
-  - `roles.helper`
 - `data_dir`: a directory path for persistent state
 - `tokens.discord`: the Discord bot token from
   [step 1](#1-creating-a-discord-application).
@@ -165,8 +156,7 @@ For temporary changes, you can set environment variables in the command-line or
 use the CLI interface available under `uv run -m app --help`.
 
 Since the TOML config has a nested structure, the environment variable names
-indicate nesting with a double underscore, e.g. overriding `roles.mod` would be
-done with the `BOT__ROLES__MOD` variable, and overriding `channels.help_tags`
+indicate nesting with a double underscore, e.g. overriding `channels.help_tags`
 would be done with the `BOT__CHANNELS__HELP_TAGS` variable.
 
 The complete priority is, in decreasing order:
