@@ -56,12 +56,6 @@ def _alias(name: str) -> AliasChoices:
     return AliasChoices(name, ENV_PREFIX + name.upper())
 
 
-class ConfigRoles(BaseModel):
-    mod: Annotated[int, Field(description="the id of the mod role")]
-    helper: Annotated[int, Field(description="the id of the helper role")]
-    maintainer: Annotated[int, Field(description="the id of the maintainer role")]
-
-
 class ConfigTokens(BaseModel):
     discord: Annotated[SecretStr, Field(description="the Discord bot token")]
     github: Annotated[SecretStr, Field(description="the GitHub token")]
@@ -154,7 +148,6 @@ class Config(BaseSettings):
     sentry_dsn: Annotated[SecretStr | None, Field(description="the Sentry DSN")] = None
 
     tokens: ConfigTokens
-    role_ids: Annotated[ConfigRoles, Field(validation_alias=_alias("roles"))]
     channel_ids: Annotated[ConfigChannels, Field(validation_alias=_alias("channels"))]
     webhook: ConfigWebhook
 
@@ -205,20 +198,13 @@ class Config(BaseSettings):
         return guild
 
     def is_privileged_discord(self, member: dc.Member) -> bool:
-        return not (
-            member.get_role(self.role_ids.mod) is None
-            and member.get_role(self.role_ids.helper) is None
-        )
+        return member.guild_permissions.manage_messages
 
     def is_privileged_github(self, member: dc.Member) -> bool:
-        return not (
-            member.get_role(self.role_ids.mod) is None
-            and member.get_role(self.role_ids.maintainer) is None
-        )
+        return member.guild_permissions.send_tts_messages
 
     def is_ghostty_mod(self, user: Account) -> bool:
-        member = self.ghostty_guild.get_member(user.id)
-        return member is not None and member.get_role(self.role_ids.mod) is not None
+        return isinstance(user, dc.Member) and user.guild_permissions.ban_members
 
 
 config_var = ContextVar[Config]("config")
