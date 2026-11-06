@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, cast
 
-from zig_codeblocks import CodeBlock, extract_codeblocks
+from toolbox.code_blocks import CodeBlock, extract_codeblocks
 
 if TYPE_CHECKING:
     from githubkit.typing import Missing
