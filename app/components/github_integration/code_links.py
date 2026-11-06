@@ -11,10 +11,8 @@ from typing import TYPE_CHECKING, NamedTuple, final, override
 import discord as dc
 from discord.ext import commands
 from githubkit.exception import RequestFailed
-from zig_codeblocks import highlight_zig_code
 
 from app.components.github_integration.repositories import can_link_repo
-from app.components.zig_codeblocks import FILE_HIGHLIGHT_NOTE, THEME
 from app.config import gh
 from toolbox.cache import TTLCache
 from toolbox.discord import suppress_embeds_after_delay
@@ -106,9 +104,6 @@ class CodeLinks(commands.Cog):
                 continue
             selected_lines = "\n".join(snippet.splitlines()[content_range])
             lang = snippet_path.path.rpartition(".")[2]
-            if lang == "zig":
-                lang = "ansi"
-                selected_lines = highlight_zig_code(selected_lines, THEME)
             lang = LANG_SUBSTITUTIONS.get(lang, lang)
             yield Snippet(
                 f"{snippet_path.owner}/{snippet_path.repo}",
@@ -153,11 +148,6 @@ class CodeLinks(commands.Cog):
         if len(blobs) == 1 and len(blobs[0]) > 2000:
             snippet = snippets[0]
             content = self._format_snippet(snippet, include_body=False)
-            # If the snippet's language is `ansi`, as done for Zig codeblocks,
-            # highlighting doesn't show up unless the file is expanded, so add the note
-            # shown for Zig codeblocks attached as a file.
-            if snippet.lang == "ansi":
-                content += FILE_HIGHLIGHT_NOTE
             # Correct the filename to use the snippet's language in case it differs from
             # the filename's extension, which is done for multiple file types by
             # get_snippets().
