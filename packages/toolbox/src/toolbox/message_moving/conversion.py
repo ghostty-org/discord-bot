@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import discord as dc
-import httpx
+import httpx2
 
 from .subtext import Subtext
 from toolbox.discord import SUPPORTED_IMAGE_FORMATS
@@ -63,7 +63,7 @@ async def get_sticker_embed(sticker: dc.StickerItem) -> dc.Embed:
         return _unattachable_embed(
             "sticker", title=sticker.name, description=description
         )
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         for u in (
             sticker.url,
             # Discord sometimes returns the wrong CDN link.
