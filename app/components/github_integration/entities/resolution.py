@@ -4,11 +4,11 @@ from functools import reduce
 from typing import TYPE_CHECKING, final, override
 
 from githubkit.exception import RequestFailed
-from zig_codeblocks import extract_codeblocks
 
 from app.components.github_integration.repositories import can_link_repo
 from app.config import REPO_ALIASES, gh
 from toolbox.cache import TTLCache
+from toolbox.code_blocks import extract_codeblocks
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator

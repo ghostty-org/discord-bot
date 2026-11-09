@@ -312,7 +312,6 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "sentry-sdk" },
     { name = "toolbox" },
-    { name = "zig-codeblocks" },
 ]
 
 [package.dev-dependencies]
@@ -342,7 +341,6 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.10.1,<3" },
     { name = "sentry-sdk", specifier = ">=2.36" },
     { name = "toolbox", editable = "packages/toolbox" },
-    { name = "zig-codeblocks", specifier = ">=0.3.3" },
 ]
 
 [package.metadata.requires-dev]
@@ -1146,7 +1144,6 @@ dependencies = [
     { name = "discord-py" },
     { name = "httpx" },
     { name = "loguru" },
-    { name = "zig-codeblocks" },
 ]
 
 [package.dev-dependencies]
@@ -1163,7 +1160,6 @@ requires-dist = [
     { name = "discord-py", specifier = ">=2.6.3" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.0" },
-    { name = "zig-codeblocks", specifier = ">=0.3.3" },
 ]
 
 [package.metadata.requires-dev]
@@ -1330,24 +1326,4 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/38/02/eef443559563ef8f2e10469387b8b1e97cb5efee95b288a56da60801f7ee/yarl-1.25.1-cp315-cp315t-win_amd64.whl", hash = "sha256:b13b88747769537f3d32e89e3a735da10c0a9e35d7322928c701b5f93d3afffd", size = 106811, upload-time = "2026-09-15T19:34:54.935Z" },
     { url = "https://files.pythonhosted.org/packages/88/91/41e284ca2cf5211e05dae031d126a3668aea88fa759df56e7e35c6ad25ba/yarl-1.25.1-cp315-cp315t-win_arm64.whl", hash = "sha256:783dd1467083f4d3f7722ad6a313f24c173e7571372738fcb7a6e6d1ba48df25", size = 101804, upload-time = "2026-09-15T19:34:57.231Z" },
     { url = "https://files.pythonhosted.org/packages/54/22/318c7980066769c6bcd9221ed2248294f5698811da099013098c670565ed/yarl-1.25.1-py3-none-any.whl", hash = "sha256:681c758b0490f9e96b78e5fa8e8dc6e648e9185bb6eaebe73183c33ea0c445f3", size = 63617, upload-time = "2026-09-15T19:34:59.616Z" },
-]
-
-[[package]]
-name = "zig-codeblocks"
-version = "0.3.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1c/47/b9b6ac2387f004cdbf8bc1429131cf86ccaf188ca9a9145ec42877da612d/zig_codeblocks-0.3.3.tar.gz", hash = "sha256:75b33a96474612b2f76e80fed7d8e406a29d0677b05cae281335c14fcfef3a8c", size = 539972, upload-time = "2025-07-27T19:25:19.405Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/e0/940f7968ed971eba5aedf46eb81eaccd5c9a3ab90547a671d5c00ff94d3b/zig_codeblocks-0.3.3-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b2d3939f6f7a28ba0283c581a7d5bb5dc55d828df1f595f965f5f9e8a9f28d66", size = 439869, upload-time = "2025-07-27T19:25:05.089Z" },
-    { url = "https://files.pythonhosted.org/packages/7a/43/c0d02daa78de1074f8d5ab6336adc085528402407eb88efe76f78ea7c457/zig_codeblocks-0.3.3-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:4c510373b06cda128a81725fd9fdbab18860ca2e891df727a7b612fd16459427", size = 427371, upload-time = "2025-07-27T19:25:02.098Z" },
-    { url = "https://files.pythonhosted.org/packages/5f/22/d92042d17a0ce6d94418da13e478a57890b7bfe95babfde1afcd72937681/zig_codeblocks-0.3.3-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:bf3a59ee82b19307191979f4c180fa92167fb91e7a95d61ab6074015190c3d44", size = 658796, upload-time = "2025-07-27T19:24:48.525Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/3e/d09359a74825e912293951cd6fd941fb355604a0b63a434d6c33a1364fe8/zig_codeblocks-0.3.3-cp39-abi3-manylinux_2_28_armv7l.whl", hash = "sha256:ce108319859f4bc8ec3c4e742186647c4886d8a8c053626dfa821d842009f381", size = 651254, upload-time = "2025-07-27T19:24:52.29Z" },
-    { url = "https://files.pythonhosted.org/packages/42/95/73604f0331ced87c258515b0c5005662665122ac7e39030b968a78304cad/zig_codeblocks-0.3.3-cp39-abi3-manylinux_2_28_ppc64le.whl", hash = "sha256:6a54a07954b59d6f8b4e678c84fd2ee7f91d6ce0308929a030496948d0ba29fd", size = 843001, upload-time = "2025-07-27T19:24:55.768Z" },
-    { url = "https://files.pythonhosted.org/packages/eb/1a/bebb7fef80544e8e1cfd338ea84d6de25e1055735a809ff4baedfd32d484/zig_codeblocks-0.3.3-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:e7eff5776c9efddfe9f41f448b7ca08b981396211019ca3312f21d35dd55b722", size = 706948, upload-time = "2025-07-27T19:24:59.024Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/40/502ace4b67b1871c8795e179f88f88fb3d788c02521bae510290793f2b7f/zig_codeblocks-0.3.3-cp39-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:a65e2f4335bd4bb8d2df3aa31860aa2bd7a0a29849c49c1fd3a78e7554bb672c", size = 747921, upload-time = "2025-07-27T19:25:07.974Z" },
-    { url = "https://files.pythonhosted.org/packages/f3/1d/83dc0496480e39218da259e3b78de7cc77a39e21781b060789325a1c92ed/zig_codeblocks-0.3.3-cp39-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:21af6aba76c545c6e659383e9e9081da1e886f84cb3531a8df15cf496e6b8e9b", size = 839389, upload-time = "2025-07-27T19:25:11.233Z" },
-    { url = "https://files.pythonhosted.org/packages/91/d5/b9a03968d1f12664b4102190164012ac41eba07fbffba43dae7ce87fa675/zig_codeblocks-0.3.3-cp39-abi3-musllinux_1_2_i686.whl", hash = "sha256:d676413f5a67b1d1c91d911198f3fe055147c39a0bbca0a4ad8b4fd1c7068b3e", size = 906332, upload-time = "2025-07-27T19:25:14.34Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/e1/d133771c366aace828b25ad657f1e9d9468ecb42d7962a0c49ec03ee7586/zig_codeblocks-0.3.3-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:c0512f87429997162eb7fa69e6868cd72f2d00201abaed28b164bc5a8edac2d8", size = 861034, upload-time = "2025-07-27T19:25:17.788Z" },
-    { url = "https://files.pythonhosted.org/packages/9a/83/1380980bfb89eddb497482e9b86e283bdad61d38a1bcf013b3a44104e4f3/zig_codeblocks-0.3.3-cp39-abi3-win32.whl", hash = "sha256:b51d54da8d1e9eb9c67f36b933ab8e588fb06eb6d274dd6b2757e5f6543f36c7", size = 448436, upload-time = "2025-07-27T19:25:25.008Z" },
-    { url = "https://files.pythonhosted.org/packages/99/1a/fd70e3980e27bf8cb24383518f0337cb8d5d7eba17d9af02072425692e59/zig_codeblocks-0.3.3-cp39-abi3-win_amd64.whl", hash = "sha256:7624e6d0f2ba36ee0ad8a6dcc3c5719b3a9e1adaf2af91f7c4495d3e63481abc", size = 482718, upload-time = "2025-07-27T19:25:22.065Z" },
 ]
