@@ -1,5 +1,3 @@
-# pyright: reportUnusedFunction=false
-
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 from loguru import logger

@@ -1,5 +1,3 @@
-# pyright: reportUnusedFunction=false
-
 import asyncio
 from typing import TYPE_CHECKING, final, override
 
@@ -23,7 +21,7 @@ def register_internal_hooks(webhook: Monalisten) -> None:
     @webhook.internal.error
     async def error(error: Error) -> None:
         error.exc.add_note(f"payload: {error.payload}")
-        sentry_sdk.set_context("payload", error.payload or {})  # pyright: ignore[reportArgumentType]
+        sentry_sdk.set_context("payload", error.payload or {})  # ty: ignore[invalid-argument-type]
         handle_error(error.exc)
 
     @webhook.internal.auth_issue

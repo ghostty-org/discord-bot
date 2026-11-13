@@ -1,5 +1,3 @@
-# pyright: reportUnannotatedClassAttribute=false
-
 from contextvars import ContextVar
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NamedTuple, override
@@ -153,7 +151,7 @@ class Config(BaseSettings):
 
     @override
     def model_post_init(self, context: Any, /) -> None:
-        self.webhook._bot = self.bot  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+        self.webhook._bot = self.bot  # noqa: SLF001
 
     @classmethod
     @override

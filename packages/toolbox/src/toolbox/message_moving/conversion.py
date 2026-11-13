@@ -185,7 +185,7 @@ def format_interaction(message: dc.Message) -> str:
     # filter resulting in a bunch of warnings spammed in the logs even if it is ignored.
     # There is no other way to get the name, and Message._interaction is not marked
     # deprecated. Delectable.
-    if hasattr(message, "_interaction") and (interaction := message._interaction):  # pyright: ignore[reportPrivateUsage] # noqa: SLF001
+    if hasattr(message, "_interaction") and (interaction := message._interaction):  # noqa: SLF001
         prefix = "/" * (message.type is not dc.MessageType.context_menu_command)
         name = f"`{prefix}{interaction.name}`"
     else:

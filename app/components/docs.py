@@ -87,7 +87,7 @@ class Docs(commands.Cog):
             )
 
     def _load_children(
-        self, sitemap: dict[str, list[str]], path: str, children: list[Entry]
+        self, sitemap: dict[str, list[str]], path: str, children: Iterable[Entry]
     ) -> None:
         sitemap[path] = []
         for item in children:

@@ -26,7 +26,6 @@ dependencies = [
 [dependency-groups]
 dev = [
   "ruff>=0.14.10",
-  "basedpyright>=1.36.2",
   "taplo>=0.9.3",
   "pytest>=9.0.2",
   "hypothesis>=6.148.9",
@@ -35,6 +34,7 @@ dev = [
   "mdformat>=1.0",
   "mdformat-gfm>=1.0",
   "mdformat-gfm-alerts>=2.0",
+  "ty>=0.0.103",
 ]
 
 [tool.uv.sources]
@@ -56,15 +56,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "app"
 module-root = ""
-
-[tool.basedpyright]
-enableBasedFeatures = true
-reportAny = false
-reportExplicitAny = false
-reportImplicitStringConcatenation = false
-reportInvalidCast = false
-reportUnusedCallResult = false
-reportUnknownLambdaType = false
 
 [tool.pytest.ini_options]
 pythonpath = "."

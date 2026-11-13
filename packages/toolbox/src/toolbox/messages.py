@@ -53,7 +53,7 @@ class ExtensibleMessage(dc.Message):
     Message.__init__().
     """
 
-    def __init__(self, message: dc.Message) -> None:  # pyright: ignore[reportMissingSuperCall]
+    def __init__(self, message: dc.Message) -> None:
         for attr in itertools.chain.from_iterable(
             getattr(cls, "__slots__", ()) for cls in type(message).__mro__
         ):
@@ -76,8 +76,8 @@ async def get_files(attachments: list[dc.Attachment]) -> tuple[list[dc.File], in
 
 
 class MessageData(ExtensibleMessage):
-    files: list[dc.File]  # pyright: ignore[reportUninitializedInstanceVariable]
-    skipped_attachments: int  # pyright: ignore[reportUninitializedInstanceVariable]
+    files: list[dc.File]
+    skipped_attachments: int
 
     @classmethod
     async def scrape(cls, message: dc.Message) -> Self:

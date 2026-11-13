@@ -48,11 +48,15 @@ class GitHubComments(commands.Cog):
     def comment_to_embed(self, comment: Comment) -> dc.Embed:
         emoji = get_entity_emoji(comment.entity)
         title = f"{emoji} {comment.entity.title}"
-        formatted_reactions = comment.reactions and [
-            f"{REACTION_EMOJIS[reaction]} ×{count}"  # noqa: RUF001
-            for reaction, count in comment.reactions
-            if count
-        ]
+        formatted_reactions = (
+            [
+                f"{REACTION_EMOJIS[reaction]} ×{count}"  # noqa: RUF001
+                for reaction, count in comment.reactions
+                if count
+            ]
+            if comment.reactions
+            else None
+        )
         embed = (
             dc
             .Embed(
