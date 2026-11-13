@@ -114,11 +114,10 @@ def unknown_review_request(spec: MockSpec = ()) -> Mock:
 
 
 def review_requests_modifieds() -> st.SearchStrategy[type[ReviewRequestsModified]]:
-    # NOTE: using a tuple instead of a list breaks Pyright for some reason.
-    return st.sampled_from([
+    return st.sampled_from((
         events.PullRequestReviewRequested,
         events.PullRequestReviewRequestRemoved,
-    ])
+    ))  # ty: ignore[invalid-explicit-return]
 
 
 @st.composite

@@ -10,24 +10,15 @@ dependencies = ["discord-py>=2.6.3", "httpx2>=2.13.1", "loguru>=0.7.0"]
 [dependency-groups]
 dev = [
   "githubkit>=0.15.4",
-  "basedpyright>=1.36.2",
   "pytest>=9.0.2",
   "hypothesis>=6.148.9",
   "anyio>=4.12.0",
+  "ty>=0.0.103",
 ]
 
 [build-system]
 requires = ["uv_build>=0.11.6,<0.12"]
 build-backend = "uv_build"
-
-[tool.basedpyright]
-enableBasedFeatures = true
-reportAny = false
-reportExplicitAny = false
-reportImplicitStringConcatenation = false
-reportInvalidCast = false
-reportUnusedCallResult = false
-reportUnknownLambdaType = false
 
 [tool.pytest.ini_options]
 pythonpath = "."

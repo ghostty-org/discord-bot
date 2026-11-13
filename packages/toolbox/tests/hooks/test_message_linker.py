@@ -47,7 +47,7 @@ def test_free_dangling_links(linker: MessageLinker) -> None:
     expected_to_go: list[dc.Message] = []
     for h in range(48):
         msg = spawn_user_message(age=dt.timedelta(hours=h))
-        linker._refs[msg] = msg  # pyright: ignore[reportPrivateUsage]
+        linker._refs[msg] = msg
         linker.freeze(msg)
         (expected_to_stay if h < 24 else expected_to_go).append(msg)
 

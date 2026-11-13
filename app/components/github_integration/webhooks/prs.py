@@ -1,5 +1,3 @@
-# pyright: reportUnusedFunction=false
-
 import asyncio
 from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
@@ -229,7 +227,7 @@ def register_hooks(  # noqa: C901, PLR0915
             color="blue",
         )
 
-    @webhook.event.pull_request.review_requested  # pyright: ignore[reportArgumentType]
+    @webhook.event.pull_request.review_requested
     @webhook.event.pull_request.review_request_removed
     async def review_requests_modified(event: ReviewRequestsModified) -> None:
         async def run() -> None:

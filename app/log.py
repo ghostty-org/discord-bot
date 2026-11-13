@@ -55,7 +55,7 @@ def setup() -> None:
     filters = {f: lvl.upper() for f, lvl in raw_filters}
 
     logger.remove()
-    logger.add(sys.stderr, level=primary_level.upper(), filter=default_filter | filters)  # pyright: ignore[reportArgumentType, reportCallIssue]
+    logger.add(sys.stderr, level=primary_level.upper(), filter=default_filter | filters)  # ty: ignore[no-matching-overload]
     if filters:
         filters_str = " ".join(f"{f}={lvl}" for f, lvl in filters.items())
         logger.info("using log filters {filters}", filters=filters_str)
