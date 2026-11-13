@@ -169,7 +169,7 @@ The complete priority is, in decreasing order:
 
 ## 6. Running the bot
 
-This bot runs on Python 3.14+ and is managed with [uv]. To get started:
+This bot runs on Python 3.15+ and is managed with [uv]. To get started:
 
 1. Install [uv].
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Common code and assorted tools for Ghostty Bot"
 license = "MIT"
 authors = [{ name = "trag1c", email = "dev@jakubr.me" }]
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 dependencies = ["discord-py>=2.6.3", "httpx2>=2.13.1", "loguru>=0.7.0"]
 
 [dependency-groups]
