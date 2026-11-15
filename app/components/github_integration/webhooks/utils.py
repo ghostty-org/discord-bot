@@ -63,8 +63,7 @@ class Footer(NamedTuple):
     icon: EmojiName
     text: str
 
-    @property
-    def dict(self) -> dict[str, str | None]:
+    def as_dict(self) -> dict[str, str | None]:
         return {
             "text": self.text,
             "icon_url": getattr(emojis()[self.icon], "url", None),
@@ -190,7 +189,7 @@ async def send_embed(  # noqa: PLR0913
     embed = (
         dc
         .Embed(color=color and COLOR_PALETTE.get(color), **content.dict)
-        .set_footer(**footer.dict)
+        .set_footer(**footer.as_dict())
         .set_author(**author.model_dump())
     )
     await config().webhook.channels[feed_type].send(embed=embed)

@@ -1,5 +1,3 @@
-# pyright: reportUnusedFunction=false
-
 import re
 from typing import TYPE_CHECKING, Any, Protocol, cast
 

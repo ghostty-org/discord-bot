@@ -218,7 +218,7 @@ This bot runs on Python 3.15+ and is managed with [uv]. To get started:
 
       ```sh
       cd packages/<package name>
-      uv run basedpyright src tests
+      uv run ty check src tests
       uv run pytest tests
       uv run taplo fmt --check --diff pyproject.toml
       ```
@@ -227,7 +227,7 @@ This bot runs on Python 3.15+ and is managed with [uv]. To get started:
 
       ```sh
       cd packages/toolbox
-      uv run basedpyright src tests
+      uv run ty check src tests
       uv run pytest tests
       uv run taplo fmt --check --diff pyproject.toml
       ```
@@ -239,11 +239,11 @@ This bot runs on Python 3.15+ and is managed with [uv]. To get started:
       subpackages may have broken the bot. Run these from the **project root**.
 
       ```sh
-      uv run basedpyright app tests
+      uv run ty check app tests
       uv run pytest tests
       ```
 
-      Note that the `basedpyright` command uses **`app`, not `src`**.
+      Note that the `ty` command uses **`app`, not `src`**.
 
    </details>
 

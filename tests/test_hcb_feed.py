@@ -118,7 +118,7 @@ async def test_poll_recovers(
         return [transaction("txn_old"), transaction("txn_new")]
 
     harness.fetch.side_effect = fetch
-    with patch.object(hcb_feed.logger, "info") as info:  # pyright: ignore[reportPrivateLocalImportUsage]
+    with patch.object(hcb_feed.logger, "info") as info:
         await run_polls(harness.feed, failure_count + 2)
         recovery_calls = [
             call

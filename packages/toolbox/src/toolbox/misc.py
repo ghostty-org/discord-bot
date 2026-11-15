@@ -73,7 +73,7 @@ async def async_process_check_output(program: str, *args: str, **kwargs: Any) ->
             returncode=rc,
             cmd=[program, *args],
             output=await proc.stdout.read(),
-            stderr=proc.stderr and await proc.stderr.read(),
+            stderr=await proc.stderr.read() if proc.stderr else None,
         )
     return (await proc.stdout.read()).decode()
 

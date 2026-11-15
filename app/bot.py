@@ -53,7 +53,7 @@ emojis = emojis_var.get
 class GhosttyBot(commands.Bot):
     def __init__(self) -> None:
         log.setup()
-        self._config_context_token = config_var.set(Config(bot=self))  # pyright: ignore[reportCallIssue]
+        self._config_context_token = config_var.set(Config(bot=self))
         log.setup_sentry(config().sentry_dsn)
         self._gh_context_token = gh_var.set(
             GitHub(config().tokens.github.get_secret_value())

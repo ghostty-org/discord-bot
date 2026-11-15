@@ -28,7 +28,7 @@ class MovedMessageLookupFailed(IntEnum):
 
 
 @final
-class MovedMessage(ExtensibleMessage, dc.WebhookMessage):  # pyright: ignore[reportUnsafeMultipleInheritance]
+class MovedMessage(ExtensibleMessage, dc.WebhookMessage):
     def __init__(
         self, message: dc.WebhookMessage, *, author: dc.Member | None = None
     ) -> None:

@@ -1,5 +1,3 @@
-# pyright: reportPrivateUsage=false
-
 from typing import TYPE_CHECKING
 
 import pytest

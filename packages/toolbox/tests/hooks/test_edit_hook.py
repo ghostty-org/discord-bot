@@ -17,19 +17,19 @@ if TYPE_CHECKING:
 async def test_same_content(linker: MessageLinker, edit_hook: EditHook) -> None:
     msg = spawn_user_message(content="foo")
     msg2 = spawn_user_message(content="foo")
-    linker.is_expired = TrackedCallable(linker.is_expired)
+    linker.is_expired = is_expired = TrackedCallable(linker.is_expired)
 
     await edit_hook(msg, msg2)
-    assert not linker.is_expired.called
+    assert not is_expired.called
 
 
 async def test_ignore_bots(linker: MessageLinker, edit_hook: EditHook) -> None:
     msg = spawn_bot_message(content="foo 1")
     msg2 = spawn_bot_message(content="foo 2")
-    linker.is_expired = TrackedCallable(linker.is_expired)
+    linker.is_expired = is_expired = TrackedCallable(linker.is_expired)
 
     await edit_hook(msg, msg2)
-    assert not linker.is_expired.called
+    assert not is_expired.called
 
 
 async def test_message_expired(linker: MessageLinker, edit_hook: EditHook) -> None:
@@ -49,11 +49,11 @@ async def test_different_content_same_items(
 ) -> None:
     msg = spawn_user_message(content="foo 1")
     msg2 = spawn_user_message(content="bar 1")
-    linker.get = TrackedCallable(linker.get)
+    linker.get = get = TrackedCallable(linker.get)
 
     await edit_hook(msg, msg2)
 
-    assert not linker.get.called
+    assert not get.called
 
 
 async def test_different_items_unlinked_frozen(
@@ -61,13 +61,13 @@ async def test_different_items_unlinked_frozen(
 ) -> None:
     msg = spawn_user_message(content="foo 1")
     msg2 = spawn_user_message(content="foo 2")
-    linker.is_expired = TrackedCallable(linker.is_expired)
+    linker.is_expired = is_expired = TrackedCallable(linker.is_expired)
     linker.freeze(msg)
 
     await edit_hook(msg, msg2)
 
     assert not edit_hook.interactor.called
-    assert linker.is_expired.calls == 1
+    assert is_expired.calls == 1
 
 
 async def test_different_items_unlinked_prior(
@@ -75,11 +75,11 @@ async def test_different_items_unlinked_prior(
 ) -> None:
     msg = spawn_user_message(content="foo 1")
     msg2 = spawn_user_message(content="foo 2")
-    linker.is_frozen = TrackedCallable(linker.is_frozen)
+    linker.is_frozen = is_frozen = TrackedCallable(linker.is_frozen)
 
     await edit_hook(msg, msg2)
 
-    assert linker.is_frozen.called
+    assert is_frozen.called
     assert not edit_hook.interactor.called
 
 
@@ -88,11 +88,11 @@ async def test_new_items_edited_in(
 ) -> None:
     msg = spawn_user_message(content="foo")
     msg2 = spawn_user_message(content="foo 1")
-    linker.is_expired = TrackedCallable(linker.is_expired)
+    linker.is_expired = is_expired = TrackedCallable(linker.is_expired)
 
     await edit_hook(msg, msg2)
 
-    assert linker.is_expired.calls == 1
+    assert is_expired.calls == 1
     assert capsys.readouterr().out == "0x1\n"
     assert edit_hook.interactor.called
 
@@ -105,12 +105,12 @@ async def test_different_items_linked_frozen(
     reply = cast("Mock", spawn_bot_message(content="0x1"))
     linker.link(msg, reply)
     linker.freeze(msg)
-    linker.is_frozen = TrackedCallable(linker.is_frozen)
+    linker.is_frozen = is_frozen = TrackedCallable(linker.is_frozen)
 
     await edit_hook(msg, msg2)
 
     assert not reply.edit.called
-    assert linker.is_frozen.calls == 1
+    assert is_frozen.calls == 1
 
 
 async def test_items_edited_out(linker: MessageLinker, edit_hook: EditHook) -> None:

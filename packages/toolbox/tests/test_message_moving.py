@@ -1,6 +1,4 @@
 # ruff: noqa: RUF001, RUF003 (because of `×`)
-# pyright: reportPrivateUsage=false
-
 import datetime as dt
 from unittest.mock import Mock
 

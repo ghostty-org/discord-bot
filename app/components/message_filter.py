@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, NamedTuple, cast, final
+from typing import TYPE_CHECKING, NamedTuple, final
 
 import discord as dc
 from discord.ext import commands
@@ -42,14 +42,14 @@ class MessageFilter(commands.Cog):
             # Delete non-image messages in #showcase
             MessageFilterTuple(
                 config().channel_ids.showcase,
-                lambda msg: cast("dc.Message", msg).attachments,
+                lambda msg: msg.attachments,
                 requirement="any attachments",
                 suggestion="a screenshot or a video",
             ),
             # Delete non-link messages in #media
             MessageFilterTuple(
                 config().channel_ids.media,
-                lambda msg: URL_REGEX.search(cast("dc.Message", msg).content),
+                lambda msg: URL_REGEX.search(msg.content),
                 requirement="a link",
                 suggestion="a link",
             ),

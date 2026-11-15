@@ -1,4 +1,3 @@
-# pyright: reportPrivateUsage=false
 from functools import partial
 from unittest.mock import Mock, patch
 
@@ -47,8 +46,7 @@ def test_footer_dict() -> None:
             "issue_open": Mock(dc.Emoji, url="https://example.com/emoji.png")
         }
 
-        footer = Footer("issue_open", "Issue #1: Test")
-        result = footer.dict
+        result = Footer("issue_open", "Issue #1: Test").as_dict()
 
         assert result["text"] == "Issue #1: Test"
         assert result["icon_url"] == "https://example.com/emoji.png"

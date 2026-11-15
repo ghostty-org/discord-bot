@@ -1,4 +1,3 @@
-# pyright: reportUnannotatedClassAttribute=false
 import datetime as dt
 from typing import TYPE_CHECKING, Annotated, Literal, NamedTuple, Self, cast, override
 
