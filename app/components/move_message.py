@@ -322,7 +322,7 @@ class ChooseMessageAction(SafeView):
         # Adding the thread button might also add the attachment button so that the
         # attachment button can be placed in between the thread and help buttons.
         self._add_thread_button()
-        if not self._attachment_button_added:
+        if not self._attachment_button_added:  # ty: ignore[redundant-condition-strict]
             self._add_attachment_button()
 
     @dc.ui.button(label="Delete", emoji="❌")
