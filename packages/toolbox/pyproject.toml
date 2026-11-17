@@ -24,3 +24,11 @@ build-backend = "uv_build"
 pythonpath = "."
 anyio_mode = "auto"
 filterwarnings = ["ignore::Warning"]
+
+[tool.ty.rules]
+all = "error"
+truthiness-test-of-none-union = "ignore"
+disjoint-cast = "ignore"
+unsound-return = "ignore"
+unsound-yield = "ignore"
+unsound-assignment = "ignore"
