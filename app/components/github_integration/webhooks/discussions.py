@@ -22,11 +22,11 @@ if TYPE_CHECKING:
     from app.components.github_integration.webhooks.vouch import VouchQueue
     from toolbox.misc import EmbedColor
 
-DISCUSSION_STATE_COLORS: dict[str, EmbedColor] = {
-    "resolved": "purple",
-    "outdated": "gray",
-    "duplicate": "gray",
-}
+DISCUSSION_STATE_COLORS: frozendict[str, EmbedColor] = frozendict(
+    resolved="purple",
+    outdated="gray",
+    duplicate="gray",
+)
 
 
 class DiscussionLike(Protocol):

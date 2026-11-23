@@ -19,14 +19,14 @@ __all__ = (
 
 type EmbedColor = Literal["green", "red", "purple", "gray", "orange", "blue"]
 
-COLOR_PALETTE: dict[EmbedColor, int] = {
+COLOR_PALETTE: frozendict[EmbedColor, int] = frozendict({
     "green": 0x3FB950,
     "red": 0xF85149,
     "blue": 0x4C8CED,
     "purple": 0xAB7DF8,
     "gray": 0x9198A1,
     "orange": 0xEDB74A,
-}
+})
 
 URL_REGEX = re.compile(
     r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b"

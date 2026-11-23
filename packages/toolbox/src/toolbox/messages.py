@@ -1,7 +1,6 @@
 # PPE is strongly recommended in this file. Blindfolds are even better.
 
 import asyncio
-import itertools
 from contextlib import suppress
 from typing import Self
 
@@ -54,9 +53,7 @@ class ExtensibleMessage(dc.Message):
     """
 
     def __init__(self, message: dc.Message) -> None:
-        for attr in itertools.chain.from_iterable(
-            getattr(cls, "__slots__", ()) for cls in type(message).__mro__
-        ):
+        for attr in (*getattr(cls, "__slots__", ()) for cls in type(message).__mro__):
             with suppress(AttributeError):
                 # At the time of writing, the only things which cause an AttributeError
                 # to be thrown are `call` and everything that starts with `_cs_`.

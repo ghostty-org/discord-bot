@@ -42,10 +42,10 @@ COMMENT_PATTERN = re.compile(
     r"https?://(?:www\.)?github\.com/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-\._]+)/"
     r"(issues|discussions|pull)/(\d+)/?#(\w+?-?)(\d+)"
 )
-STATE_TO_COLOR = {
-    "APPROVED": COLOR_PALETTE["green"],
-    "CHANGES_REQUESTED": COLOR_PALETTE["red"],
-}
+STATE_TO_COLOR = frozendict(
+    APPROVED=COLOR_PALETTE["green"],
+    CHANGES_REQUESTED=COLOR_PALETTE["red"],
+)
 
 # Many of the events below are from GitHub's official documentation, which can be found
 # at https://docs.github.com/en/rest/using-the-rest-api/issue-event-types. However, some
@@ -103,127 +103,127 @@ ENTITY_UPDATE_EVENTS = frozenset({
     "transferred",
 })
 # NOTE: some events are special-cased in _get_event() itself.
-SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
+SUPPORTED_EVENTS: frozendict[str, str | Callable[[IssueEvent], str]] = frozendict(
     # https://github.com/ghostty-org/ghostty/pull/8479#event-19434379557
     # https://github.com/ghostty-org/ghostty/pull/8365#event-19305035157
     # https://github.com/ghostty-org/discord-bot/issues/155#event-16525531765
     # https://github.com/ghostty-org/discord-bot/issues/378#event-20007243169
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540911478
-    "assigned": "Assigned `{event.assignee.login}`",
+    assigned="Assigned `{event.assignee.login}`",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540912045
-    "unassigned": "Unassigned `{event.assignee.login}`",
+    unassigned="Unassigned `{event.assignee.login}`",
     # https://github.com/ghostty-org/ghostty/pull/8365#event-19305034038
     # https://github.com/ghostty-org/discord-bot/issues/113#event-15807270712
     # https://github.com/ghostty-org/discord-bot/issues/118#event-15815381050
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540915909
-    "labeled": "Added the `{event.label.name}` label",
+    labeled="Added the `{event.label.name}` label",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540916899
-    "unlabeled": "Removed the `{event.label.name}` label",
+    unlabeled="Removed the `{event.label.name}` label",
     # https://github.com/ghostty-org/ghostty/issues/7128#event-17324195909
     # https://github.com/ghostty-org/discord-bot/issues/236#event-17747044482
-    "issue_type_added": "Added an issue type",
+    issue_type_added="Added an issue type",
     #  https://github.com/ghostty-org/discord-bot/issues/236#event-17747063469
-    "issue_type_changed": "Changed the issue type",
+    issue_type_changed="Changed the issue type",
     # https://github.com/ghostty-org/discord-bot/issues/236#event-17747091355
-    "issue_type_removed": "Removed the issue type",
+    issue_type_removed="Removed the issue type",
     # https://github.com/ghostty-org/ghostty/pull/9756#event-21257176103
     # https://github.com/ghostty-org/ghostty/pull/9758#event-21488581260
     # https://github.com/ghostty-org/ghostty/pull/9832#event-21428833545
-    "milestoned": "Added this to the `{event.milestone.title}` milestone",
+    milestoned="Added this to the `{event.milestone.title}` milestone",
     # https://github.com/ghostty-org/ghostty/issues/5491#event-16302256854
-    "demilestoned": "Removed this from the `{event.milestone.title}` milestone",
+    demilestoned="Removed this from the `{event.milestone.title}` milestone",
     # https://github.com/gleam-lang/awesome-gleam/issues/160#event-14908148573
-    "converted_from_draft": "Converted this from a draft issue",
+    converted_from_draft="Converted this from a draft issue",
     # https://github.com/ghostty-org/discord-bot/pull/175#event-16555527337
     # https://github.com/ghostty-org/discord-bot/pull/431#event-21540933434
-    "convert_to_draft": "Marked this pull request as draft",
+    convert_to_draft="Marked this pull request as draft",
     # https://github.com/ghostty-org/discord-bot/pull/175#event-16529671127
     # https://github.com/ghostty-org/discord-bot/pull/176#event-16596899731
-    "ready_for_review": "Marked this pull request as ready for review",
+    ready_for_review="Marked this pull request as ready for review",
     # https://github.com/ghostty-org/discord-bot/pull/234#event-17752890907
     # https://github.com/ghostty-org/ghostty/pull/9890#event-21539711044
-    "review_requested": "Requested a review from `{reviewer}`",
+    review_requested="Requested a review from `{reviewer}`",
     # https://github.com/ghostty-org/discord-bot/pull/234#event-17752986102
     # https://github.com/ghostty-org/discord-bot/pull/234#event-17753052966
-    "review_request_removed": "Removed the request for a review from `{reviewer}`",
+    review_request_removed="Removed the request for a review from `{reviewer}`",
     # https://github.com/trag1c/monalisten/pull/15#event-21534908956
-    "copilot_work_started": "Started a Copilot review",
+    copilot_work_started="Started a Copilot review",
     # https://github.com/ghostty-org/ghostty/pull/5341#event-16053815030
-    "auto_merge_enabled": "Enabled auto-merge",
+    auto_merge_enabled="Enabled auto-merge",
     # https://github.com/microsoft/terminal/pull/18903#event-17640118811
-    "auto_squash_enabled": "Enabled auto-merge (squash)",
+    auto_squash_enabled="Enabled auto-merge (squash)",
     # https://github.com/ghostty-org/ghostty/pull/5341#event-16053815030
     # https://github.com/microsoft/terminal/pull/18901#event-17626618807
-    "auto_merge_disabled": "Disabled auto-merge",
+    auto_merge_disabled="Disabled auto-merge",
     # https://github.com/ghostty-org/ghostty/pull/5341#event-16053900676
-    "head_ref_deleted": "Deleted the head branch",
+    head_ref_deleted="Deleted the head branch",
     # https://github.com/Pix-xiP/remake/pull/2#event-13989779969
-    "head_ref_restored": "Restored the head branch",
+    head_ref_restored="Restored the head branch",
     # https://github.com/ghostty-org/ghostty/pull/5650#event-16271684386
     # https://github.com/ghostty-org/discord-bot/pull/175#event-16529067881
-    "head_ref_force_pushed": lambda event: (
+    head_ref_force_pushed=lambda event: (
         "Force-pushed the head branch to "
         + _format_commit_id(event, cast("str", event.commit_id))
     ),
     # https://github.com/ghostty-org/discord-bot/pull/151#event-16323374495
-    "base_ref_changed": "Changed the base branch",
+    base_ref_changed="Changed the base branch",
     # https://github.com/ghostty-org/discord-bot/pull/154#event-16440303050
-    "automatic_base_change_succeeded": "Base automatically changed",
+    automatic_base_change_succeeded="Base automatically changed",
     # (A link has not yet been procured: it's included only because it's documented.)
-    "automatic_base_change_failed": "Automatic base change failed",
+    automatic_base_change_failed="Automatic base change failed",
     # https://github.com/ghostty-org/ghostty/issues/601#event-14492268323
     # https://github.com/ghostty-org/ghostty/issues/2915#event-15601932131
-    "converted_to_discussion": "Converted this issue to a discussion",
+    converted_to_discussion="Converted this issue to a discussion",
     # https://github.com/ghostty-org/ghostty/issues/6709#event-16762188684
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540953657
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540955887
-    "parent_issue_added": "Added a parent issue",
+    parent_issue_added="Added a parent issue",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540954322
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540956147
-    "parent_issue_removed": "Removed a parent issue",
+    parent_issue_removed="Removed a parent issue",
     # https://github.com/ghostty-org/ghostty/issues/5255#event-16762188659
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540955881
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540953649
-    "sub_issue_added": "Added a sub-issue",
+    sub_issue_added="Added a sub-issue",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540956142
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540954319
-    "sub_issue_removed": "Removed a sub-issue",
+    sub_issue_removed="Removed a sub-issue",
     # https://github.com/ghostty-org/ghostty/issues/3074#event-15773680889
     # https://github.com/ghostty-org/ghostty/issues/5191#event-15981365503
     # https://github.com/microsoft/terminal/issues/3061#event-16688362043
-    "marked_as_duplicate": "Marked an issue as a duplicate of this one",
+    marked_as_duplicate="Marked an issue as a duplicate of this one",
     # https://github.com/microsoft/terminal/issues/3061#event-16688383563
-    "unmarked_as_duplicate": "Unmarked an issue as a duplicate of this one",
+    unmarked_as_duplicate="Unmarked an issue as a duplicate of this one",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540951762
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540961662
-    "blocking_added": "Marked this issue as blocking another",
+    blocking_added="Marked this issue as blocking another",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540952702
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540961913
-    "blocking_removed": "Unmarked this issue as blocking another",
+    blocking_removed="Unmarked this issue as blocking another",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540961666
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540951768
-    "blocked_by_added": "Marked this issue as blocked by another",
+    blocked_by_added="Marked this issue as blocked by another",
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21540961919
     # https://github.com/ghostty-org/discord-bot/issues/236#event-21540952710
-    "blocked_by_removed": "Unmarked this issue as blocked by another",
+    blocked_by_removed="Unmarked this issue as blocked by another",
     # https://github.com/python/mypy/issues/6700#event-16524881873
-    "referenced": lambda event: (
+    referenced=lambda event: (
         "Referenced this issue in commit "
         + _format_commit_id(event, cast("str", event.commit_id), preserve_repo_url=True)
     ),
     # https://github.com/ghostty-org/ghostty/issues/5491#event-16304505401
-    "renamed": lambda event: (
+    renamed=lambda event: (
         f"Changed the title ~~{
             escape_special((rename := cast('IssueEventRename', event.rename)).from_)
         }~~ {escape_special(rename.to)}"
     ),
     # https://github.com/microsoft/terminal/pull/17421#event-13349470395
-    "added_to_merge_queue": "Added this pull request to the merge queue",
+    added_to_merge_queue="Added this pull request to the merge queue",
     # https://github.com/google-gemini/gemini-cli/pull/4625#event-19668902591
-    "removed_from_merge_queue": "Removed this pull request from the merge queue",
+    removed_from_merge_queue="Removed this pull request from the merge queue",
     # https://github.com/Foxboron/sbctl/pull/300#event-12587455392
     # https://github.com/ghostty-org/website/pull/411#event-22986127374
-    "deployed": lambda event: (
+    deployed=lambda event: (
         "Deployed this"
         + (
             f" via {escape_special(event.performed_via_github_app.name)}"
@@ -233,14 +233,14 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     ),
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21541845202
     # https://github.com/ghostty-org/discord-bot/pull/429#event-21541845197
-    "connected": lambda event: (
+    connected=lambda event: (
         "Linked an issue that may be closed by this pull request"
         if isinstance(cast("Issue", event.issue).pull_request, IssuePropPullRequest)
         else "Linked a pull request that may close this issue"
     ),
     # https://github.com/ghostty-org/discord-bot/issues/430#event-21541847026
     # https://github.com/ghostty-org/discord-bot/pull/429#event-21541847022
-    "disconnected": lambda event: (
+    disconnected=lambda event: (
         "Removed a link to "
         + (
             "a pull request"
@@ -250,34 +250,34 @@ SUPPORTED_EVENTS: dict[str, str | Callable[[IssueEvent], str]] = {
     ),
     # https://github.com/microsoft/terminal/pull/18903#event-17640120322
     # https://github.com/microsoft/terminal/pull/18901#event-17626622591
-    "added_to_project_v2": "Added this to a project",
+    added_to_project_v2="Added this to a project",
     # https://github.com/microsoft/terminal/pull/18903#event-17640120474
     # https://github.com/microsoft/terminal/pull/18903#event-17643846664
     # https://github.com/microsoft/terminal/pull/18901#event-17626622936
     # https://github.com/microsoft/terminal/pull/18901#event-17626622996
     # https://github.com/microsoft/terminal/pull/18901#event-17639416901
     # https://github.com/microsoft/terminal/pull/18901#event-17639425386
-    "project_v2_item_status_changed": "Changed the status of this in a project",
+    project_v2_item_status_changed="Changed the status of this in a project",
     # https://github.com/microsoft/sudo/issues/2#event-13350207312
-    "comment_deleted": "Deleted a comment",
+    comment_deleted="Deleted a comment",
     # https://github.com/xtermjs/xterm.js/issues/5686#event-23575567225
-    "user_blocked": "Blocked a user",
+    user_blocked="Blocked a user",
     # https://github.com/ghostty-org/discord-bot/issues/551#event-25804791481
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25804935575
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25804935708
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25804936726
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805073359
-    "issue_field_added": "Set a field",
+    issue_field_added="Set a field",
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25804979963
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805098924
-    "issue_field_changed": "Changed a field",
+    issue_field_changed="Changed a field",
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805016559
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805048941
     # https://github.com/ghostty-org/discord-bot/issues/553#event-25805123262
-    "issue_field_removed": "Cleared a field",
+    issue_field_removed="Cleared a field",
     # https://github.com/ghostty-org/discord-bot/pull/572#event-31132926526
-    "added_to_stack": "Added this pull request to a stack",
-}
+    added_to_stack="Added this pull request to a stack",
+)
 
 
 def _format_commit_id(

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 URL_TEMPLATE = "https://ghostty.org/docs/{section}{page}"
 
-SECTIONS = {
+SECTIONS = frozendict({
     "action": "config/keybind/reference#",
     "config": "config/",
     "help": "help/",
@@ -31,7 +31,7 @@ SECTIONS = {
     "vt-csi": "vt/csi/",
     "vt-esc": "vt/esc/",
     "vt": "vt/",
-}
+})
 
 
 class Entry(TypedDict):
