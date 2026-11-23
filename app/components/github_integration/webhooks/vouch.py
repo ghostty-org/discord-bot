@@ -67,11 +67,11 @@ def find_vouch_command(body: str) -> VouchKind | None:
 
 def cleanup_vouch_queue(vouch_queue: VouchQueue) -> None:
     now = time.monotonic()
-    for comment_id in (
+    for comment_id in [
         comment_id
         for comment_id, entry in vouch_queue.items()
         if now - entry.created_at > VOUCH_QUEUE_TTL_SECONDS
-    ):
+    ]:
         entry = vouch_queue.pop(comment_id)
         logger.warning(
             "removed stale vouch queue entry for comment {comment_id} "
