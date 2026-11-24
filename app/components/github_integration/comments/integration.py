@@ -18,16 +18,16 @@ if TYPE_CHECKING:
     from app.bot import GhosttyBot
     from app.components.github_integration.models import Comment
 
-REACTION_EMOJIS = {
-    "plus_one": "👍",
-    "minus_one": "👎",
-    "laugh": "😄",  # NOTE: while laugh is actually 😆, GitHub's UI uses smile.
-    "confused": "😕",
-    "heart": "❤️",  # test: allow-vs16
-    "hooray": "🎉",
-    "eyes": "👀",
-    "rocket": "🚀",
-}
+REACTION_EMOJIS = frozendict(
+    plus_one="👍",
+    minus_one="👎",
+    laugh="😄",  # NOTE: while laugh is actually 😆, GitHub's UI uses smile.
+    confused="😕",
+    heart="❤️",  # test: allow-vs16
+    hooray="🎉",
+    eyes="👀",
+    rocket="🚀",
+)
 
 _FIGURE_SPACE = "\u2007"
 

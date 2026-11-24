@@ -32,12 +32,12 @@ CODE_LINK_PATTERN = re.compile(
     r"https?://(?:www\.)?github\.com/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-\._]+)/blob/"
     r"([^/\s]+)/([^\?#\s]+)(?:[^\#\s]*)?#L(\d+)(?:C\d+)?(?:-L(\d+)(?:C\d+)?)?"
 )
-LANG_SUBSTITUTIONS = {
-    "el": "lisp",
-    "pyi": "py",
-    "fnl": "clojure",
-    "m": "objc",
-}
+LANG_SUBSTITUTIONS = frozendict(
+    el="lisp",
+    pyi="py",
+    fnl="clojure",
+    m="objc",
+)
 
 
 class SnippetPath(NamedTuple):

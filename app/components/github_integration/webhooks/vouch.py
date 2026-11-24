@@ -31,16 +31,16 @@ MAINTAINER_ASSOCIATIONS = frozenset[AuthorAssociation]({
     "MEMBER",
     "COLLABORATOR",
 })
-VOUCH_PAST_TENSE: dict[VouchKind, str] = {
+VOUCH_PAST_TENSE = frozendict[VouchKind, str]({
     "vouch": "vouched",
     "unvouch": "unvouched",
     "denounce": "denounced",
-}
-VOUCH_KIND_COLORS: dict[VouchKind, EmbedColor] = {
+})
+VOUCH_KIND_COLORS: frozendict[VouchKind, EmbedColor] = frozendict({
     "vouch": "blue",
     "unvouch": "orange",
     "denounce": "red",
-}
+})
 VOUCH_QUEUE_TTL_SECONDS = 3600
 
 
@@ -61,7 +61,7 @@ def find_vouch_command(body: str) -> VouchKind | None:
     if (
         command := body.partition(" ")[0].removeprefix("!").strip()
     ) in VOUCH_KIND_COLORS:
-        return command
+        return command  # ty: ignore[invalid-explicit-return]  # https://github.com/astral-sh/ty/issues/5029
     return None
 
 

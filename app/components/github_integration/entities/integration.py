@@ -1,6 +1,5 @@
 import asyncio
 from collections import defaultdict
-from itertools import chain
 from typing import TYPE_CHECKING, final, override
 
 import discord as dc
@@ -57,7 +56,7 @@ class GitHubEntities(commands.Cog):
                 entity_to_message_map.pop(entity)
 
         # Deduplicate remaining messages
-        messages_to_update = set(chain.from_iterable(entity_to_message_map.values()))
+        messages_to_update = {*msgs for msgs in entity_to_message_map.values()}
 
         for msg in messages_to_update:
             reply = self.linker.get(msg)

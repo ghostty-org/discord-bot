@@ -44,7 +44,7 @@ EmojiName = Literal[
 _EMOJI_NAMES = frozenset(get_args(EmojiName))
 
 emojis_var = ContextVar[MappingProxyType[EmojiName, dc.Emoji | Literal["❓"]]](
-    "emojis", default=MappingProxyType(dict.fromkeys(_EMOJI_NAMES, "❓"))
+    "emojis", default=MappingProxyType(frozendict.fromkeys(_EMOJI_NAMES, "❓"))
 )
 emojis = emojis_var.get
 
@@ -72,7 +72,7 @@ class GhosttyBot(commands.Bot):
 
         # Retain the default: this dict will later be mutated by load_emojis, and if
         # a cog accesses emojis before load_emojis finishes it'll throw a KeyError.
-        self._emojis = dict(emojis_var.get())
+        self._emojis = dict(emojis())
         # Contexts, within which ContextVars are stored, are thread-local; setting
         # emojis_var in load_emojis doesn't work as they're set in a different Context,
         # which asyncio never has a chance to copy into other coroutines' Contexts.

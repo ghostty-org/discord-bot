@@ -1,6 +1,14 @@
 from contextvars import ContextVar
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NamedTuple, override
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    NamedTuple,
+    TypeForm,
+    override,
+)
 
 import discord as dc
 from githubkit import GitHub, TokenAuthStrategy
@@ -29,7 +37,7 @@ type WebhookFeedType = Literal["main", "discussions"]
 
 # This maps valid special ghostty-org repo prefixes to appropriate repo names. Since the
 # actual repo names are also valid prefixes, they can be viewed as self-mapping aliases.
-REPO_ALIASES = {
+REPO_ALIASES = frozendict({
     "ghostty": "ghostty",
     "main": "ghostty",
     "meta": "meta",
@@ -38,14 +46,14 @@ REPO_ALIASES = {
     "discord-bot": "discord-bot",
     "bot": "discord-bot",
     "bobr": "discord-bot",
-}
+})
 # Repositories in this set can only be linked by privileged Discord members. The full
 # owner/name is kept here so the restriction also applies to full GitHub URLs.
 PRIVATE_REPOS = frozenset({"meta"})
 ENV_PREFIX = "BOT__"
 
 
-def validate_type[T](obj: object, typ: type[T]) -> T:
+def validate_type[T](obj: object, typ: TypeForm[T]) -> T:
     adapter = TypeAdapter(typ, config={"arbitrary_types_allowed": True})
     return adapter.validate_python(obj, strict=True)
 
