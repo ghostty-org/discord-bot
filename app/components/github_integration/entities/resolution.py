@@ -102,7 +102,7 @@ async def resolve_entity_signatures(
                 continue
 
         if (sig := await resolve_repo_signature(owner, repo)) and can_link_repo(
-            message.author, *sig
+            message, *sig
         ):
             kind_hint = sep.strip("/#") if site else None
             yield (*sig, number), kind_hint

@@ -490,9 +490,9 @@ class EditMessage(SafeModal, title="Edit Message"):
     @override
     async def on_submit(self, interaction: dc.Interaction) -> None:
         content = f"{self.new_text.value}\n{self._split_subtext.subtext}"
-        converted_content = convert_nitro_emojis(
-            self.bot, config().ghostty_guild, content
-        )
+        guild = self._message.guild
+        assert guild is not None
+        converted_content = convert_nitro_emojis(self.bot, guild, content)
         await self._message.edit(
             content=converted_content if len(converted_content) <= 2000 else content,
             allowed_mentions=dc.AllowedMentions.none(),
@@ -714,9 +714,9 @@ class MoveMessage(commands.Cog):
     ) -> None:
         channel = moved_message.channel
         if new_content is not dc.utils.MISSING:
-            converted_content = convert_nitro_emojis(
-                self.bot, config().ghostty_guild, new_content
-            )
+            guild = moved_message.guild
+            assert guild is not None
+            converted_content = convert_nitro_emojis(self.bot, guild, new_content)
             if len(converted_content) <= 2000:
                 new_content = converted_content
         # Suppress NotFound in case the user attempts to commit an edit to a message

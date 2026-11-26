@@ -91,7 +91,7 @@ class CodeLinks(commands.Cog):
             snippet_path[-1] = snippet_path[-1].rstrip("/")
 
             snippet_path = SnippetPath(*snippet_path)
-            if not can_link_repo(message.author, snippet_path.owner, snippet_path.repo):
+            if not can_link_repo(message, snippet_path.owner, snippet_path.repo):
                 continue
             range_start = int(range_start)
             # slice(a - 1, b) since lines are 1-indexed

@@ -139,15 +139,6 @@ class Config(BaseSettings):
     accept_invite_url: Annotated[
         str, Field(description="a URL to visit to accept the Ghostty invite")
     ]
-    guild_id: Annotated[
-        int | None,
-        Field(
-            description=(
-                "the id of the server you prepared (useful when your bot is in multiple"
-                " servers)"
-            )
-        ),
-    ] = None
     data_dir: Annotated[
         DirectoryPath, Field(description="a directory path for persistent state")
     ]
@@ -187,21 +178,6 @@ class Config(BaseSettings):
             self.bot.get_channel(self.channel_ids.log),
         )
         return validate_type(channels, Channels)
-
-    @cached_property
-    def ghostty_guild(self) -> dc.Guild:
-        logger.debug("fetching ghostty guild")
-        if (id_ := self.guild_id) and (guild := self.bot.get_guild(id_)):
-            logger.trace("found ghostty guild")
-            return guild
-        guild = self.bot.guilds[0]
-        logger.info(
-            "BOT_GUILD_ID unset or specified guild not found; using bot's first guild: "
-            "{name} (ID: {id})",
-            name=guild.name,
-            id=guild.id,
-        )
-        return guild
 
     def is_privileged_discord(self, member: dc.Member) -> bool:
         return member.guild_permissions.manage_messages

@@ -2,7 +2,6 @@
 
 data_dir = "data"
 accept_invite_url = "https://github.com/ghostty-org"
-guild_id = 1005603569187160125
 sentry_dsn = "abcd"
 
 [tokens]

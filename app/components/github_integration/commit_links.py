@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
     from app.bot import GhosttyBot
     from app.components.github_integration.commit_types import CommitSummary
-    from toolbox.discord import Account
 
 COMMIT_SHA_PATTERN = re.compile(
     r"(?P<site>\bhttps?://(?:www\.)?github\.com/)?"
@@ -111,7 +110,7 @@ class CommitLinks(commands.Cog):
 
     @staticmethod
     async def resolve_repo_signatures(
-        author: Account,
+        message: dc.Message,
         sigs: Iterable[tuple[str, str, str, str, str]],
     ) -> AsyncGenerator[CommitKey]:
         valid_signatures = 0
@@ -127,7 +126,7 @@ class CommitLinks(commands.Cog):
                 continue  # Not a valid GitHub link
             if (
                 sig := await resolve_repo_signature(owner or None, repo or None)
-            ) and can_link_repo(author, *sig):
+            ) and can_link_repo(message, *sig):
                 yield CommitKey(*sig, sha)
                 valid_signatures += 1
                 if valid_signatures == 10:
@@ -135,7 +134,7 @@ class CommitLinks(commands.Cog):
 
     async def process(self, message: dc.Message) -> ProcessedMessage:
         shas = dict.fromkeys(COMMIT_SHA_PATTERN.findall(message.content))
-        shas = [r async for r in self.resolve_repo_signatures(message.author, shas)]
+        shas = [r async for r in self.resolve_repo_signatures(message, shas)]
         commit_summaries = await asyncio.gather(*(commit_cache.get(c) for c in shas))
         valid_shas = list(filter(None, commit_summaries))
         content = "\n\n".join(map(self._format, valid_shas))

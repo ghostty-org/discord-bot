@@ -125,9 +125,7 @@ Create a `config.toml` file in the root of the project based on
 `config-example.toml`. Below are explanations for all fields variable:
 
 - `accept_invite_url`: a URL to visit to accept the Ghostty invite
-- Channel/role IDs from [step 4](#4-preparing-a-discord-server):
-  - `guild_id`: the id of the server you prepared (optional; useful when your
-    bot is in multiple servers).
+- Channel IDs from [step 4](#4-preparing-a-discord-server):
   - `channels.hcb_feed`
   - `channels.help`
   - `channels.help_tags`: a table of `tag_name` → `tag_id` pairs. The tag names
