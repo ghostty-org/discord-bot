@@ -175,6 +175,17 @@ def register_hooks(webhook: Monalisten, vouch_queue: VouchQueue) -> None:  # noq
             color="orange",
         )
 
+    @webhook.event.issues.status_changed
+    async def status_changed(event: events.IssuesStatusChanged) -> None:
+        issue = event.issue
+        await send_embed(
+            event.sender,
+            issue_embed_content(
+                issue, "updated {}", f"Changed status to: **{event.status.name}**"
+            ),
+            issue_footer(issue),
+        )
+
     @webhook.event.issue_comment.created
     async def comment_created(event: events.IssueCommentCreated) -> None:
         if event.sender.login == VOUCH_BOT_LOGIN:

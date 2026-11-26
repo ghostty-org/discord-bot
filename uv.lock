@@ -233,7 +233,7 @@ requires-dist = [
     { name = "hcb", specifier = ">=1.0.0" },
     { name = "httpx2", specifier = ">=2.13.1" },
     { name = "loguru", specifier = ">=0.7.0" },
-    { name = "monalisten", extras = ["redis"], specifier = ">=0.5.0" },
+    { name = "monalisten", extras = ["redis"], specifier = ">=0.5.1" },
     { name = "msgpack", specifier = ">=1.1" },
     { name = "pydantic", specifier = ">=2.11.7,<3" },
     { name = "pydantic-settings", specifier = ">=2.10.1,<3" },
@@ -274,27 +274,27 @@ wheels = [
 
 [[package]]
 name = "githubkit-schemas"
-version = "26.11.15"
+version = "26.11.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "githubkit" },
     { name = "githubkit-schemas-2026-03-10" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/ff/f3aafcdbea5d76d1b7ee0539549ded4c4fafad3dca2c96a82b1ca2b57ee9/githubkit_schemas-26.11.15.tar.gz", hash = "sha256:29a990417a22eec04bc607675e818e19d85686edd662d81fdde4bf27946705b2", size = 141898, upload-time = "2026-11-15T06:42:23.179Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a8/7b/de6bb6baef77627e6424c6ab236b5d41be1be587bf68a6439b22f078f9e3/githubkit_schemas-26.11.19.tar.gz", hash = "sha256:8bf3bb6a372df9bd9a6d8af8378c8ef4a03a52ecab16c557a42f7c372d2cac12", size = 134316, upload-time = "2026-11-19T10:13:33.148Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/d2/83d98d99d2350951e0097cd28e2bea32e714054e413c2d807eb326ab3451/githubkit_schemas-26.11.15-py3-none-any.whl", hash = "sha256:4b56d0c32644570c64db7dec22f87ed227d5da22466a48c238c42cda0990a14a", size = 144148, upload-time = "2026-11-15T06:42:13.893Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/23/fc889c6b0733b9424c42063d58da2f8116689d7a52125d7d28198a767042/githubkit_schemas-26.11.19-py3-none-any.whl", hash = "sha256:9d0630a2c18640b90477343422aaa737e703e82156dc9ca4c885e8341fd12281", size = 136851, upload-time = "2026-11-19T10:13:23.964Z" },
 ]
 
 [[package]]
 name = "githubkit-schemas-2026-03-10"
-version = "26.11.15"
+version = "26.11.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "githubkit-schemas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/34/6b80425bc6ba523def9a93db2d0b394a2c5874089a8aae93125e91790fea/githubkit_schemas_2026_03_10-26.11.15.tar.gz", hash = "sha256:06489998317ebef98a532d54d6b939769ea4e078a79af3f120b7396f137d7cc4", size = 1671512, upload-time = "2026-11-15T06:42:25.637Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/ec/2a2442d7b82512149ed14ed795fd3d10d36ced57f9feb99a291511a3f8bd/githubkit_schemas_2026_03_10-26.11.19.tar.gz", hash = "sha256:ab9c12a34006b330901d8d139cfcf2ea8827d3c5f018627b4f59cc248c0ddf0b", size = 1667259, upload-time = "2026-11-19T10:13:35.74Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/e5/bd38ad0457d94df0c8d5c012cea28783e000e805f0a630c9be69cc2f071d/githubkit_schemas_2026_03_10-26.11.15-py3-none-any.whl", hash = "sha256:8e6906734f1eeb760a0a3a33935015241f6bde9f68152bf24c0bf0eeac9ae859", size = 3845376, upload-time = "2026-11-15T06:42:17.513Z" },
+    { url = "https://files.pythonhosted.org/packages/38/9a/4b110fba6f67bd96cd411fb82fc9e86887ab329514e3c8cbc5ef39ab3c9a/githubkit_schemas_2026_03_10-26.11.19-py3-none-any.whl", hash = "sha256:328397e81806a0cde7c0e44e1a131ea5db67223635098afb71aff5024a1e3cb3", size = 3843449, upload-time = "2026-11-19T10:13:27.165Z" },
 ]
 
 [[package]]
@@ -562,15 +562,15 @@ wheels = [
 
 [[package]]
 name = "monalisten"
-version = "0.5.0"
+version = "0.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "githubkit" },
     { name = "githubkit-schemas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/f4/b038a0e9ae59b55223016377904a33daf2c274a0793f6dfec85172fd8d81/monalisten-0.5.0.tar.gz", hash = "sha256:fa155a05bd8198547ba8c3009825ac054c75c88356dcf9b091a04fcfff7d0170", size = 26369, upload-time = "2026-11-01T15:43:05.16Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/28/ea/61d6621997c9ba1e1f30578b38f3792c24bb1738cb45541d7fb8f2913b26/monalisten-0.5.1.tar.gz", hash = "sha256:56f593942f5aeabf319ff858c415f270144809dbe72ccc129537e154339cbbd9", size = 26427, upload-time = "2026-11-26T17:35:18.775Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/51/98078f0f1d46410c9ec0dd9266e0f6f34fa4805a7ec16e0a24d5062eaa0d/monalisten-0.5.0-py3-none-any.whl", hash = "sha256:b755cee52d8c8e2400804e79ccfdf1837ad74726bcfee37bc5eaacf971a49647", size = 27536, upload-time = "2026-11-01T15:43:04.033Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/16/effd5cb89dc56efbbcbabae74b35038098a9505f2b9da1b6561ab8894e48/monalisten-0.5.1-py3-none-any.whl", hash = "sha256:8af06737752b00023f1938c1b407b9174f37d420067dee3ce2e8096129d460b4", size = 27579, upload-time = "2026-11-26T17:35:17.596Z" },
 ]
 
 [package.optional-dependencies]
