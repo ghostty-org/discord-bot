@@ -493,7 +493,7 @@ async def get_comments(message: dc.Message) -> AsyncGenerator[Comment]:
     found_comments = set[Comment]()
     for match in COMMENT_PATTERN.finditer(message.content):
         owner, repo, kind, number, event, event_no = map(str, match.groups())
-        if not can_link_repo(message.author, owner, repo):
+        if not can_link_repo(message, owner, repo):
             continue
         entity_gist = EntityGist(owner, repo, int(number), kind)
         comment = await comment_cache.get((entity_gist, event, int(event_no)))

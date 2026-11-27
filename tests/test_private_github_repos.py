@@ -26,15 +26,7 @@ def make_message(content: str) -> dc.Message:
 
 
 def mock_repo_access(*, privileged: bool) -> None:
-    member = Mock(dc.Member)
-    guild = Mock(dc.Guild, get_member=Mock((), return_value=member))
-    config_var.set(
-        Mock(
-            Config,
-            ghostty_guild=guild,
-            is_privileged_github=Mock((), return_value=privileged),
-        )
-    )
+    config_var.set(Mock(Config, is_privileged_github=Mock((), return_value=privileged)))
 
 
 @pytest.mark.anyio
@@ -64,7 +56,7 @@ def test_public_repos_do_not_require_privilege() -> None:
     config = Mock((), side_effect=AssertionError("public repo checked permissions"))
     config_var.set(config)
 
-    assert repositories.can_link_repo(Mock(dc.Member, id=1), "ghostty-org", "ghostty")
+    assert repositories.can_link_repo(Mock(dc.Message), "ghostty-org", "ghostty")
     config.assert_not_called()
 
 
@@ -104,6 +96,5 @@ async def test_private_commit_links_are_filtered_before_fetching() -> None:
     matches = COMMIT_SHA_PATTERN.findall(message.content)
     assert matches
     assert [
-        commit
-        async for commit in CommitLinks.resolve_repo_signatures(message.author, matches)
+        commit async for commit in CommitLinks.resolve_repo_signatures(message, matches)
     ] == []
