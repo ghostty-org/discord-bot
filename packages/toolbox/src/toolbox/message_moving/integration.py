@@ -158,6 +158,7 @@ async def move_message(  # noqa: PLR0913
         thread_name=thread_name,
         wait=True,
     )
+    client.dispatch("accepted_message", msg)
     await message.delete()
 
     # Even though `message` is definitely from a guild, not all messages have a Member
