@@ -194,14 +194,15 @@ class GhosttyBot(commands.Bot):
     async def load_emojis(self) -> None:
         self.emojis_loaded.clear()
 
-        for emoji in config().ghostty_guild.emojis:
-            if emoji.name in _EMOJI_NAMES:
-                self._emojis[cast("EmojiName", emoji.name)] = emoji
-
-        if missing_emojis := _EMOJI_NAMES - {
-            k for k, v in self._emojis.items() if v != "❓"
-        }:
-            emoji_list = ", ".join(missing_emojis)
-            logger.error("failed to load emojis: {emojis}", emojis=emoji_list)
-
-        self.emojis_loaded.set()
+        try:
+            loaded: dict[EmojiName, dc.Emoji] = {
+                cast("EmojiName", emoji.name): emoji
+                for emoji in await self.fetch_application_emojis()
+                if emoji.name in _EMOJI_NAMES
+            }
+            if missing_emojis := _EMOJI_NAMES - loaded.keys():
+                emoji_list = ", ".join(missing_emojis)
+                logger.error("failed to load emojis: {emojis}", emojis=emoji_list)
+            self._emojis |= loaded
+        finally:
+            self.emojis_loaded.set()
